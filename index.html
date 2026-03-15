@@ -6,6 +6,7 @@
 <title>nTransactions</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:16px;-webkit-tap-highlight-color:transparent;}
@@ -304,10 +305,10 @@ const LOAN_TYPES = {
   loan_given:  {label:'Loan Given',       short:'Loan Given',   icon:'🤝', col:'purple',walletDir:'out', childLabel:'Loan Collected',  childDir:'in'},
 };
 const WLT_TYPES = [
-  {id:'cash',   label:'Cash',         icon:'💵'},
   {id:'bank',   label:'Bank Account', icon:'🏦'},
   {id:'drawer', label:'Drawer',       icon:'🗄️'},
-  {id:'wallet', label:'Wallet',       icon:'💸'},
+  {id:'wallet', label:'Wallet',       icon:'👛'},
+  {id:'cash',   label:'Cash',         icon:'💵'},
   {id:'mfs',    label:'MFS',          icon:'📱'},
 ];
 const COLORS = ['#0ce97f','#4d9fff','#ff3d5a','#ffb020','#9d6fff','#ff6b35','#00d4ff','#f472b6'];
@@ -319,7 +320,7 @@ let S = {
   transactions:[],wallets:[],budgets:[],loans:[],
   customExpCats:[],customIncCats:[],
   view:'dashboard',month:todayYM(),
-  syncKey:'',lastSync:null,
+  syncDbUrl:'',syncPath:'',lastSync:null,
 };
 let txF='all', txQ='', loanF='all', txType='expense', editWltId='', selColor=COLORS[0];
 let syncTimeout=null;
@@ -344,16 +345,23 @@ function load(){
 function saveLocal(){
   try{localStorage.setItem('ntx4',JSON.stringify({
     transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,
-    customExpCats:S.customExpCats,customIncCats:S.customIncCats,month:S.month,syncKey:S.syncKey,lastSync:S.lastSync
+    customExpCats:S.customExpCats,customIncCats:S.customIncCats,month:S.month,
+    syncDbUrl:S.syncDbUrl,syncPath:S.syncPath,lastSync:S.lastSync
   }));}catch(e){}
 }
 function save(){saveLocal();scheduleSync();}
 
 // ============================================================
-// CLOUD SYNC (kvdb.io - free, no signup needed)
+// CLOUD SYNC - Firebase Realtime Database (free, reliable)
+// Setup: console.firebase.google.com → New project → Realtime Database
+//        → Start in test mode → copy the database URL
 // ============================================================
-function syncKey(){return S.syncKey||'';}
-function syncUrl(){return syncKey()?`https://kvdb.io/${syncKey()}/data`:'';}
+function fbUrl(){
+  if(!S.syncDbUrl||!S.syncPath)return'';
+  const base=S.syncDbUrl.replace(/\/+$/,'');
+  const path=S.syncPath.replace(/[^a-zA-Z0-9_-]/g,'_');
+  return`${base}/${path}.json`;
+}
 
 function setSyncDot(state){
   const el=document.getElementById('sync-dot');
@@ -362,49 +370,49 @@ function setSyncDot(state){
 }
 
 async function pushSync(){
-  if(!syncKey())return;
+  const url=fbUrl();
+  if(!url)return;
   setSyncDot('busy');
   try{
-    const payload=JSON.stringify({transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,customExpCats:S.customExpCats||[],customIncCats:S.customIncCats||[],ts:Date.now()});
-    const r=await fetch(syncUrl(),{method:'PUT',body:payload,headers:{'Content-Type':'application/json'}});
+    const payload={transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,
+      customExpCats:S.customExpCats||[],customIncCats:S.customIncCats||[],ts:Date.now()};
+    const r=await fetch(url,{method:'PUT',body:JSON.stringify(payload),headers:{'Content-Type':'application/json'}});
     if(r.ok){S.lastSync=Date.now();saveLocal();setSyncDot('ok');}
-    else setSyncDot('err');
-  }catch(e){setSyncDot('err');}
+    else{console.error('Sync push failed',r.status);setSyncDot('err');}
+  }catch(e){console.error('Sync push error',e);setSyncDot('err');}
 }
 
 async function pullSync(){
-  if(!syncKey())return;
+  const url=fbUrl();
+  if(!url)return;
   setSyncDot('busy');
   try{
-    const r=await fetch(syncUrl());
+    const r=await fetch(url);
     if(r.ok){
-      const txt=await r.text();
-      if(txt&&txt!=='null'&&txt.startsWith('{')){
-        const d=JSON.parse(txt);
-        if(d.ts&&(!S.lastSync||d.ts>S.lastSync)){
-          S.transactions=d.transactions||S.transactions;
-          S.wallets=d.wallets||S.wallets;
-          S.budgets=d.budgets||S.budgets;
-          S.loans=d.loans||S.loans;
-          S.customExpCats=d.customExpCats||S.customExpCats;
-          S.customIncCats=d.customIncCats||S.customIncCats;
-          S.lastSync=d.ts;
-          saveLocal();renderMain();
-        }
+      const d=await r.json();
+      if(d&&d.ts&&(!S.lastSync||d.ts>S.lastSync)){
+        S.transactions=d.transactions||S.transactions;
+        S.wallets=d.wallets||S.wallets;
+        S.budgets=d.budgets||S.budgets;
+        S.loans=d.loans||S.loans;
+        S.customExpCats=d.customExpCats||S.customExpCats;
+        S.customIncCats=d.customIncCats||S.customIncCats;
+        S.lastSync=d.ts;
+        saveLocal();renderMain();
       }
       setSyncDot('ok');
-    }else setSyncDot('err');
-  }catch(e){setSyncDot('err');}
+    }else{console.error('Sync pull failed',r.status);setSyncDot('err');}
+  }catch(e){console.error('Sync pull error',e);setSyncDot('err');}
 }
 
 function scheduleSync(){
-  if(!syncKey())return;
+  if(!fbUrl())return;
   clearTimeout(syncTimeout);
-  syncTimeout=setTimeout(pushSync,1200);
+  syncTimeout=setTimeout(pushSync,1400);
 }
 
 // auto pull every 45 sec
-setInterval(()=>{if(syncKey())pullSync();},45000);
+setInterval(()=>{if(fbUrl())pullSync();},45000);
 
 // ============================================================
 // UTILS
@@ -453,7 +461,7 @@ function renderMain(){
   else if(S.view==='loans')html=rLoans();
   el.innerHTML=`<div class="main-inner fade-up">${html}</div>`;
   // sync dot status
-  if(!syncKey())setSyncDot('');else setSyncDot('ok');
+  if(!fbUrl())setSyncDot('');else setSyncDot('ok');
 }
 
 // ============================================================
@@ -473,7 +481,7 @@ function rDash(){
 
   return `
   <div class="section" style="padding-top:18px;">
-    ${!syncKey()?`<div class="sync-banner">☁️ <span style="flex:1;"><b>Cloud Sync not set up.</b> Data only saves on this device. <button onclick="openSyncModal()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Set up →</button></span></div>`:''}
+    ${!fbUrl()?`<div class="sync-banner">☁️ <span style="flex:1;"><b>Cloud Sync not set up.</b> Data only saves on this device. <button onclick="openSyncModal()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Set up →</button></span></div>`:''}
     <div class="bal-card">
       <div class="bal-label">Total Balance</div>
       <div class="bal-amount">${fmt(bal)}</div>
@@ -561,6 +569,10 @@ function rTxs(){
   const groups={};txs.forEach(t=>{const k=fmtD(t.date);if(!groups[k])groups[k]=[];groups[k].push(t);});
   return `
   <div class="section" style="padding-top:16px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;">Transactions</div>
+      <button class="sm-btn-g" onclick="exportXLSX()" title="Export to Excel">⬇ Export .xlsx</button>
+    </div>
     <div class="srch-wrap">
       <span class="srch-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
       <input type="text" placeholder="Search by category or note..." value="${txQ}" oninput="doSearch(this.value)" id="txs-inp">
@@ -694,7 +706,7 @@ function rLoans(){
             </div>
           </div>
           <div style="font-size:11px;color:var(--text3);margin-top:8px;">📅 ${fmtD(l.date)}${l.dueDate?' · Due: '+fmtD(l.dueDate):''}${l.note?' · '+l.note:''}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">৳ ${w.name}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">👛 ${w.name}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
           <div class="loan-orig" style="color:var(--${sc.acol});">${fmt(l.amount)}</div>
@@ -711,7 +723,7 @@ function rLoans(){
         <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:7px;">Payment History</div>
         ${l.payments.map((p,i)=>`
         <div class="loan-pay-item">
-          <span>🗓 ${fmtD(p.date)}${p.note?' · '+p.note:''} · ৳ ${getWlt(p.wallet).name}</span>
+          <span>🗓 ${fmtD(p.date)}${p.note?' · '+p.note:''} · 👛 ${getWlt(p.wallet).name}</span>
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(p.amount)}</span>
             <button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="delLoanPayment('${l.id}',${i})">×</button>
@@ -767,7 +779,7 @@ function handleOvClick(e){if(e.target===document.getElementById('modal-overlay')
 function openAddTx(){txType='expense';openModal(txModalHTML());}
 function txCatOpts(type){
   const cats=type==='expense'?getExpCats():getIncCats();
-  return cats.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
+  return `<option value="">-- Select a category --</option>`+cats.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
 }
 function txModalHTML(){
   const wOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
@@ -1078,38 +1090,110 @@ function delLoan(id){
 // ---- SYNC MODAL ----
 function openSyncModal(){
   openModal(`
-  <div class="modal-title">☁️ Cloud Sync</div>
-  <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
-    Sync your data across devices using a free cloud key. Both devices must use the <b>same Sync Key</b>. Your data is stored privately under that key.
+  <div class="modal-title">☁️ Cloud Sync Setup</div>
+  <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7;">
+    Uses <b>Firebase Realtime Database</b> (free) to sync across all your devices. One-time setup takes about 2 minutes.
   </div>
-  <div class="fg"><label class="fl">Sync Key (unique name)</label>
-    <input type="text" class="fi" id="sk-key" placeholder="e.g. username-sync-key" value="${S.syncKey||''}">
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;font-size:12px;line-height:1.8;color:var(--text2);">
+    <b style="color:var(--text);font-size:13px;">How to set up (one-time):</b><br>
+    1. Go to <b style="color:var(--blue);">console.firebase.google.com</b><br>
+    2. Create a new project (any name)<br>
+    3. Build → Realtime Database → Create database<br>
+    4. Choose <b>"Start in test mode"</b> → Enable<br>
+    5. Copy the Database URL (looks like: <span style="color:var(--green);font-family:'Space Mono',monospace;font-size:11px;">https://myapp-abc.firebaseio.com</span>)<br>
+    6. Paste it below
   </div>
-  <div style="font-size:11px;color:var(--text3);margin-bottom:16px;">Pick any unique name. Use the same key on all your devices. Tip: add random digits to keep it private.</div>
-  <button class="btn btn-p" onclick="applySyncKey()">Save & Sync Now</button>
-  ${S.syncKey?`<button class="btn btn-s" onclick="manualPull()" style="margin-top:8px;">⬇ Pull Latest from Cloud</button>`:''}
+  <div class="fg">
+    <label class="fl">Firebase Database URL</label>
+    <input type="url" class="fi" id="sk-dburl" placeholder="https://myapp-default-rtdb.firebaseio.com" value="${S.syncDbUrl||''}">
+  </div>
+  <div class="fg">
+    <label class="fl">Sync Path (unique name for your data)</label>
+    <input type="text" class="fi" id="sk-path" placeholder="e.g. nasimul-main" value="${S.syncPath||''}">
+    <div style="font-size:11px;color:var(--text3);margin-top:6px;">Use the same path on all devices. Only letters, numbers, hyphens allowed.</div>
+  </div>
+  <button class="btn btn-p" onclick="applySyncKey()">💾 Save & Push to Cloud</button>
+  ${fbUrl()?`<button class="btn btn-s" onclick="manualPull()" style="margin-top:8px;">⬇ Pull Latest from Cloud</button>`:''}
   <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>
   ${S.lastSync?`<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;">Last synced: ${new Date(S.lastSync).toLocaleString()}</div>`:''}
-  <div style="margin-top:16px;padding:12px;background:var(--amber-d);border:1px solid rgba(255,176,32,.2);border-radius:10px;font-size:12px;color:var(--amber);">
-    ⚠ Do not share your Sync Key with others. Anyone with the key can read and overwrite your data.
+  <div style="margin-top:14px;padding:10px 12px;background:var(--amber-d);border:1px solid rgba(255,176,32,.2);border-radius:10px;font-size:11px;color:var(--amber);">
+    ⚠ Keep your Sync Path private. Anyone who knows both the DB URL and path can access your data.
   </div>`);
 }
+
 async function applySyncKey(){
-  const k=document.getElementById('sk-key').value.trim().replace(/[^a-zA-Z0-9_-]/g,'');
-  if(!k||k.length<6)return alert('Enter a sync key with at least 6 characters (letters, numbers, -, _).');
-  S.syncKey=k;save();
+  const dburl=(document.getElementById('sk-dburl').value||'').trim().replace(/\/+$/,'');
+  const path=(document.getElementById('sk-path').value||'').trim().replace(/[^a-zA-Z0-9_-]/g,'');
+  if(!dburl||!dburl.startsWith('https://'))return alert('Enter a valid Firebase Database URL (must start with https://).');
+  if(!path||path.length<3)return alert('Enter a sync path with at least 3 characters.');
+  S.syncDbUrl=dburl;S.syncPath=path;saveLocal();
   closeModal();
+  setSyncDot('busy');
   await pushSync();
   renderMain();
-  alert('Sync key saved! Now use the same key on your other device.');
-}
-async function manualPull(){
-  closeModal();
-  await pullSync();
-  alert('Data pulled from cloud. If the data looks different, a newer version was found on the server.');
+  alert('✅ Sync configured! Now set the same Database URL and Path on your other device, then tap "Pull Latest from Cloud" on that device.');
 }
 
-// ---- MONTH ----
+async function manualPull(){
+  closeModal();
+  setSyncDot('busy');
+  await pullSync();
+  alert('⬇ Pull complete. Your data is now up to date.');
+}
+
+// ---- EXPORT TO XLSX ----
+function exportXLSX(){
+  if(!S.transactions.length)return alert('No transactions to export.');
+  const rows=S.transactions
+    .sort((a,b)=>b.date.localeCompare(a.date))
+    .map(t=>{
+      let category='',type=t.type;
+      if(t.type==='expense')category=getCat('expense',t.category).label;
+      else if(t.type==='income')category=getCat('income',t.category).label;
+      else category='Transfer';
+      const fromWallet=getWlt(t.wallet).name;
+      const toWallet=t.toWallet?getWlt(t.toWallet).name:'';
+      return{
+        'Date':fmtD(t.date),
+        'Type':type.charAt(0).toUpperCase()+type.slice(1),
+        'Category':category,
+        'Amount (৳)':t.amount,
+        'Wallet':fromWallet,
+        'To Wallet':toWallet,
+        'Note':t.note||'',
+      };
+    });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.json_to_sheet(rows);
+  // column widths
+  ws['!cols']=[{wch:14},{wch:12},{wch:24},{wch:14},{wch:16},{wch:16},{wch:28}];
+  XLSX.utils.book_append_sheet(wb,ws,'Transactions');
+  // also add loans sheet
+  if(S.loans.length){
+    const lrows=S.loans.map(l=>{
+      const cfg=LOAN_TYPES[l.type];
+      const paid=loanPaid(l);
+      return{
+        'Date':fmtD(l.date),
+        'Type':cfg.label,
+        'Person':l.person,
+        'Original (৳)':l.amount,
+        'Paid (৳)':paid,
+        'Remaining (৳)':loanRemain(l),
+        'Wallet':getWlt(l.wallet).name,
+        'Due Date':l.dueDate?fmtD(l.dueDate):'',
+        'Note':l.note||'',
+        'Status':loanRemain(l)<=0?'Settled':'Pending',
+      };
+    });
+    const ws2=XLSX.utils.json_to_sheet(lrows);
+    ws2['!cols']=[{wch:14},{wch:18},{wch:16},{wch:14},{wch:12},{wch:14},{wch:16},{wch:14},{wch:24},{wch:10}];
+    XLSX.utils.book_append_sheet(wb,ws2,'Loans');
+  }
+  const fname=`nTransactions_${S.month}.xlsx`;
+  XLSX.writeFile(wb,fname);
+}
+
 function changeMonth(d){const[y,m]=S.month.split('-').map(Number);const nd=new Date(y,m-1+d,1);S.month=nd.toISOString().slice(0,7);save();renderMain();}
 function openMonthPicker(){
   openModal(`
@@ -1125,7 +1209,7 @@ function applyMonth(){const v=document.getElementById('mp-val').value;if(v){S.mo
 // ============================================================
 load();
 go('dashboard');
-if(syncKey())setTimeout(()=>pullSync(),800);
+if(fbUrl())setTimeout(()=>pullSync(),800);
 </script>
 </body>
 </html>
