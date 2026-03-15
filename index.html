@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>nTransactions</title>
+<link rel="icon" type="image/png" href="https://raw.githubusercontent.com/nasimulrizvi/index.html/refs/heads/main/Transactions.png">
+<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/nasimulrizvi/index.html/refs/heads/main/Transactions.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -305,9 +307,9 @@ const LOAN_TYPES = {
   loan_given:  {label:'Loan Given',       short:'Loan Given',   icon:'🤝', col:'purple',walletDir:'out', childLabel:'Loan Collected',  childDir:'in'},
 };
 const WLT_TYPES = [
-  {id:'bank',   label:'Bank Account', icon:'💳'},
+  {id:'bank',   label:'Bank Account', icon:'🏦'},
   {id:'drawer', label:'Drawer',       icon:'🗄️'},
-  {id:'wallet', label:'Wallet',       icon:'💸'},
+  {id:'wallet', label:'Wallet',       icon:'👛'},
   {id:'cash',   label:'Cash',         icon:'💵'},
   {id:'mfs',    label:'MFS',          icon:'📱'},
 ];
@@ -630,23 +632,45 @@ function rWallets(){
 // ============================================================
 function rBudget(){
   const st=mStats(S.month);
-  const ob=S.budgets.find(b=>b.category==='overall'&&b.month===S.month);
-  let overallHTML=ob?`
-  <div style="background:linear-gradient(135deg,#0d1420,#0a1422);border:1px solid rgba(255,176,32,.14);border-radius:18px;padding:20px;margin-bottom:14px;">
-    <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Overall Monthly Budget</div>
-    <div style="font-family:'Space Mono',monospace;font-size:28px;font-weight:700;">${fmt(ob.amount)}</div>
-    ${(()=>{const pct=Math.min(100,(st.exp/ob.amount)*100);const col=pct>80?'var(--red)':pct>60?'var(--amber)':'var(--green)';return`
-    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin:10px 0 6px;"><span>Spent ${fmt(st.exp)}</span><span style="color:${col};font-weight:700;">${pct.toFixed(1)}% used</span></div>
-    <div class="prog" style="height:8px;"><div class="prog-fill" style="width:${pct}%;background:${col};"></div></div>
-    <div style="font-size:12px;margin-top:8px;font-weight:700;color:${col};">${pct>=100?'⚠ Budget exceeded!':pct>80?'⚠ Approaching limit':'✓ '+fmt(ob.amount-st.exp)+' remaining'}</div>`;})()}
-  </div>`:
-  `<div class="card" style="margin-bottom:14px;text-align:center;padding:16px;">
-    <div style="font-size:13px;color:var(--text3);">No overall budget for ${fmtMY(S.month)}</div>
-    <button onclick="openAddBgt('overall')" style="margin-top:8px;background:none;border:none;color:var(--green);cursor:pointer;font-size:13px;font-weight:700;font-family:'Outfit',sans-serif;">Set Overall Budget →</button>
-  </div>`;
+  const yr=curYear();
 
+  // yearly totals for the selected year
+  const yrTxs=S.transactions.filter(t=>t.date&&t.date.startsWith(yr));
+  const yrExp=yrTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const yrInc=yrTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+
+  // monthly overall budget
+  const mOb=S.budgets.find(b=>b.category==='overall'&&b.month===S.month&&b.period!=='yearly');
+  // yearly overall budget
+  const yOb=S.budgets.find(b=>b.category==='overall'&&b.year===yr&&b.period==='yearly');
+
+  function budgetCard(bgt,spent,label,accentCol){
+    const pct=Math.min(100,(spent/bgt.amount)*100);
+    const col=pct>80?'var(--red)':pct>60?'var(--amber)':'var(--green)';
+    return`<div style="background:linear-gradient(135deg,#0d1420,#0a1422);border:1px solid rgba(${accentCol},.14);border-radius:18px;padding:18px;margin-bottom:12px;">
+      <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:5px;">${label}</div>
+      <div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:700;">${fmt(bgt.amount)}</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin:9px 0 5px;"><span>Spent ${fmt(spent)}</span><span style="color:${col};font-weight:700;">${pct.toFixed(1)}% used</span></div>
+      <div class="prog" style="height:8px;"><div class="prog-fill" style="width:${pct}%;background:${col};"></div></div>
+      <div style="font-size:12px;margin-top:7px;font-weight:700;color:${pct>=100?'var(--red)':pct>80?'var(--amber)':'var(--green)'};">${pct>=100?'⚠ Exceeded!':pct>80?'⚠ Approaching limit':'✓ '+fmt(bgt.amount-spent)+' remaining'}</div>
+    </div>`;
+  }
+
+  const monthlyOverallHTML=mOb?budgetCard(mOb,st.exp,`Monthly Budget – ${fmtMY(S.month)}`,'255,176,32'):
+    `<div class="card" style="margin-bottom:12px;text-align:center;padding:14px;">
+      <div style="font-size:13px;color:var(--text3);">No monthly budget for ${fmtMY(S.month)}</div>
+      <button onclick="openAddBgt('overall')" style="margin-top:7px;background:none;border:none;color:var(--green);cursor:pointer;font-size:13px;font-weight:700;font-family:'Outfit',sans-serif;">Set Monthly Budget →</button>
+    </div>`;
+
+  const yearlyOverallHTML=yOb?budgetCard(yOb,yrExp,`Yearly Budget – ${yr}`,'77,159,255'):
+    `<div class="card" style="margin-bottom:12px;text-align:center;padding:14px;">
+      <div style="font-size:13px;color:var(--text3);">No yearly budget for ${yr}</div>
+      <button onclick="openAddBgt('yearly')" style="margin-top:7px;background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;font-weight:700;font-family:'Outfit',sans-serif;">Set Yearly Budget →</button>
+    </div>`;
+
+  // category budgets (monthly)
   const catItems=getExpCats().map(c=>{
-    const bgt=S.budgets.find(b=>b.category===c.id&&b.month===S.month);
+    const bgt=S.budgets.find(b=>b.category===c.id&&b.month===S.month&&b.period!=='yearly');
     const spent=mTxs(S.month).filter(t=>t.type==='expense'&&t.category===c.id).reduce((s,t)=>s+t.amount,0);
     if(!bgt&&spent===0)return'';
     const pct=bgt?Math.min(100,(spent/bgt.amount)*100):0;
@@ -662,12 +686,44 @@ function rBudget(){
   return `
   <div class="section" style="padding-top:16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-      <div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Budget</div><div style="font-weight:800;font-size:16px;">${fmtMY(S.month)}</div></div>
+      <div>
+        <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Budget</div>
+        <div style="font-weight:800;font-size:16px;">${fmtMY(S.month)} · ${yr}</div>
+      </div>
       <button class="sm-btn" onclick="openAddBgt()">+ Set Budget</button>
     </div>
-    ${overallHTML}
-    <div class="card">${catItems||`<div class="empty" style="padding:28px;"><div class="empty-ico">📊</div><div class="empty-t">No category budgets set</div><div class="empty-s">Tap "+ Set Budget" to get started</div></div>`}</div>
+
+    <div style="display:flex;gap:7px;margin-bottom:14px;background:var(--bg3);padding:4px;border-radius:12px;">
+      <button id="btab-m" class="tab-btn active" onclick="showBgtTab('monthly')" style="flex:1;padding:8px;border-radius:9px;">📅 Monthly</button>
+      <button id="btab-y" class="tab-btn" onclick="showBgtTab('yearly')" style="flex:1;padding:8px;border-radius:9px;">📆 Yearly</button>
+    </div>
+
+    <div id="bgt-monthly">
+      ${monthlyOverallHTML}
+      <div class="card" style="margin-bottom:4px;">
+        ${catItems||`<div class="empty" style="padding:28px;"><div class="empty-ico">📊</div><div class="empty-t">No category budgets for this month</div><div class="empty-s">Tap "+ Set Budget" to add one</div></div>`}
+      </div>
+    </div>
+
+    <div id="bgt-yearly" style="display:none;">
+      ${yearlyOverallHTML}
+      <div class="card" style="padding:14px 16px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;">
+          <span style="color:var(--text3);">Total Income ${yr}</span>
+          <span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(yrInc)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;">
+          <span style="color:var(--text3);">Total Expense ${yr}</span>
+          <span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--red);">${fmt(yrExp)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px solid var(--borderl);padding-top:10px;">
+          <span style="color:var(--text3);">Net Savings ${yr}</span>
+          <span style="font-family:'Space Mono',monospace;font-weight:700;color:${yrInc-yrExp>=0?'var(--green)':'var(--red)'};">${fmt(yrInc-yrExp)}</span>
+        </div>
+      </div>
+    </div>
   </div>`;
+}
 }
 
 // ============================================================
@@ -706,7 +762,7 @@ function rLoans(){
             </div>
           </div>
           <div style="font-size:11px;color:var(--text3);margin-top:8px;">📅 ${fmtD(l.date)}${l.dueDate?' · Due: '+fmtD(l.dueDate):''}${l.note?' · '+l.note:''}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;"> ৳ ${w.name}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">👛 ${l.wallet?getWlt(l.wallet).name:'No wallet linked'}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
           <div class="loan-orig" style="color:var(--${sc.acol});">${fmt(l.amount)}</div>
@@ -723,7 +779,7 @@ function rLoans(){
         <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:7px;">Payment History</div>
         ${l.payments.map((p,i)=>`
         <div class="loan-pay-item">
-          <span>🗓 ${fmtD(p.date)}${p.note?' · '+p.note:''} · ৳ ${getWlt(p.wallet).name}</span>
+          <span>🗓 ${fmtD(p.date)}${p.note?' · '+p.note:''}${p.wallet?' · 👛 '+getWlt(p.wallet).name:''}</span>
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(p.amount)}</span>
             <button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="delLoanPayment('${l.id}',${i})">×</button>
@@ -779,7 +835,7 @@ function handleOvClick(e){if(e.target===document.getElementById('modal-overlay')
 function openAddTx(){txType='expense';openModal(txModalHTML());}
 function txCatOpts(type){
   const cats=type==='expense'?getExpCats():getIncCats();
-  return `<option value="">Select a category</option>`+cats.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
+  return `<option value="">-- Select a category --</option>`+cats.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
 }
 function txModalHTML(){
   const wOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
@@ -941,28 +997,52 @@ function delWlt(id){
 }
 
 // ---- BUDGET ----
+function curYear(){return S.month.slice(0,4);}
+
 function openAddBgt(pre){
   openModal(`
   <div class="modal-title">Set Budget</div>
+  <div class="fg"><label class="fl">Budget Period</label>
+    <select class="fi" id="b-period" onchange="bgtPeriodChanged()">
+      <option value="monthly" ${pre!=='yearly'?'selected':''}>📅 Monthly – ${fmtMY(S.month)}</option>
+      <option value="yearly" ${pre==='yearly'?'selected':''}>📆 Yearly – ${curYear()}</option>
+    </select>
+  </div>
   <div class="fg"><label class="fl">Category</label>
     <select class="fi" id="b-cat">
-      <option value="overall" ${pre==='overall'?'selected':''}>📊 Overall Monthly Budget</option>
+      <option value="overall" ${pre==='overall'||pre==='yearly'?'selected':''}>📊 Overall Budget</option>
       ${getExpCats().map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('')}
     </select>
   </div>
   <div class="fg"><label class="fl">Budget Amount (৳)</label>
     <div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div>
   </div>
-  <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Applies to ${fmtMY(S.month)}</div>
+  <div id="b-hint" style="font-size:12px;color:var(--text3);margin-bottom:14px;">Applies to ${fmtMY(S.month)}</div>
   <button class="btn btn-p" onclick="submitBgt()">Save Budget</button>
   <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
+
+function bgtPeriodChanged(){
+  const p=document.getElementById('b-period').value;
+  const hint=document.getElementById('b-hint');
+  if(hint)hint.textContent=p==='yearly'?`Applies to full year ${curYear()}`:`Applies to ${fmtMY(S.month)}`;
+}
+
 function submitBgt(){
+  const period=document.getElementById('b-period').value;
   const cat=document.getElementById('b-cat').value;
   const amt=parseFloat(document.getElementById('b-amt').value);
   if(!amt||amt<=0)return alert('Enter a valid amount.');
-  const idx=S.budgets.findIndex(b=>b.category===cat&&b.month===S.month);
-  if(idx>=0)S.budgets[idx].amount=amt;else S.budgets.push({id:uid(),category:cat,amount:amt,month:S.month});
+  if(period==='yearly'){
+    const yr=curYear();
+    const idx=S.budgets.findIndex(b=>b.category===cat&&b.year===yr&&b.period==='yearly');
+    if(idx>=0)S.budgets[idx].amount=amt;
+    else S.budgets.push({id:uid(),category:cat,amount:amt,year:yr,period:'yearly'});
+  }else{
+    const idx=S.budgets.findIndex(b=>b.category===cat&&b.month===S.month&&b.period!=='yearly');
+    if(idx>=0)S.budgets[idx].amount=amt;
+    else S.budgets.push({id:uid(),category:cat,amount:amt,month:S.month,period:'monthly'});
+  }
   save();closeModal();renderMain();
 }
 
@@ -979,13 +1059,19 @@ function openAddLoan(){
     </select>
   </div>
   <div id="ln-wallet-info" style="font-size:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--blue);">
-    💡 Taking a Deposit: money will be added to selected wallet
+    💡 Taking a Deposit: money will be <b>added</b> to selected wallet (optional)
   </div>
   <div class="fg"><label class="fl">Person / Organization</label><input type="text" class="fi" id="ln-pr" placeholder="Name"></div>
   <div class="fg"><label class="fl">Amount (৳)</label>
     <div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="ln-amt" placeholder="0.00" min="0"></div>
   </div>
-  <div class="fg"><label class="fl">Wallet</label><select class="fi" id="ln-w">${wOpts}</select></div>
+  <div class="fg">
+    <label class="fl">Wallet <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:500;">(optional – select to affect balance)</span></label>
+    <select class="fi" id="ln-w">
+      <option value="">-- No wallet selected --</option>
+      ${wOpts}
+    </select>
+  </div>
   <div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="ln-dt" value="${todayD()}"></div>
   <div class="fg"><label class="fl">Due Date (optional)</label><input type="date" class="fi" id="ln-dd"></div>
   <div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="ln-nt" placeholder="Additional details"></div>
@@ -997,9 +1083,9 @@ function lnTypeChanged(){
   const tp=document.getElementById('ln-tp').value;
   const info=document.getElementById('ln-wallet-info');
   const msgs={
-    deposit:'💡 Taking a Deposit: money will be <b>added</b> to selected wallet',
-    loan_recv:'💡 Loan Received: money will be <b>added</b> to selected wallet',
-    loan_given:'💡 Loan Given: money will be <b>deducted</b> from selected wallet',
+    deposit:'💡 Taking a Deposit: money will be <b>added</b> to selected wallet (optional)',
+    loan_recv:'💡 Loan Received: money will be <b>added</b> to selected wallet (optional)',
+    loan_given:'💡 Loan Given: money will be <b>deducted</b> from selected wallet (optional)',
   };
   if(info)info.innerHTML=msgs[tp]||'';
 }
@@ -1008,19 +1094,20 @@ function submitLoan(){
   const tp=document.getElementById('ln-tp').value;
   const pr=document.getElementById('ln-pr').value.trim();
   const amt=parseFloat(document.getElementById('ln-amt').value);
-  const w=document.getElementById('ln-w').value;
+  const w=document.getElementById('ln-w').value; // may be empty string
   const dt=document.getElementById('ln-dt').value;
   const dd=document.getElementById('ln-dd').value;
   const nt=document.getElementById('ln-nt').value.trim();
   if(!pr)return alert('Enter a person name.');
   if(!amt||amt<=0)return alert('Enter a valid amount.');
-  if(!w)return alert('Select a wallet.');
   if(!dt)return alert('Select a date.');
-  // affect wallet
-  const cfg=LOAN_TYPES[tp];
-  const wObj=S.wallets.find(x=>x.id===w);
-  if(wObj){if(cfg.walletDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}
-  S.loans.push({id:uid(),type:tp,person:pr,amount:amt,wallet:w,date:dt,dueDate:dd,note:nt,payments:[],at:new Date().toISOString()});
+  // affect wallet only if one was selected
+  if(w){
+    const cfg=LOAN_TYPES[tp];
+    const wObj=S.wallets.find(x=>x.id===w);
+    if(wObj){if(cfg.walletDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}
+  }
+  S.loans.push({id:uid(),type:tp,person:pr,amount:amt,wallet:w||'',date:dt,dueDate:dd,note:nt,payments:[],at:new Date().toISOString()});
   save();closeModal();renderMain();
 }
 
@@ -1032,13 +1119,19 @@ function openAddLoanPayment(loanId){
   openModal(`
   <div class="modal-title">${cfg.childLabel}</div>
   <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;">
-    <div style="font-size:12px;color:var(--text3);">Original: <b style="color:var(--text);">${fmt(loan.amount)}</b> from <b style="color:var(--text);">${loan.person}</b></div>
+    <div style="font-size:12px;color:var(--text3);">Original: <b style="color:var(--text);">${fmt(loan.amount)}</b> · <b style="color:var(--text);">${loan.person}</b></div>
     <div style="font-size:12px;color:var(--text3);margin-top:4px;">Remaining: <b style="color:var(--red);">${fmt(remain)}</b></div>
   </div>
   <div class="fg"><label class="fl">Amount (৳)</label>
     <div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="${remain.toFixed(2)}" min="0" max="${remain}" value="${remain.toFixed(2)}"></div>
   </div>
-  <div class="fg"><label class="fl">Wallet</label><select class="fi" id="lp-w">${wOpts}</select></div>
+  <div class="fg">
+    <label class="fl">Wallet <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:500;">(optional)</span></label>
+    <select class="fi" id="lp-w">
+      <option value="">-- No wallet --</option>
+      ${wOpts}
+    </select>
+  </div>
   <div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="lp-dt" value="${todayD()}"></div>
   <div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div>
   <button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button>
@@ -1048,28 +1141,33 @@ function openAddLoanPayment(loanId){
 function submitLoanPayment(loanId){
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;
   const amt=parseFloat(document.getElementById('lp-amt').value);
-  const w=document.getElementById('lp-w').value;
+  const w=document.getElementById('lp-w').value; // may be empty
   const dt=document.getElementById('lp-dt').value;
   const nt=document.getElementById('lp-nt').value.trim();
   const remain=loanRemain(loan);
   if(!amt||amt<=0)return alert('Enter a valid amount.');
   if(amt>remain+0.01)return alert(`Cannot exceed remaining amount of ${fmt(remain)}.`);
   if(!dt)return alert('Select a date.');
-  // affect wallet: childDir = in or out
-  const cfg=LOAN_TYPES[loan.type];
-  const wObj=S.wallets.find(x=>x.id===w);
-  if(wObj){if(cfg.childDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}
-  loan.payments.push({id:uid(),amount:amt,wallet:w,date:dt,note:nt});
+  // affect wallet only if selected
+  if(w){
+    const cfg=LOAN_TYPES[loan.type];
+    const wObj=S.wallets.find(x=>x.id===w);
+    if(wObj){if(cfg.childDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}
+  }
+  loan.payments.push({id:uid(),amount:amt,wallet:w||'',date:dt,note:nt});
   save();closeModal();renderMain();
 }
 
 function delLoanPayment(loanId,idx){
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;
   const p=loan.payments[idx];if(!p)return;
-  if(!confirm('Remove this payment? Wallet balance will be reversed.'))return;
-  const cfg=LOAN_TYPES[loan.type];
-  const wObj=S.wallets.find(x=>x.id===p.wallet);
-  if(wObj){if(cfg.childDir==='in')wObj.balance-=p.amount;else wObj.balance+=p.amount;}
+  if(!confirm('Remove this payment? Wallet balance will be reversed if a wallet was linked.'))return;
+  // only reverse if wallet was set
+  if(p.wallet){
+    const cfg=LOAN_TYPES[loan.type];
+    const wObj=S.wallets.find(x=>x.id===p.wallet);
+    if(wObj){if(cfg.childDir==='in')wObj.balance-=p.amount;else wObj.balance+=p.amount;}
+  }
   loan.payments.splice(idx,1);save();renderMain();
 }
 
@@ -1139,6 +1237,22 @@ async function manualPull(){
   setSyncDot('busy');
   await pullSync();
   alert('⬇ Pull complete. Your data is now up to date.');
+}
+
+// ---- BUDGET TAB SWITCH ----
+function showBgtTab(tab){
+  const m=document.getElementById('bgt-monthly');
+  const y=document.getElementById('bgt-yearly');
+  const tm=document.getElementById('btab-m');
+  const ty=document.getElementById('btab-y');
+  if(!m||!y)return;
+  if(tab==='monthly'){
+    m.style.display='';y.style.display='none';
+    if(tm){tm.classList.add('active');}if(ty){ty.classList.remove('active');}
+  }else{
+    m.style.display='none';y.style.display='';
+    if(ty){ty.classList.add('active');}if(tm){tm.classList.remove('active');}
+  }
 }
 
 // ---- EXPORT TO XLSX ----
