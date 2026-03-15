@@ -309,7 +309,7 @@ const LOAN_TYPES = {
 const WLT_TYPES = [
   {id:'bank',   label:'Bank Account', icon:'🏦'},
   {id:'drawer', label:'Drawer',       icon:'🗄️'},
-  {id:'wallet', label:'Wallet',       icon:'👛'},
+  {id:'wallet', label:'Wallet',       icon:'💸'},
   {id:'cash',   label:'Cash',         icon:'💵'},
   {id:'mfs',    label:'MFS',          icon:'📱'},
 ];
@@ -761,7 +761,7 @@ function rLoans(){
             </div>
           </div>
           <div style="font-size:11px;color:var(--text3);margin-top:8px;">📅 ${fmtD(l.date)}${l.dueDate?' · Due: '+fmtD(l.dueDate):''}${l.note?' · '+l.note:''}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">👛 ${l.wallet?getWlt(l.wallet).name:'No wallet linked'}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;"> ৳  ${l.wallet?getWlt(l.wallet).name:'No wallet linked'}</div>
         </div>
         <div style="text-align:right;flex-shrink:0;">
           <div class="loan-orig" style="color:var(--${sc.acol});">${fmt(l.amount)}</div>
@@ -778,7 +778,7 @@ function rLoans(){
         <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:7px;">Payment History</div>
         ${l.payments.map((p,i)=>`
         <div class="loan-pay-item">
-          <span>🗓 ${fmtD(p.date)}${p.note?' · '+p.note:''}${p.wallet?' · 👛 '+getWlt(p.wallet).name:''}</span>
+          <span>🗓 ${fmtD(p.date)}${p.note?' · '+p.note:''}${p.wallet?' · ৳ '+getWlt(p.wallet).name:''}</span>
           <div style="display:flex;align-items:center;gap:8px;">
             <span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(p.amount)}</span>
             <button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="delLoanPayment('${l.id}',${i})">×</button>
@@ -834,7 +834,7 @@ function handleOvClick(e){if(e.target===document.getElementById('modal-overlay')
 function openAddTx(){txType='expense';openModal(txModalHTML());}
 function txCatOpts(type){
   const cats=type==='expense'?getExpCats():getIncCats();
-  return `<option value="">-- Select a category --</option>`+cats.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
+  return `<option value="">Select a category</option>`+cats.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');
 }
 function txModalHTML(){
   const wOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
@@ -1067,7 +1067,7 @@ function openAddLoan(){
   <div class="fg">
     <label class="fl">Wallet <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:500;">(optional – select to affect balance)</span></label>
     <select class="fi" id="ln-w">
-      <option value="">-- No wallet selected --</option>
+      <option value="">Select a wellet</option>
       ${wOpts}
     </select>
   </div>
@@ -1082,9 +1082,9 @@ function lnTypeChanged(){
   const tp=document.getElementById('ln-tp').value;
   const info=document.getElementById('ln-wallet-info');
   const msgs={
-    deposit:'💡 Taking a Deposit: money will be <b>added</b> to selected wallet (optional)',
-    loan_recv:'💡 Loan Received: money will be <b>added</b> to selected wallet (optional)',
-    loan_given:'💡 Loan Given: money will be <b>deducted</b> from selected wallet (optional)',
+    deposit:'💡 Taking a Deposit: money will be <b>added</b> to selected wallet',
+    loan_recv:'💡 Loan Received: money will be <b>added</b> to selected wallet',
+    loan_given:'💡 Loan Given: money will be <b>deducted</b> from selected wallet',
   };
   if(info)info.innerHTML=msgs[tp]||'';
 }
@@ -1202,11 +1202,11 @@ function openSyncModal(){
   </div>
   <div class="fg">
     <label class="fl">Firebase Database URL</label>
-    <input type="url" class="fi" id="sk-dburl" placeholder="https://myapp-default-rtdb.firebaseio.com" value="${S.syncDbUrl||''}">
+    <input type="url" class="fi" id="sk-dburl" placeholder="https://ntransactions-default-rtdb.firebaseio.com/" value="${S.syncDbUrl||''}">
   </div>
   <div class="fg">
     <label class="fl">Sync Path (unique name for your data)</label>
-    <input type="text" class="fi" id="sk-path" placeholder="e.g. nasimul-main" value="${S.syncPath||''}">
+    <input type="text" class="fi" id="sk-path" placeholder="e.g. username" value="${S.syncPath||''}">
     <div style="font-size:11px;color:var(--text3);margin-top:6px;">Use the same path on all devices. Only letters, numbers, hyphens allowed.</div>
   </div>
   <button class="btn btn-p" onclick="applySyncKey()">💾 Save & Push to Cloud</button>
