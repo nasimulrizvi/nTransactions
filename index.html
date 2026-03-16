@@ -265,7 +265,7 @@ select.fi{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='
 
 <!-- PWA Install Banner -->
 <div id="pwa-banner">
-  <div class="pwa-icon">📲</div>
+  <div class="pwa-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0ce97f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
   <div class="pwa-text">
     <div class="pwa-t">Install nTransactions</div>
     <div class="pwa-s">Add to Home Screen for app experience</div>
@@ -429,6 +429,68 @@ const WLT_TYPES=[
 const COLORS=['#0ce97f','#4d9fff','#ff3d5a','#ffb020','#9d6fff','#ff6b35','#00d4ff','#f472b6'];
 
 // ============================================================
+// SVG ICON SYSTEM
+// ============================================================
+const ICON_PATHS={
+  // Expense categories
+  education:'<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  entertainment:'<rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/>',
+  transportation:'<rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
+  food:'<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>',
+  health:'<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
+  accommodation:'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
+  mobile:'<rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>',
+  misc:'<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>',
+  clothing:'<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/>',
+  tech:'<rect x="2" y="3" width="20" height="14" rx="2"/><line x1="2" y1="20" x2="22" y2="20"/>',
+  travel:'<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 4c-1 0-2 .5-2.5 1L13 9 4.8 6.2c-.5-.2-1.1 0-1.4.5l-.5.9c-.3.5-.1 1.1.3 1.4L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.9.6 1.4.3l.9-.5c.5-.3.7-.9.5-1.4"/>',
+  // Income categories
+  family:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  bonus:'<polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>',
+  relatives:'<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  other:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  // Wallet types
+  bank:'<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/>',
+  drawer:'<path d="M22 12h-4l-3 3H9l-3-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
+  wallet_type:'<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>',
+  cash:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+  mfs:'<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/><path d="M9 7h6"/>',
+  // Loan types
+  deposit:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>',
+  loan_recv:'<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+  loan_given:'<path d="m17 11-5-5-5 5"/><path d="M12 6v12"/><circle cx="12" cy="6" r="0"/>',
+  // UI
+  cloud_sync:'<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>',
+  warning:'<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+  info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  calendar:'<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>',
+  due_date:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  install:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  eye_off:'<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>',
+  empty_tx:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  empty_search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/>',
+  empty_wallet:'<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/>',
+  empty_loan:'<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/><line x1="7" y1="15" x2="17" y2="15"/>',
+  empty_budget:'<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+};
+function ico(name,size=18,col='currentColor'){
+  const d=ICON_PATHS[name];
+  if(!d)return'';
+  return`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;">${d}</svg>`;
+}
+// Map category id → icon key (fallback to misc)
+const CAT_ICON_MAP={education:'education',entertainment:'entertainment',transportation:'transportation',food:'food',health:'health',accommodation:'accommodation',mobile:'mobile',misc:'misc',clothing:'clothing',tech:'tech',travel:'travel',family:'family',bonus:'bonus',relatives:'relatives',other:'other'};
+function catIco(id,size=18){return ico(CAT_ICON_MAP[id]||'misc',size);}
+// Map wallet type id → icon key
+const WLT_ICON_MAP={bank:'bank',drawer:'drawer',wallet:'wallet_type',cash:'cash',mfs:'mfs'};
+function wltIco(typeId,size=18){return ico(WLT_ICON_MAP[typeId]||'wallet_type',size);}
+// Map loan type id → icon key
+const LOAN_ICON_MAP={deposit:'deposit',loan_recv:'loan_recv',loan_given:'loan_given'};
+function loanIco(typeId,size=18){return ico(LOAN_ICON_MAP[typeId]||'loan_recv',size);}
+
+// ============================================================
 // STATE
 // ============================================================
 let S={transactions:[],wallets:[],budgets:[],loans:[],customExpCats:[],customIncCats:[],view:'dashboard',month:todayYM(),syncDbUrl:'',syncPath:'',lastSync:null};
@@ -533,20 +595,24 @@ function rDash(){
   const owesMe=S.loans.filter(l=>l.type==='loan_given'&&loanRemain(l)>0).reduce((s,l)=>s+loanRemain(l),0);
   return`
   <div class="section" style="padding-top:18px;">
-    ${!fbUrl()?`<div class="sync-banner">☁️ <span style="flex:1;"><b>Cloud Sync not set up.</b> Data only saves on this device. <button onclick="openSyncModal()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Set up →</button></span></div>`:''}
+    ${!fbUrl()?`<div class="sync-banner"><span style="display:flex;align-items:center;color:var(--blue);">${ico('cloud_sync',16,'#4d9fff')}</span> <span style="flex:1;"><b>Cloud Sync not set up.</b> Data only saves on this device. <button onclick="openSyncModal()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Set up →</button></span></div>`:''}
     <div class="bal-card">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px;">
         <div class="bal-label">Total Balance</div>
-        <button onclick="toggleBal()" style="background:rgba(255,255,255,.07);border:none;border-radius:8px;padding:5px 9px;cursor:pointer;color:var(--text2);font-size:13px;line-height:1;transition:all .2s;" title="${balHidden?'Show balance':'Hide balance'}">${balHidden?'👁':'🙈'}</button>
+        <button onclick="toggleBal()" style="background:rgba(255,255,255,.07);border:none;border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--text2);display:flex;align-items:center;transition:all .2s;" title="${balHidden?'Show balance':'Hide balance'}">
+          ${balHidden
+            ? `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+            : `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`}
+        </button>
       </div>
-      <div class="bal-amount" id="bal-main">${balHidden?'৳ ••••••':''+fmt(bal)}</div>
+      <div class="bal-amount">${balHidden?'••••••':fmt(bal)}</div>
       <div class="bal-sub">${S.wallets.length} wallet${S.wallets.length!==1?'s':''} · ${fmtMY(S.month)}</div>
       <div class="bal-row">
-        <div class="bal-stat"><div class="bsl">Income</div><div class="bsv c-green">${balHidden?'••••':fmt(st.inc)}</div></div>
-        <div class="bal-stat"><div class="bsl">Expense</div><div class="bsv c-red">${balHidden?'••••':fmt(st.exp)}</div></div>
-        <div class="bal-stat"><div class="bsl">Net</div><div class="bsv" style="color:${st.net>=0?'var(--green)':'var(--red)'};">${balHidden?'••••':fmt(st.net)}</div></div>
+        <div class="bal-stat"><div class="bsl">Income</div><div class="bsv c-green">${fmt(st.inc)}</div></div>
+        <div class="bal-stat"><div class="bsl">Expense</div><div class="bsv c-red">${fmt(st.exp)}</div></div>
+        <div class="bal-stat"><div class="bsl">Net</div><div class="bsv" style="color:${st.net>=0?'var(--green)':'var(--red)'};">${fmt(st.net)}</div></div>
       </div>
-      ${st.inc>0?`<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;"><span>Savings Rate</span><span style="color:${savCol};font-weight:700;">${balHidden?'•••%':savR.toFixed(1)+'%'}</span></div><div class="prog"><div class="prog-fill" style="width:${balHidden?0:savR}%;background:${savCol};"></div></div></div>`:''}
+      ${st.inc>0?`<div style="margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.04);"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;"><span>Savings Rate</span><span style="color:${savCol};font-weight:700;">${savR.toFixed(1)}%</span></div><div class="prog"><div class="prog-fill" style="width:${savR}%;background:${savCol};"></div></div></div>`:''}
     </div>
   </div>
   <div class="section" style="padding-top:14px;">
@@ -559,19 +625,20 @@ function rDash(){
   ${cs.length?`<div class="section" style="padding-top:14px;"><div class="sec-hdr"><div class="sec-title">Top Spending</div></div><div class="card">${cs.map((c,i)=>{const pct=st.exp>0?(c.amount/st.exp*100):0;const cols=['var(--red)','var(--amber)','var(--blue)','var(--purple)','var(--green)'];return`<div style="display:flex;align-items:center;gap:10px;margin-bottom:${i<cs.length-1?'12':'0'}px;"><span style="font-size:19px;">${c.icon}</span><div style="flex:1;"><div style="display:flex;justify-content:space-between;font-size:13px;font-weight:600;margin-bottom:5px;"><span>${c.label}</span><span style="font-family:'Space Mono',monospace;font-size:12px;">${fmt(c.amount)}</span></div><div class="prog"><div class="prog-fill" style="width:${pct}%;background:${cols[i]};"></div></div></div></div>`;}).join('')}</div></div>`:''}
   <div class="section" style="padding-top:14px;">
     <div class="sec-hdr"><div class="sec-title">Recent Transactions</div><button class="see-all" onclick="go('transactions')">See All →</button></div>
-    ${rec.length?`<div class="card">${rec.map(t=>txHTML(t)).join('')}</div>`:`<div class="empty"><div class="empty-ico">💸</div><div class="empty-t">No transactions yet</div><div class="empty-s">Tap + to add your first one</div></div>`}
+    ${rec.length?`<div class="card">${rec.map(t=>txHTML(t)).join('')}</div>`:`<div class="empty"><div style="display:flex;justify-content:center;margin-bottom:12px;opacity:.4;">${ico('empty_tx',46)}</div><div class="empty-t">No transactions yet</div><div class="empty-s">Tap + to add your first one</div></div>`}
   </div>
   <div style="height:8px;"></div>`;
 }
 
 function txHTML(t){
-  let icon,label,ac,pfx;
-  if(t.type==='expense'){const c=getCat('expense',t.category);icon=c.icon;label=c.label;ac='var(--red)';pfx='-';}
-  else if(t.type==='income'){const c=getCat('income',t.category);icon=c.icon;label=c.label;ac='var(--green)';pfx='+';}
-  else{icon='🔄';label='Transfer';ac='var(--blue)';pfx='→';}
+  let svgIcon,label,ac,pfx;
+  if(t.type==='expense'){const c=getCat('expense',t.category);label=c.label;ac='var(--red)';pfx='-';svgIcon=catIco(t.category);}
+  else if(t.type==='income'){const c=getCat('income',t.category);label=c.label;ac='var(--green)';pfx='+';svgIcon=catIco(t.category);}
+  else{label='Transfer';ac='var(--blue)';pfx='→';svgIcon=ico('wallet_type');}
   const bg=t.type==='expense'?'var(--red-d)':t.type==='income'?'var(--green-d)':'var(--blue-d)';
+  const acStr=t.type==='expense'?'#ff3d5a':t.type==='income'?'#0ce97f':'#4d9fff';
   const w=getWlt(t.wallet);
-  return`<div class="tx-item" onclick="showTxD('${t.id}')"><div class="tx-ico" style="background:${bg};">${icon}</div><div class="tx-inf"><div class="tx-name">${label}</div><div class="tx-meta">${w.name}${t.note?' · '+t.note:''}</div></div><div><div class="tx-amt" style="color:${ac};">${pfx}${fmt(t.amount)}</div><div class="tx-dt">${fmtD(t.date)}</div></div></div>`;
+  return`<div class="tx-item" onclick="showTxD('${t.id}')"><div class="tx-ico" style="background:${bg};color:${acStr};">${svgIcon}</div><div class="tx-inf"><div class="tx-name">${label}</div><div class="tx-meta">${w.name}${t.note?' · '+t.note:''}</div></div><div><div class="tx-amt" style="color:${ac};">${pfx}${fmt(t.amount)}</div><div class="tx-dt">${fmtD(t.date)}</div></div></div>`;
 }
 
 // ============================================================
@@ -590,7 +657,7 @@ function rTxs(){
     </div>
     <div class="srch-wrap"><span class="srch-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" placeholder="Search by category or note..." value="${txQ}" oninput="doSearch(this.value)" id="txs-inp"></div>
     <div class="filter-bar"><button class="fc ${txF==='all'?'active':''}" onclick="setTxF('all')">All</button><button class="fc ${txF==='expense'?'active':''}" onclick="setTxF('expense')">Expense</button><button class="fc ${txF==='income'?'active':''}" onclick="setTxF('income')">Income</button><button class="fc ${txF==='transfer'?'active':''}" onclick="setTxF('transfer')">Transfer</button></div>
-    ${txs.length===0?`<div class="empty"><div class="empty-ico">🔍</div><div class="empty-t">No transactions found</div><div class="empty-s">Try a different filter</div></div>`:Object.entries(groups).map(([date,list])=>`<div style="margin-bottom:14px;"><div class="dg-label">${date}</div><div class="card">${list.map(t=>txHTML(t)).join('')}</div></div>`).join('')}
+    ${txs.length===0?`<div class="empty"><div style="display:flex;justify-content:center;margin-bottom:12px;opacity:.4;">${ico('empty_search',46)}</div><div class="empty-t">No transactions found</div><div class="empty-s">Try a different filter</div></div>`:Object.entries(groups).map(([date,list])=>`<div style="margin-bottom:14px;"><div class="dg-label">${date}</div><div class="card">${list.map(t=>txHTML(t)).join('')}</div></div>`).join('')}
   </div>`;
 }
 function setTxF(f){txF=f;renderMain();setTimeout(()=>{const e=document.getElementById('txs-inp');if(e)e.focus();},50);}
@@ -607,7 +674,7 @@ function rWallets(){
       <div style="font-family:'Space Mono',monospace;font-size:32px;font-weight:700;color:var(--blue);">${fmt(totalBal())}</div>
       <div style="font-size:12px;color:var(--text3);margin-top:4px;">${S.wallets.length} wallet${S.wallets.length!==1?'s':''}</div>
     </div>
-    ${S.wallets.map(w=>{const wt=WLT_TYPES.find(t=>t.id===w.type)||{icon:'💳',label:'Other'};return`<div class="wlt-card"><div class="wlt-ico" style="background:${w.color}22;">${wt.icon}</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;">${w.name}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${wt.label}</div></div><div style="text-align:right;"><div class="wlt-bal" style="color:${w.balance>=0?'var(--text)':'var(--red)'};">${fmt(w.balance)}</div><div style="display:flex;gap:6px;margin-top:7px;justify-content:flex-end;"><button class="sm-btn" onclick="openEditWlt('${w.id}')">Edit</button><button class="del-btn" onclick="delWlt('${w.id}')">🗑</button></div></div></div>`;}).join('')}
+    ${S.wallets.map(w=>{const wt=WLT_TYPES.find(t=>t.id===w.type)||{id:'wallet',label:'Other'};const trashIco=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ff3d5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;return`<div class="wlt-card"><div class="wlt-ico" style="background:${w.color}22;color:${w.color};">${wltIco(wt.id,22)}</div><div style="flex:1;"><div style="font-size:15px;font-weight:700;">${w.name}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${wt.label}</div></div><div style="text-align:right;"><div class="wlt-bal" style="color:${w.balance>=0?'var(--text)':'var(--red)'};">${fmt(w.balance)}</div><div style="display:flex;gap:6px;margin-top:7px;justify-content:flex-end;"><button class="sm-btn" onclick="openEditWlt('${w.id}')">Edit</button><button class="del-btn" onclick="delWlt('${w.id}')">${trashIco}</button></div></div></div>`;}).join('')}
     <button class="btn btn-s" onclick="openAddWlt()" style="margin-top:4px;">+ Add Wallet</button>
   </div>`;
 }
@@ -639,7 +706,7 @@ function rBudget(){
   <div class="section" style="padding-top:16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Budget</div><div style="font-weight:800;font-size:16px;">${fmtMY(S.month)} · ${yr}</div></div><button class="sm-btn" onclick="openAddBgt()">+ Set Budget</button></div>
     <div style="display:flex;gap:7px;margin-bottom:14px;background:var(--bg3);padding:4px;border-radius:12px;"><button id="btab-m" class="tab-btn active" onclick="showBgtTab('monthly')" style="flex:1;padding:8px;border-radius:9px;">📅 Monthly</button><button id="btab-y" class="tab-btn" onclick="showBgtTab('yearly')" style="flex:1;padding:8px;border-radius:9px;">📆 Yearly</button></div>
-    <div id="bgt-monthly">${mHTML}<div class="card">${catItems||`<div class="empty" style="padding:28px;"><div class="empty-ico">📊</div><div class="empty-t">No category budgets</div><div class="empty-s">Tap "+ Set Budget" to add one</div></div>`}</div></div>
+    <div id="bgt-monthly">${mHTML}<div class="card">${catItems||`<div class="empty" style="padding:28px;"><div style="display:flex;justify-content:center;margin-bottom:10px;opacity:.4;">${ico('empty_budget',36)}</div><div class="empty-t">No category budgets</div><div class="empty-s">Tap "+ Set Budget" to add one</div></div>`}</div></div>
     <div id="bgt-yearly" style="display:none;">${yHTML}<div class="card" style="padding:14px 16px;"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;"><span style="color:var(--text3);">Total Income ${yr}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(yrInc)}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;"><span style="color:var(--text3);">Total Expense ${yr}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--red);">${fmt(yrExp)}</span></div><div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px solid var(--borderl);padding-top:10px;"><span style="color:var(--text3);">Net Savings ${yr}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:${yrInc-yrExp>=0?'var(--green)':'var(--red)'};">${fmt(yrInc-yrExp)}</span></div></div></div>
   </div>`;
 }
@@ -659,10 +726,14 @@ function rLoans(){
     const paid=loanPaid(l);const remain=loanRemain(l);
     const pct=Math.min(100,(paid/l.amount)*100);
     const pcol=remain<=0?'var(--green)':pct>50?'var(--amber)':'var(--red)';
-    return`<div class="loan-card"><div class="loan-hdr"><div><div style="display:flex;align-items:center;gap:8px;"><span style="font-size:22px;">${cfg.icon}</span><div><div class="loan-person">${l.person}</div><span class="loan-type-badge" style="background:var(--${sc.acol}-d);color:var(--${sc.acol});">${cfg.label}</span></div></div><div style="font-size:11px;color:var(--text3);margin-top:8px;">📅 ${fmtD(l.date)}${l.dueDate?' · Due: '+fmtD(l.dueDate):''}${l.note?' · '+l.note:''}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">👛 ${l.wallet?getWlt(l.wallet).name:'No wallet linked'}</div></div><div style="text-align:right;flex-shrink:0;"><div style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--${sc.acol});">${fmt(l.amount)}</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">Original</div>${remain>0?`<div style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--red);margin-top:6px;">${fmt(remain)}</div><div style="font-size:10px;color:var(--text3);">Remaining</div>`:`<div style="font-size:12px;color:var(--green);font-weight:700;margin-top:6px;">✓ Settled</div>`}</div></div>
+    const lIconCol=l.type==='deposit'?'#4d9fff':l.type==='loan_recv'?'#ffb020':'#9d6fff';
+    const trashSvg=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ff3d5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+    const calSvg=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
+    const walSvg=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>`;
+    return`<div class="loan-card"><div class="loan-hdr"><div><div style="display:flex;align-items:center;gap:10px;"><div style="width:42px;height:42px;border-radius:12px;background:${lIconCol}22;display:flex;align-items:center;justify-content:center;color:${lIconCol};flex-shrink:0;">${loanIco(l.type,20)}</div><div><div class="loan-person">${l.person}</div><span class="loan-type-badge" style="background:var(--${sc.acol}-d);color:var(--${sc.acol});">${cfg.label}</span></div></div><div style="font-size:11px;color:var(--text3);margin-top:9px;display:flex;align-items:center;gap:5px;">${calSvg} ${fmtD(l.date)}${l.dueDate?` · Due: ${fmtD(l.dueDate)}`:''}</div>${l.note?`<div style="font-size:11px;color:var(--text3);margin-top:3px;">${l.note}</div>`:''}<div style="font-size:11px;color:var(--text3);margin-top:3px;display:flex;align-items:center;gap:5px;">${walSvg} ${l.wallet?getWlt(l.wallet).name:'No wallet linked'}</div></div><div style="text-align:right;flex-shrink:0;"><div style="font-family:'Space Mono',monospace;font-size:15px;font-weight:700;color:var(--${sc.acol});">${fmt(l.amount)}</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">Original</div>${remain>0?`<div style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--red);margin-top:6px;">${fmt(remain)}</div><div style="font-size:10px;color:var(--text3);">Remaining</div>`:`<div style="font-size:12px;color:var(--green);font-weight:700;margin-top:6px;display:flex;align-items:center;gap:4px;justify-content:flex-end;">${ico('check',13,'#0ce97f')} Settled</div>`}</div></div>
     <div class="loan-prog-wrap"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;"><span>Paid ${fmt(paid)}</span><span style="color:${pcol};font-weight:700;">${pct.toFixed(0)}%</span></div><div class="prog" style="height:8px;"><div class="prog-fill" style="width:${pct}%;background:${pcol};"></div></div></div>
-    ${(l.payments&&l.payments.length)?`<div class="loan-payments"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:7px;">Payment History</div>${l.payments.map((p,i)=>`<div class="loan-pay-item"><span>🗓 ${fmtD(p.date)}${p.note?' · '+p.note:''}${p.wallet?' · 👛 '+getWlt(p.wallet).name:''}</span><div style="display:flex;align-items:center;gap:8px;"><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(p.amount)}</span><button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="delLoanPayment('${l.id}',${i})">×</button></div></div>`).join('')}</div>`:''}
-    <div class="loan-actions">${remain>0?`<button class="sm-btn-g" onclick="openAddLoanPayment('${l.id}')">+ Add ${cfg.childLabel}</button>`:''} ${remain>0?`<button class="sm-btn" onclick="settleFullLoan('${l.id}')">✓ Fully Settle</button>`:''}<button class="del-btn" style="margin-left:auto;" onclick="delLoan('${l.id}')">🗑</button></div></div>`;
+    ${(l.payments&&l.payments.length)?`<div class="loan-payments"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:7px;">Payment History</div>${l.payments.map((p,i)=>`<div class="loan-pay-item"><span style="display:flex;align-items:center;gap:4px;">${calSvg} ${fmtD(p.date)}${p.note?' · '+p.note:''}${p.wallet?` · ${walSvg} ${getWlt(p.wallet).name}`:''}</span><div style="display:flex;align-items:center;gap:8px;"><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(p.amount)}</span><button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="delLoanPayment('${l.id}',${i})">×</button></div></div>`).join('')}</div>`:''}
+    <div class="loan-actions">${remain>0?`<button class="sm-btn-g" onclick="openAddLoanPayment('${l.id}')">+ ${cfg.childLabel}</button>`:''} ${remain>0?`<button class="sm-btn" onclick="settleFullLoan('${l.id}')">Fully Settle</button>`:''}<button class="del-btn" style="margin-left:auto;" onclick="delLoan('${l.id}')">${trashSvg}</button></div></div>`;
   }
   const sections=['deposit','loan_recv','loan_given'].map(type=>{
     if(loanF!=='all'&&loanF!==type)return'';
@@ -673,10 +744,10 @@ function rLoans(){
   return`
   <div class="section" style="padding-top:16px;">
     <div class="stats-grid" style="margin-bottom:14px;"><div class="stat-card" style="border-color:rgba(255,61,90,.14);"><div class="st-lbl">I Owe Others</div><div class="st-val c-red">${fmt(iOwe)}</div></div><div class="stat-card" style="border-color:rgba(12,233,127,.14);"><div class="st-lbl">Others Owe Me</div><div class="st-val c-green">${fmt(owesMe)}</div></div></div>
-    ${depPend>0?`<div style="background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--blue);font-weight:700;">🏦 Pending deposits to return: ${fmt(depPend)}</div>`:''}
-    <div class="filter-bar"><button class="fc ${loanF==='all'?'active':''}" onclick="setLoanF('all')">All</button><button class="fc ${loanF==='deposit'?'active':''}" onclick="setLoanF('deposit')">🏦 Deposits</button><button class="fc ${loanF==='loan_recv'?'active':''}" onclick="setLoanF('loan_recv')">💳 Received</button><button class="fc ${loanF==='loan_given'?'active':''}" onclick="setLoanF('loan_given')">🤝 Given</button></div>
+    ${depPend>0?`<div style="background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--blue);font-weight:700;display:flex;align-items:center;gap:8px;">${ico('deposit',15,'#4d9fff')} Pending deposits to return: ${fmt(depPend)}</div>`:''}
+    <div class="filter-bar"><button class="fc ${loanF==='all'?'active':''}" onclick="setLoanF('all')">All</button><button class="fc ${loanF==='deposit'?'active':''}" onclick="setLoanF('deposit')">Deposits</button><button class="fc ${loanF==='loan_recv'?'active':''}" onclick="setLoanF('loan_recv')">Received</button><button class="fc ${loanF==='loan_given'?'active':''}" onclick="setLoanF('loan_given')">Given</button></div>
     <button class="btn btn-s" onclick="openAddLoan()" style="margin-bottom:14px;">+ New Entry</button>
-    ${S.loans.length===0?`<div class="empty"><div class="empty-ico">🏦</div><div class="empty-t">No records yet</div><div class="empty-s">Track deposits, loans received & given</div></div>`:sections}
+    ${S.loans.length===0?`<div class="empty"><div style="display:flex;justify-content:center;margin-bottom:12px;opacity:.4;">${ico('empty_loan',46)}</div><div class="empty-t">No records yet</div><div class="empty-s">Track deposits, loans received & given</div></div>`:sections}
   </div>`;
 }
 function setLoanF(f){loanF=f;renderMain();}
