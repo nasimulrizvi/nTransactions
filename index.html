@@ -426,7 +426,7 @@ function loanIco(tid,size=18){return ico(LOAN_ICON_MAP[tid]||'loan_recv',size);}
 // ============================================================
 let S={transactions:[],wallets:[],budgets:[],loans:[],customExpCats:[],customIncCats:[],view:'dashboard',month:todayYM(),syncDbUrl:'',syncPath:'',lastSync:null};
 let txF='all',txQ='',txDuration='all',loanF='all',txType='expense',editWltId='',selColor=COLORS[0];
-let syncTimeout=null,balHidden=true;
+let syncTimeout=null,balHiddenLarge=false,balHiddenNet=true;
 
 function todayYM(){return new Date().toISOString().slice(0,7);}
 function todayD(){return new Date().toISOString().slice(0,10);}
@@ -559,11 +559,11 @@ function rDash(){
     <div class="bal-card">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px;">
         <div class="bal-label">Yearly Balance · ${yr}${ys.sav>0?' (after savings)':''}</div>
-        <button onclick="toggleBal()" style="background:rgba(255,255,255,.07);border:none;border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--text2);display:flex;align-items:center;transition:all .2s;" title="${balHidden?'Show':'Hide'} balance">
-          ${balHidden?ico('eye',15):ico('eye_off',15)}
+        <button onclick="toggleBalLarge()" style="background:rgba(255,255,255,.07);border:none;border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--text2);display:flex;align-items:center;transition:all .2s;" title="${balHiddenLarge?'Show':'Hide'} large balance">
+          ${balHiddenLarge?ico('eye',15):ico('eye_off',15)}
         </button>
       </div>
-      <div class="bal-amount">${balHidden?'••••••':fmt(ys.net)}</div>
+      <div class="bal-amount">${balHiddenLarge?'••••••':fmt(ys.net)}</div>
       <div class="bal-sub">${ys.sav>0?`Income − Expense − Savings target`:`Yearly Income − Expense`}</div>
       <div class="bal-row">
         <div class="bal-stat">
@@ -575,8 +575,13 @@ function rDash(){
           <div class="bsv c-red" style="font-size:12px;">${fmt(ys.exp)}</div>
         </div>
         <div class="bal-stat">
-          <div class="bsl">Net</div>
-          <div class="bsv" style="font-size:12px;color:${ys.simpleNet>=0?'var(--green)':'var(--red)'};">${fmt(ys.simpleNet)}</div>
+          <div class="bsl" style="display:flex;align-items:center;justify-content:space-between;">
+            Net
+            <button onclick="toggleBalNet()" style="background:none;border:none;color:var(--text2);display:inline-flex;align-items:center;cursor:pointer;margin-left:4px;" title="${balHiddenNet?'Show':'Hide'} net">
+              ${balHiddenNet?ico('eye',12):ico('eye_off',12)}
+            </button>
+          </div>
+          <div class="bsv" style="font-size:12px;color:${ys.simpleNet>=0?'var(--green)':'var(--red)'};">${balHiddenNet?'••••••':fmt(ys.simpleNet)}</div>
         </div>
       </div>
     </div>
@@ -786,11 +791,11 @@ function rBudget(){
   const ySav=getSavingsBgt('yearly',yr);
   const yrNet=yrInc-yrExp;
 
-  function bCard(bgt,spent,label,ac,editFn){
+  function bCard(bgt,spent,label,ac,editFn,gradientColor){
     const pct=Math.min(100,(spent/bgt.amount)*100);const col=pct>80?'var(--red)':pct>60?'var(--amber)':'var(--green)';
     return`<div style="background:linear-gradient(135deg,#0d1420,#0a1422);border:1px solid rgba(${ac},.14);border-radius:18px;padding:18px;margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;">
-        <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--blue);">${ico('barChart',16,'#4d9fff')}</span><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">${label}</div></div>
+        <div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--${gradientColor});">${ico('barChart',16,`var(--${gradientColor})`)}</span><div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;background:linear-gradient(120deg,var(--${gradientColor}),${gradientColor==='blue'?'#4d9fff':gradientColor==='amber'?'#ffb020':'#0ce97f'});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${label}</div></div>
         <div style="display:flex;gap:6px;">${editFn?`<button class="sm-btn" onclick="${editFn}" style="font-size:10px;padding:4px 9px;">${EDIT_SVG}</button>`:''}
         <button class="del-btn" style="width:24px;height:24px;" onclick="delBgt('${bgt.id}')">${TRASH_SVG}</button></div>
       </div>
@@ -798,6 +803,16 @@ function rBudget(){
       <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin:9px 0 5px;"><span>Spent ${fmt(spent)}</span><span style="color:${col};font-weight:700;">${pct.toFixed(1)}% used</span></div>
       <div class="prog" style="height:8px;"><div class="prog-fill" style="width:${pct}%;background:${col};"></div></div>
       <div style="font-size:12px;margin-top:7px;font-weight:700;color:${col};">${pct>=100?'⚠ Exceeded!':pct>80?'⚠ Approaching limit':'✓ '+fmt(bgt.amount-spent)+' remaining'}</div>
+    </div>`;
+  }
+  function emptyBudgetCard(label,gradientColor,iconColor,onClick){
+    return`<div style="background:linear-gradient(135deg,#0d1420,#0a1422);border:1px solid rgba(${iconColor==='blue'?'77,159,255':iconColor==='amber'?'255,176,32':'12,233,127'},.14);border-radius:18px;padding:18px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+        <span style="color:var(--${iconColor});">${ico('barChart',20,`var(--${iconColor})`)}</span>
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;background:linear-gradient(120deg,var(--${iconColor}),${iconColor==='blue'?'#4d9fff':iconColor==='amber'?'#ffb020':'#0ce97f'});-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${label}</div>
+      </div>
+      <div style="font-size:13px;color:var(--text3);margin-bottom:10px;">No budget set yet.</div>
+      <button class="sm-btn" onclick="${onClick}" style="width:100%;">Set →</button>
     </div>`;
   }
   function savCard(bgt,net,label,ac,editFn){
@@ -815,8 +830,8 @@ function rBudget(){
     </div>`;
   }
 
-  const mHTML=mOb?bCard(mOb,st.exp,`Monthly Budget – ${fmtMY(S.month)}`,'255,176,32',`openEditBgt('${mOb.id}')`):`<div class="card" style="margin-bottom:12px;text-align:center;padding:14px;"><div style="font-size:13px;color:var(--text3);">No monthly budget for ${fmtMY(S.month)}</div><button onclick="openAddBudgetModal('monthly')" style="margin-top:7px;background:none;border:none;color:var(--green);cursor:pointer;font-size:13px;font-weight:700;font-family:'Outfit',sans-serif;">Set Monthly Budget →</button></div>`;
-  const yHTML=yOb?bCard(yOb,yrExp,`Yearly Budget – ${yr}`,'77,159,255',`openEditBgt('${yOb.id}')`):`<div class="card" style="margin-bottom:12px;text-align:center;padding:14px;"><div style="font-size:13px;color:var(--text3);">No yearly budget for ${yr}</div><button onclick="openAddBudgetModal('yearly')" style="margin-top:7px;background:none;border:none;color:var(--blue);cursor:pointer;font-size:13px;font-weight:700;font-family:'Outfit',sans-serif;">Set Yearly Budget →</button></div>`;
+  const mHTML=mOb?bCard(mOb,st.exp,`Monthly Budget – ${fmtMY(S.month)}`,'255,176,32',`openEditBgt('${mOb.id}')`,'amber'):emptyBudgetCard(`Monthly Budget – ${fmtMY(S.month)}`,'amber','amber',`openAddBudgetModal('monthly')`);
+  const yHTML=yOb?bCard(yOb,yrExp,`Yearly Budget – ${yr}`,'77,159,255',`openEditBgt('${yOb.id}')`,'blue'):emptyBudgetCard(`Yearly Budget – ${yr}`,'blue','blue',`openAddBudgetModal('yearly')`);
   const mSavHTML=mSav?savCard(mSav,st.net,`Monthly Savings Target – ${fmtMY(S.month)}`,'12,233,127',`openEditBgt('${mSav.id}')`):`<div style="text-align:center;padding:10px 0;font-size:12px;color:var(--text3);">No monthly savings target. <button onclick="openAddSavingsModal('monthly')" style="background:none;border:none;color:var(--green);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Set one →</button></div>`;
   const ySavHTML=ySav?savCard(ySav,yrNet,`Yearly Savings Target – ${yr}`,'12,233,127',`openEditBgt('${ySav.id}')`):`<div style="text-align:center;padding:10px 0;font-size:12px;color:var(--text3);">No yearly savings target. <button onclick="openAddSavingsModal('yearly')" style="background:none;border:none;color:var(--green);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Set one →</button></div>`;
 
@@ -996,7 +1011,8 @@ function setLoanF(f){loanF=f;renderMain();}
 function openModal(html){document.getElementById('mc').innerHTML=html;document.getElementById('modal-overlay').classList.add('open');}
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
 function handleOvClick(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
-function toggleBal(){balHidden=!balHidden;renderMain();}
+function toggleBalLarge(){balHiddenLarge=!balHiddenLarge;renderMain();}
+function toggleBalNet(){balHiddenNet=!balHiddenNet;renderMain();}
 
 // ADD TRANSACTION
 function openAddTx(){txType='expense';openModal(txModalHTML());}
