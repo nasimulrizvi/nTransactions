@@ -27,6 +27,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
+<!-- Firebase SDKs for Google Sign-In -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{font-size:16px;-webkit-tap-highlight-color:transparent;}
@@ -42,7 +47,6 @@ body{font-family:'Outfit',sans-serif;background:#07090f;color:#e8edf5;min-height
   --purple:#9d6fff;--purple-d:rgba(157,111,255,0.12);
   --nav:72px;--r:16px;
 }
-/* CHANGE 1: Grid effect removed — body::before deleted */
 #app{position:relative;max-width:520px;margin:0 auto;min-height:100dvh;z-index:1;}
 @media(min-width:768px){#app{max-width:100%;}.main-inner{max-width:700px;margin:0 auto;}.bottom-nav{left:0;transform:none;width:100%;}.bottom-nav-row{max-width:700px;margin:0 auto;display:flex;align-items:center;justify-content:space-around;height:100%;}.fab{right:calc(50% - 350px + 18px);}}
 
@@ -141,7 +145,7 @@ body{font-family:'Outfit',sans-serif;background:#07090f;color:#e8edf5;min-height
 .bgt-cat{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;}
 .bgt-amts{font-family:'Space Mono',monospace;font-size:11px;color:var(--text3);}
 
-/* BUDGET PERIOD TABS – Frosted Glass active state */
+/* BUDGET PERIOD TABS */
 .bgt-tab-wrap{display:flex;gap:5px;background:rgba(255,255,255,.03);border:1px solid var(--border);padding:4px;border-radius:14px;margin-bottom:14px;}
 .bgt-tab-btn{flex:1;padding:9px 8px;border-radius:10px;border:none;background:transparent;color:var(--text3);font-size:13px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .25s;position:relative;}
 .bgt-tab-btn.active{
@@ -262,11 +266,19 @@ select.fi{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='
 .pwa-btn{padding:7px 14px;border-radius:9px;background:var(--green);color:#07090f;border:none;font-size:12px;font-weight:800;font-family:'Outfit',sans-serif;cursor:pointer;white-space:nowrap;}
 .pwa-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:2px 4px;flex-shrink:0;}
 
-/* CHANGE 4: Calculator row styling */
+/* Calculator row */
 .calc-row{display:flex;gap:6px;align-items:center;}
 .calc-op-sel{width:64px;flex-shrink:0;padding:9px 6px;text-align:center;font-size:18px;font-weight:700;font-family:'Space Mono',monospace;}
+
+/* Google Sign-In button */
+.google-btn{width:100%;padding:13px;border-radius:13px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.06);color:var(--text);font-size:15px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;}
+.google-btn:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.2);}
+.google-btn svg{flex-shrink:0;}
+
+/* User avatar in header */
+.user-avatar{width:28px;height:28px;border-radius:50%;object-fit:cover;border:1.5px solid var(--border);}
+.user-avatar-placeholder{width:28px;height:28px;border-radius:50%;background:var(--green-d);border:1.5px solid rgba(12,233,127,.3);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green);}
 </style>
-<!-- Vercel Speed Insights -->
 <script>
 (function(){
   var s=document.createElement('script');
@@ -301,7 +313,7 @@ select.fi{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='
       <button class="hbtn" onclick="changeMonth(1)">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
       </button>
-      <button class="hbtn" onclick="openSyncModal()" title="Cloud Sync Settings">
+      <button class="hbtn" onclick="openSyncModal()" title="Account & Sync" id="sync-hdr-btn">
         <div class="sync-dot" id="sync-dot"></div>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       </button>
@@ -356,6 +368,66 @@ window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPro
 window.addEventListener('appinstalled',()=>{document.getElementById('pwa-banner').classList.remove('show');deferredPrompt=null;});
 document.getElementById('pwa-install-btn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('pwa-banner').classList.remove('show');});
 document.getElementById('pwa-close-btn').addEventListener('click',()=>{document.getElementById('pwa-banner').classList.remove('show');sessionStorage.setItem('pwa-dismissed','1');});
+
+// ============================================================
+// FIREBASE CONFIG — ⚠ Replace with your own config object
+// Get from: Firebase Console → Project Settings → Your apps → Web app
+// ============================================================
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCQstt1g7bPY9rlF7z1dCsCI5agUk2p3WM",
+  authDomain: "ntransactions.firebaseapp.com",
+  databaseURL: "https://ntransactions-default-rtdb.firebaseio.com",
+  projectId: "ntransactions",
+  storageBucket: "ntransactions.firebasestorage.app",
+  messagingSenderId: "1014134005291",
+  appId: "1:1014134005291:web:a5a9bf7bbf223ff1a4d46e"
+};
+
+// Initialize Firebase (only if config is filled)
+let firebaseApp = null;
+let firebaseAuth = null;
+let firebaseDb = null;
+let currentUser = null;
+
+function isFirebaseConfigured(){
+  return FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('REPLACE');
+}
+
+if(isFirebaseConfigured()){
+  try{
+    firebaseApp = firebase.initializeApp(FIREBASE_CONFIG);
+    firebaseAuth = firebase.auth();
+    firebaseDb = firebase.database();
+    firebaseAuth.onAuthStateChanged(user => {
+      currentUser = user;
+      updateHeaderAvatar();
+      if(user){
+        setSyncDot('busy');
+        pullSync().then(()=>renderMain());
+      } else {
+        setSyncDot('');
+        renderMain();
+      }
+    });
+  }catch(e){ console.error('Firebase init error:',e); }
+}
+
+function updateHeaderAvatar(){
+  const btn = document.getElementById('sync-hdr-btn');
+  if(!btn) return;
+  if(currentUser && currentUser.photoURL){
+    // Show avatar photo
+    const existing = btn.querySelector('.user-avatar');
+    if(!existing){
+      btn.innerHTML = `<img class="user-avatar" src="${currentUser.photoURL}" alt="avatar">`;
+    }
+  } else if(currentUser){
+    const initial = (currentUser.displayName||currentUser.email||'U')[0].toUpperCase();
+    btn.innerHTML = `<div class="user-avatar-placeholder">${initial}</div>`;
+  } else {
+    btn.innerHTML = `<div class="sync-dot" id="sync-dot"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`;
+  }
+}
 
 // ============================================================
 // CONSTANTS
@@ -433,7 +505,6 @@ const TRASH_SVG=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" str
 const EDIT_SVG=`<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
 const CAL_SVG=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
 const WAL_SVG=`<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>`;
-// CHANGE 2: Export SVG icon string
 const EXPORT_SVG=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
 function ico(name,size=18,col='currentColor'){const d=ICON_PATHS[name];if(!d)return'';return`<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;">${d}</svg>`;}
 const CAT_ICON_MAP={education:'education',entertainment:'entertainment',transportation:'transportation',food:'food',health:'health',accommodation:'accommodation',mobile:'mobile',misc:'misc',clothing:'clothing',tech:'tech',travel:'travel',donation:'donation',family:'family',bonus:'bonus',relatives:'relatives',other:'other'};
@@ -472,27 +543,82 @@ function saveLocal(){
 function save(){saveLocal();scheduleSync();}
 
 // ============================================================
-// CLOUD SYNC
+// CLOUD SYNC — Google Account based
 // ============================================================
-function fbUrl(){if(!S.syncDbUrl||!S.syncPath)return'';return`${S.syncDbUrl.replace(/\/+$/,'')}/${S.syncPath.replace(/[^a-zA-Z0-9_-]/g,'_')}.json`;}
-function setSyncDot(state){const el=document.getElementById('sync-dot');if(!el)return;el.className='sync-dot'+(state?' '+state:'');}
+function getSyncPath(){
+  if(!currentUser) return '';
+  // Use uid as the sync path — unique per Google account
+  return 'users/' + currentUser.uid + '/data';
+}
+
+function dbRef(){
+  if(!firebaseDb || !currentUser) return null;
+  return firebaseDb.ref(getSyncPath());
+}
+
+function setSyncDot(state){
+  const el=document.getElementById('sync-dot');
+  if(!el)return;
+  el.className='sync-dot'+(state?' '+state:'');
+}
+
 async function pushSync(){
-  const url=fbUrl();if(!url)return;setSyncDot('busy');
-  try{const r=await fetch(url,{method:'PUT',body:JSON.stringify({transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,customExpCats:S.customExpCats||[],customIncCats:S.customIncCats||[],ts:Date.now()}),headers:{'Content-Type':'application/json'}});
-    if(r.ok){S.lastSync=Date.now();saveLocal();setSyncDot('ok');}else setSyncDot('err');
-  }catch(e){setSyncDot('err');}
+  const ref = dbRef();
+  if(!ref){return;}
+  setSyncDot('busy');
+  try{
+    await ref.set({
+      transactions:S.transactions,
+      wallets:S.wallets,
+      budgets:S.budgets,
+      loans:S.loans,
+      customExpCats:S.customExpCats||[],
+      customIncCats:S.customIncCats||[],
+      ts:Date.now()
+    });
+    S.lastSync=Date.now();
+    saveLocal();
+    setSyncDot('ok');
+  }catch(e){
+    console.error('Push sync error:',e);
+    setSyncDot('err');
+  }
 }
+
 async function pullSync(){
-  const url=fbUrl();if(!url)return;setSyncDot('busy');
-  try{const r=await fetch(url);
-    if(r.ok){const d=await r.json();
-      if(d&&d.ts&&(!S.lastSync||d.ts>S.lastSync)){S.transactions=d.transactions||S.transactions;S.wallets=d.wallets||S.wallets;S.budgets=d.budgets||S.budgets;S.loans=d.loans||S.loans;S.customExpCats=d.customExpCats||S.customExpCats;S.customIncCats=d.customIncCats||S.customIncCats;S.lastSync=d.ts;saveLocal();renderMain();}
-      setSyncDot('ok');
-    }else setSyncDot('err');
-  }catch(e){setSyncDot('err');}
+  const ref = dbRef();
+  if(!ref){setSyncDot('');return;}
+  setSyncDot('busy');
+  try{
+    const snap = await ref.once('value');
+    const d = snap.val();
+    if(d && d.ts && (!S.lastSync || d.ts > S.lastSync)){
+      S.transactions=d.transactions||S.transactions;
+      S.wallets=d.wallets||S.wallets;
+      S.budgets=d.budgets||S.budgets;
+      S.loans=d.loans||S.loans;
+      S.customExpCats=d.customExpCats||S.customExpCats;
+      S.customIncCats=d.customIncCats||S.customIncCats;
+      S.lastSync=d.ts;
+      saveLocal();
+    }
+    setSyncDot('ok');
+  }catch(e){
+    console.error('Pull sync error:',e);
+    setSyncDot('err');
+  }
 }
-function scheduleSync(){if(!fbUrl())return;clearTimeout(syncTimeout);syncTimeout=setTimeout(pushSync,1400);}
-setInterval(()=>{if(fbUrl())pullSync();},45000);
+
+function scheduleSync(){
+  if(!currentUser || !firebaseDb) return;
+  clearTimeout(syncTimeout);
+  syncTimeout=setTimeout(pushSync,1400);
+}
+
+// Legacy Firebase URL/path sync (kept for backward compat if needed)
+function fbUrl(){if(!S.syncDbUrl||!S.syncPath)return'';return`${S.syncDbUrl.replace(/\/+$/,'')}/${S.syncPath.replace(/[^a-zA-Z0-9_-]/g,'_')}.json`;}
+
+setInterval(()=>{if(currentUser && firebaseDb)pullSync();},45000);
 
 // ============================================================
 // UTILS
@@ -554,7 +680,8 @@ function renderMain(){
   else if(S.view==='budget')html=rBudget();
   else if(S.view==='loans')html=rLoans();
   el.innerHTML=`<div class="main-inner fade-up">${html}</div>`;
-  if(!fbUrl())setSyncDot('');else setSyncDot('ok');
+  if(!currentUser && !fbUrl())setSyncDot('');
+  updateHeaderAvatar();
 }
 
 // ============================================================
@@ -580,9 +707,13 @@ function rDash(){
   const balDisplay=balHidden?'••••••':fmtSigned(ys.net);
   const balColor=ys.net<0?'var(--red)':'var(--text)';
 
+  const notSignedIn = !currentUser && isFirebaseConfigured();
+  const notConfigured = !isFirebaseConfigured();
+
   return`
   <div class="section" style="padding-top:18px;">
-    ${!fbUrl()?`<div class="sync-banner"><span style="display:flex;align-items:center;color:var(--blue);">${ico('cloud_sync',16,'#4d9fff')}</span> <span style="flex:1;"><b>Cloud Sync not set up.</b> Data only saves on this device. <button onclick="openSyncModal()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Set up →</button></span></div>`:''}
+    ${notConfigured?`<div class="sync-banner"><span style="display:flex;align-items:center;color:var(--blue);">${ico('cloud_sync',16,'#4d9fff')}</span> <span style="flex:1;"><b>Cloud Sync not configured.</b> Add your Firebase config to the code. <button onclick="openSyncModal()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Details →</button></span></div>`:''}
+    ${notSignedIn?`<div class="sync-banner"><span style="display:flex;align-items:center;color:var(--amber);">${ico('cloud_sync',16,'#ffb020')}</span> <span style="flex:1;"><b>Not signed in.</b> Sign in with Google to sync across devices. <button onclick="openSyncModal()" style="background:none;border:none;color:var(--blue);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Sign In →</button></span></div>`:''}
     <div class="bal-card">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px;">
         <div class="bal-label">Yearly Balance · ${yr}${ys.sav>0?'  ':''}</div>
@@ -740,7 +871,6 @@ function rTxs(){
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;">Transactions</div>
       <div style="display:flex;gap:6px;">
-        <!-- CHANGE 2: Export SVG icon instead of text -->
         <button class="sm-btn" onclick="openExportModal()" style="padding:6px 10px;display:flex;align-items:center;gap:5px;" title="Export to Excel">${EXPORT_SVG}<span style="font-size:11px;">Export</span></button>
       </div>
     </div>
@@ -841,7 +971,6 @@ function rBudget(){
   const mHTML=mOb?bCard(mOb,st.exp,`Monthly Budget – ${fmtMY(S.month)}`,'255,176,32',`openEditBgt('${mOb.id}')`,'amber'):emptyBudgetCard(`Monthly Budget – ${fmtMY(S.month)}`,'amber','amber',`openAddBudgetModal('monthly')`);
   const yHTML=yOb?bCard(yOb,yrExp,`Yearly Budget – ${yr}`,'77,159,255',`openEditBgt('${yOb.id}')`,'blue'):emptyBudgetCard(`Yearly Budget – ${yr}`,'blue','blue',`openAddBudgetModal('yearly')`);
 
-  // CHANGE 3: Savings empty state now uses sm-btn style buttons
   const mSavHTML=mSav?savCard(mSav,st.net,`Monthly Savings Target – ${fmtMY(S.month)}`,'12,233,127',`openEditBgt('${mSav.id}')`)
     :`<div style="padding:10px 0;">
         <div style="font-size:12px;color:var(--text3);margin-bottom:10px;">No monthly savings target set.</div>
@@ -1203,7 +1332,8 @@ function openAddBgtCat(catId){
   <button class="btn btn-p" onclick="submitBgtCat()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 
-// CHANGE 4: openEditBgt now shows a simple calculator for savings targets
+// ── UPDATED: openEditBgt ─────────────────────────────────────────────────────
+// Update & Delete buttons side-by-side; transparent Update; big Close below
 function openEditBgt(bgtId){
   const b=S.budgets.find(x=>x.id===bgtId);if(!b)return;
   const lbl=b.period==='yearly'?`Year ${b.year}`:`${fmtMY(b.month)}`;
@@ -1229,12 +1359,14 @@ function openEditBgt(bgtId){
   </div>
   <div class="fg"><label class="fl">${isSavings?'Target':'New'} Amount (৳)</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-edit-amt" placeholder="0.00" min="0" value="${b.amount}"></div></div>
   ${calcHTML}
-  <button class="btn btn-p" onclick="submitEditBgt('${bgtId}')">Update</button>
-  <button class="btn btn-d" onclick="delBgt('${bgtId}')" style="margin-top:8px;">Delete ${isSavings?'Savings Target':'Budget'}</button>
-  <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:6px;">
+    <button class="btn" onclick="submitEditBgt('${bgtId}')" style="margin:0;background:rgba(12,233,127,0.11);border:1px solid rgba(12,233,127,0.28);color:var(--green);display:flex;align-items:center;justify-content:center;gap:7px;">${EDIT_SVG} Update</button>
+    <button class="btn btn-d" onclick="delBgt('${bgtId}')" style="margin:0;display:flex;align-items:center;justify-content:center;gap:7px;">${TRASH_SVG} Delete</button>
+  </div>
+  <button class="btn btn-s" onclick="closeModal()" style="margin-top:10px;font-size:16px;font-weight:800;padding:15px;">Close</button>`);
 }
 
-// CHANGE 4: Calculator apply function
+// Calculator apply
 function applyCalc(){
   const mainEl=document.getElementById('b-edit-amt');
   const opEl=document.getElementById('calc-op');
@@ -1411,58 +1543,103 @@ function settleFullLoan(loanId){const loan=S.loans.find(l=>l.id===loanId);if(!lo
 function delLoan(id){if(!confirm('Delete this loan record?'))return;S.loans=S.loans.filter(x=>x.id!==id);save();renderMain();}
 
 // ============================================================
-// CHANGE 5: Cloud Sync – always shows Pull option on any device
+// SYNC MODAL — Google Sign-In
 // ============================================================
 function openSyncModal(){
-  openModal(`<div class="modal-title">☁️ Cloud Sync Setup</div>
-  <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.7;">Uses <b>Firebase Realtime Database</b> (free) to sync across all your devices.</div>
-  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;font-size:12px;line-height:1.8;color:var(--text2);">
-    <b style="color:var(--text);font-size:13px;">How to set up:</b><br>
-    1. Go to <b style="color:var(--blue);">console.firebase.google.com</b><br>
-    2. Create project → Build → Realtime Database<br>
-    3. Choose <b>"Start in test mode"</b> → Enable<br>
-    4. Copy the Database URL → Paste below
-  </div>
-  <div class="fg"><label class="fl">Firebase Database URL</label><input type="url" class="fi" id="sk-dburl" placeholder="https://myapp-default-rtdb.firebaseio.com" value="${S.syncDbUrl||''}"></div>
-  <div class="fg"><label class="fl">Sync Path (unique name)</label><input type="text" class="fi" id="sk-path" placeholder="e.g. nasimul-main" value="${S.syncPath||''}"><div style="font-size:11px;color:var(--text3);margin-top:6px;">Use the same path on all devices.</div></div>
-  <div style="background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--blue);">
-    💡 <b>New device?</b> Enter your URL + Path, then tap <b>"Pull from Cloud"</b> to restore your data safely.
-  </div>
-  <button class="btn btn-s" onclick="applyAndPull()" style="margin-bottom:8px;background:var(--blue-d);border-color:rgba(77,159,255,.35);color:var(--blue);font-weight:800;">⬇ Pull from Cloud (Recommended for new devices)</button>
-  <button class="btn btn-p" onclick="applySyncKey()">☁ Push to Cloud</button>
-  <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>
-  ${S.lastSync?`<div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;">Last synced: ${new Date(S.lastSync).toLocaleString()}</div>`:''}
-  <div style="margin-top:14px;padding:10px 12px;background:var(--amber-d);border:1px solid rgba(255,176,32,.2);border-radius:10px;font-size:11px;color:var(--amber);">⚠ Keep your Sync Path private. "Push to Cloud" overwrites existing cloud data.</div>`);
+  if(!isFirebaseConfigured()){
+    openModal(`<div class="modal-title">⚙️ Firebase Not Configured</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+      To enable Google Sign-In sync, you need to fill in your Firebase config in the HTML file.
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;font-size:12px;line-height:1.9;color:var(--text2);">
+      <b style="color:var(--text);font-size:13px;">Setup Steps:</b><br>
+      1. Go to <b style="color:var(--blue);">console.firebase.google.com</b><br>
+      2. Create project → Build → Realtime Database → Enable<br>
+      3. Authentication → Sign-in method → Google → Enable<br>
+      4. Project Settings → Your apps → Add Web App<br>
+      5. Copy the <b>firebaseConfig</b> object<br>
+      6. Paste it into the <b>FIREBASE_CONFIG</b> variable in index.html
+    </div>
+    <button class="btn btn-s" onclick="closeModal()" style="font-size:16px;font-weight:800;padding:15px;">Close</button>`);
+    return;
+  }
+
+  if(currentUser){
+    // Signed in — show account info + sign out
+    openModal(`<div class="modal-title">☁️ Account & Sync</div>
+    <div style="display:flex;align-items:center;gap:14px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:16px;">
+      ${currentUser.photoURL?`<img src="${currentUser.photoURL}" style="width:52px;height:52px;border-radius:50%;border:2px solid var(--green);" alt="avatar">`:`<div style="width:52px;height:52px;border-radius:50%;background:var(--green-d);border:2px solid rgba(12,233,127,.3);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:var(--green);">${(currentUser.displayName||currentUser.email||'U')[0].toUpperCase()}</div>`}
+      <div>
+        <div style="font-size:15px;font-weight:800;">${currentUser.displayName||'User'}</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:2px;">${currentUser.email||''}</div>
+        <div style="font-size:11px;color:var(--green);margin-top:4px;font-weight:700;">● Synced to Google Account</div>
+      </div>
+    </div>
+    ${S.lastSync?`<div style="font-size:12px;color:var(--text3);text-align:center;margin-bottom:14px;">Last synced: ${new Date(S.lastSync).toLocaleString()}</div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px;">
+      <button class="btn" onclick="manualPull()" style="margin:0;background:var(--blue-d);border:1px solid rgba(77,159,255,.3);color:var(--blue);font-weight:700;">⬇ Pull</button>
+      <button class="btn" onclick="manualPush()" style="margin:0;background:var(--green-d);border:1px solid rgba(12,233,127,.3);color:var(--green);font-weight:700;">⬆ Push</button>
+    </div>
+    <button class="btn btn-d" onclick="signOutGoogle()" style="margin-bottom:10px;">Sign Out</button>
+    <button class="btn btn-s" onclick="closeModal()" style="font-size:16px;font-weight:800;padding:15px;">Close</button>`);
+  } else {
+    // Not signed in — show Google Sign-In button
+    openModal(`<div class="modal-title">☁️ Sign In to Sync</div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.7;margin-bottom:20px;">
+      Sign in with your Google account to automatically sync your data across all your devices.
+    </div>
+    <div style="background:rgba(12,233,127,.04);border:1px solid rgba(12,233,127,.1);border-radius:12px;padding:14px;margin-bottom:20px;font-size:12px;color:var(--text2);line-height:1.8;">
+      ✓ Automatic sync across devices<br>
+      ✓ Your data stays private to your account<br>
+      ✓ No manual setup needed
+    </div>
+    <button class="google-btn" onclick="signInWithGoogle()">
+      <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917"/><path fill="#FF3D00" d="m6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917"/></svg>
+      Continue with Google
+    </button>
+    <button class="btn btn-s" onclick="closeModal()" style="margin-top:10px;font-size:16px;font-weight:800;padding:15px;">Close</button>`);
+  }
 }
 
-// CHANGE 5: Pull from cloud - reads form inputs, saves settings, then pulls
-async function applyAndPull(){
-  const dburl=(document.getElementById('sk-dburl').value||'').trim().replace(/\/+$/,'');
-  const path=(document.getElementById('sk-path').value||'').trim().replace(/[^a-zA-Z0-9_-]/g,'');
-  if(!dburl||!dburl.startsWith('https://'))return alert('Enter a valid Firebase Database URL.');
-  if(!path||path.length<3)return alert('Enter a sync path with at least 3 characters.');
-  S.syncDbUrl=dburl;S.syncPath=path;saveLocal();
-  closeModal();setSyncDot('busy');
+async function signInWithGoogle(){
+  if(!firebaseAuth) return alert('Firebase not initialized.');
+  try{
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await firebaseAuth.signInWithPopup(provider);
+    closeModal();
+    // onAuthStateChanged will handle the rest
+  }catch(e){
+    console.error('Sign-in error:',e);
+    alert('Sign-in failed: ' + (e.message||'Unknown error'));
+  }
+}
+
+async function signOutGoogle(){
+  if(!firebaseAuth) return;
+  if(!confirm('Sign out? Your local data will remain on this device.')) return;
+  await firebaseAuth.signOut();
+  currentUser = null;
+  setSyncDot('');
+  closeModal();
+  updateHeaderAvatar();
+  renderMain();
+}
+
+async function manualPull(){
+  closeModal();
+  setSyncDot('busy');
   await pullSync();
   renderMain();
-  alert('⬇ Pull complete! Your data has been synced from the cloud.');
+  alert('⬇ Pull complete! Data synced from cloud.');
 }
 
-// CHANGE 5: Push to cloud - now warns user about overwriting existing data
-async function applySyncKey(){
-  const dburl=(document.getElementById('sk-dburl').value||'').trim().replace(/\/+$/,'');
-  const path=(document.getElementById('sk-path').value||'').trim().replace(/[^a-zA-Z0-9_-]/g,'');
-  if(!dburl||!dburl.startsWith('https://'))return alert('Enter a valid Firebase Database URL.');
-  if(!path||path.length<3)return alert('Enter a sync path with at least 3 characters.');
-  if(!confirm('⚠ This will PUSH your local data to the cloud, overwriting any existing cloud data.\n\nIf you want to restore data from the cloud instead, tap Cancel and use "Pull from Cloud".'))return;
-  S.syncDbUrl=dburl;S.syncPath=path;saveLocal();
-  closeModal();setSyncDot('busy');
+async function manualPush(){
+  if(!confirm('⚠ This will overwrite cloud data with your local data. Continue?'))return;
+  closeModal();
+  setSyncDot('busy');
   await pushSync();
-  renderMain();
-  alert('✅ Data pushed to cloud successfully! Use the same URL + Path on your other devices, then tap "Pull from Cloud".');
+  alert('⬆ Push complete!');
 }
-
-async function manualPull(){closeModal();setSyncDot('busy');await pullSync();alert('⬇ Pull complete.');}
 
 // EXPORT
 function openExportModal(){
@@ -1516,7 +1693,6 @@ function applyMonth(){const v=document.getElementById('mp-val').value;if(v){S.mo
 // ============================================================
 load();
 go('dashboard');
-if(fbUrl())setTimeout(()=>pullSync(),800);
 </script>
 </body>
 </html>
