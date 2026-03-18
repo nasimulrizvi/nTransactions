@@ -348,10 +348,10 @@ select.fi{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='
 })();
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(()=>console.log('SW ok')).catch(e=>console.log('SW skipped:',e.message));});}
 let deferredPrompt=null;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;if(!localStorage.getItem('pwa-dismissed'))setTimeout(()=>document.getElementById('pwa-banner').classList.add('show'),2000);});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;if(!sessionStorage.getItem('pwa-dismissed'))setTimeout(()=>document.getElementById('pwa-banner').classList.add('show'),2000);});
 window.addEventListener('appinstalled',()=>{document.getElementById('pwa-banner').classList.remove('show');deferredPrompt=null;});
 document.getElementById('pwa-install-btn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;document.getElementById('pwa-banner').classList.remove('show');});
-document.getElementById('pwa-close-btn').addEventListener('click',()=>{document.getElementById('pwa-banner').classList.remove('show');localStorage.setItem('pwa-dismissed','1');});
+document.getElementById('pwa-close-btn').addEventListener('click',()=>{document.getElementById('pwa-banner').classList.remove('show');sessionStorage.setItem('pwa-dismissed','1');});
 
 // ============================================================
 // CONSTANTS
