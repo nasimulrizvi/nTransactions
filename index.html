@@ -606,7 +606,7 @@ function rDash(){
         </div>
         <div class="bal-stat">
           <div class="bsl" style="display:flex;align-items:center;gap:4px;">Net<button onclick="toggleNet()" style="background:none;border:none;padding:0;cursor:pointer;color:var(--text3);display:flex;align-items:center;">${netHidden?ico('eye',10):ico('eye_off',10)}</button></div>
-          <div class="bsv" style="font-size:12px;color:${ys.simpleNet>=0?'var(--green)':'var(--red)'};">${netHidden?'•••':fmtIntSigned(ys.simpleNet)}</div>
+          <div class="bsv" style="font-size:12px;color:${ys.simpleNet>=0?'var(--green)':'var(--red)'};">${netHidden?'••••':fmtIntSigned(ys.simpleNet)}</div>
         </div>
       </div>
     </div>
@@ -854,7 +854,7 @@ function rBudget(){
 
   const mHTML=mOb?bCard(mOb,st.exp,`Monthly Budget – ${fmtMY(S.month)}`,'255,176,32',`openEditBgt('${mOb.id}')`,'amber'):emptyBudgetCard(`Monthly Budget – ${fmtMY(S.month)}`,'amber','amber',`openAddBudgetModal('monthly')`);
   const yHTML=yOb?bCard(yOb,yrExp,`Yearly Budget – ${yr}`,'77,159,255',`openEditBgt('${yOb.id}')`,'blue'):emptyBudgetCard(`Yearly Budget – ${yr}`,'blue','blue',`openAddBudgetModal('yearly')`);
-  const mSavHTML=mSav?savCard(mSav,st.net,`Monthly Savings Target – ${fmtMY(S.month)}`,'12,233,127',`openEditBgt('${mSav.id}')`):`<div style="text-align:center;padding:10px 0;font-size:12px;color:var(--text3);">No monthly savings target. <button onclick="openAddSavingsModal('monthly')" style="background:none;border:none;color:var(--green);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Set one →</button></div>`;
+  const mSavHTML=mSav?savCard(mSav,st.net,`Monthly Savings Target – ${fmtMY(S.month)}`,'12,233,127',`openEditBgt('${mSav.id}')`):`<div style="text-align:center;padding:10px 0;font-size:12px;color:var(--text3);">No monthly savings target. <button onclick="openAddSavingsModal('monthly')" style="background:none;border:none;color:var(--green);cursor:pointer;font-weight:700;font-familyj:'Outfit',sans-serif;">Set one →</button></div>`;
   const ySavHTML=ySav?savCard(ySav,yrNet,`Yearly Savings Target – ${yr}`,'12,233,127',`openEditBgt('${ySav.id}')`):`<div style="text-align:center;padding:10px 0;font-size:12px;color:var(--text3);">No yearly savings target. <button onclick="openAddSavingsModal('yearly')" style="background:none;border:none;color:var(--green);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Set one →</button></div>`;
 
   const catItems=getExpCats().map(c=>{
@@ -887,7 +887,7 @@ function rBudget(){
     <div id="bgt-monthly">
       ${mHTML}
       <div style="background:rgba(12,233,127,.04);border:1px solid rgba(12,233,127,.1);border-radius:16px;padding:14px;margin-bottom:12px;">
-        <div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;">${ico('savings',14,'#0ce97f')} Savings</div>
+        <div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;">${ico('savings',14,'#0ce97f')} Monthly Savings</div>
         ${mSavHTML}
       </div>
       <div class="card">${catItems||`<div class="empty" style="padding:28px;"><div style="display:flex;justify-content:center;margin-bottom:10px;opacity:.4;">${ico('empty_budget',36)}</div><div class="empty-t">No category budgets</div><div class="empty-s">Tap "+ Set Budget" to add one</div></div>`}</div>
@@ -1299,7 +1299,7 @@ function openAddLoan(prefill){
     <option value="deposit" ${pf.type==='deposit'?'selected':''}>Taking a Deposit</option>
     <option value="loan_recv" ${pf.type==='loan_recv'?'selected':''}>Loan Received</option>
     <option value="loan_given" ${pf.type==='loan_given'?'selected':''}>Loan Given</option>
-  </select></div><div id="ln-wallet-info" style="font-size:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--blue);">Taking a Deposit: money will be <b>added</b> to wallet (optional)</div><div class="fg"><label class="fl">Person / Organization</label><input type="text" class="fi" id="ln-pr" placeholder="Name" value="${pf.person||''}"></div><div class="fg"><label class="fl">Amount (৳)</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="ln-amt" placeholder="0.00" min="0"></div></div><div class="fg"><label class="fl">Wallet <span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:500;">(optional)</span></label><select class="fi" id="ln-w"><option value="">-- No wallet --</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="ln-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Due Date (optional)</label><input type="date" class="fi" id="ln-dd"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="ln-nt" placeholder="Additional details"></div><button class="btn btn-p" onclick="submitLoan()">Add Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);}
+  </select></div><div id="ln-wallet-info" style="font-size:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--blue);">Taking a Deposit: money will be <b>added</b> to wallet</div><div class="fg"><label class="fl">Person / Organization</label><input type="text" class="fi" id="ln-pr" placeholder="Name" value="${pf.person||''}"></div><div class="fg"><label class="fl">Amount (৳)</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="ln-amt" placeholder="0.00" min="0"></div></div><div class="fg"><label class="fl">Wallet (optional)<span style="color:var(--text3);text-transform:none;letter-spacing:0;font-weight:500;"></span></label><select class="fi" id="ln-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="ln-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Due Date (optional)</label><input type="date" class="fi" id="ln-dd"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="ln-nt" placeholder="Additional details"></div><button class="btn btn-p" onclick="submitLoan()">Add Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);}
 function openAddLoanFor(person,type){openAddLoan({person,type});}
 
 function openAddSubEntry(loanId){
@@ -1343,7 +1343,7 @@ function delLoanSubEntry(loanId,idx){
   if(e.wallet){const cfg=LOAN_TYPES[loan.type];const wObj=S.wallets.find(x=>x.id===e.wallet);if(wObj){if(cfg.walletDir==='in')wObj.balance-=e.amount;else wObj.balance+=e.amount;}}
   loan.extraEntries.splice(idx,1);save();renderMain();
 }
-function lnTypeChanged(){const tp=document.getElementById('ln-tp').value;const info=document.getElementById('ln-wallet-info');const msgs={deposit:'Taking a Deposit: money will be <b>added</b> to wallet (optional)',loan_recv:'Loan Received: money will be <b>added</b> to wallet (optional)',loan_given:'Loan Given: money will be <b>deducted</b> from wallet (optional)'};if(info)info.innerHTML=msgs[tp]||'';}
+function lnTypeChanged(){const tp=document.getElementById('ln-tp').value;const info=document.getElementById('ln-wallet-info');const msgs={deposit:'Taking a Deposit: money will be <b>added</b> to wallet',loan_recv:'Loan Received: money will be <b>added</b> to wallet',loan_given:'Loan Given: money will be <b>deducted</b> from wallet'};if(info)info.innerHTML=msgs[tp]||'';}
 function submitLoan(){
   const tp=document.getElementById('ln-tp').value;const pr=document.getElementById('ln-pr').value.trim();
   const amt=parseFloat(document.getElementById('ln-amt').value);const w=document.getElementById('ln-w').value;
