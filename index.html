@@ -395,26 +395,11 @@ let sbSyncTimeout = null;
 async function initSupabase() {
   sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  // Listen for auth state changes
-  sbClient.auth.onAuthStateChange(async (event, session) => {
-    if (session && session.user) {
-      currentUser = session.user;
-      showApp();
-      setSyncDot('busy');
-      await loadFromSupabase();
-      renderMain();
-    } else {
-      currentUser = null;
-      showLoginScreen();
-    }
-  });
-
-  // Check current session on load
+  // Check existing session first - handles page refresh correctly
   const { data: { session } } = await sbClient.auth.getSession();
   if (session && session.user) {
     currentUser = session.user;
     showApp();
-    load(); // Load cached data first for instant render
     go('dashboard');
     setSyncDot('busy');
     await loadFromSupabase();
@@ -422,6 +407,21 @@ async function initSupabase() {
   } else {
     showLoginScreen();
   }
+
+  // Only react to actual sign-in / sign-out events
+  sbClient.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'SIGNED_IN' && session && session.user) {
+      currentUser = session.user;
+      showApp();
+      go('dashboard');
+      setSyncDot('busy');
+      await loadFromSupabase();
+      renderMain();
+    } else if (event === 'SIGNED_OUT') {
+      currentUser = null;
+      showLoginScreen();
+    }
+  });
 }
 
 async function signInWithGoogle() {
@@ -500,13 +500,18 @@ async function saveToSupabase() {
       },
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
-    if (error) { setSyncDot('err'); } else { setSyncDot('ok'); }
-  } catch (e) { setSyncDot('err'); }
-}
-
-function scheduleSupabaseSync() {
-  clearTimeout(sbSyncTimeout);
-  sbSyncTimeout = setTimeout(saveToSupabase, 1400);
+    if (error) {
+      console.error('Sync error:', error.message, error.code);
+      setSyncDot('err');
+    } else {
+      S.lastSync = Date.now();
+      saveLocal();
+      setSyncDot('ok');
+    }
+  } catch (e) {
+    console.error('Sync exception:', e);
+    setSyncDot('err');
+  }
 }
 
 // ============================================================
