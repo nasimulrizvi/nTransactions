@@ -393,11 +393,7 @@ if(_bc) _bc.onmessage = (e) => {
 };
 
 // ============ PWA ============
-(function(){
-  const manifest={name:'nTransactions',short_name:'nTransactions',description:'Personal finance tracker',start_url:'./',scope:'./',display:'standalone',orientation:'portrait-primary',theme_color:'#07090f',background_color:'#07090f',categories:['finance','productivity'],icons:[{src:'https://raw.githubusercontent.com/nasimulrizvi/index.html/refs/heads/main/Transactions.png',sizes:'512x512',type:'image/png',purpose:'any maskable'},{src:'https://raw.githubusercontent.com/nasimulrizvi/index.html/refs/heads/main/Transactions.png',sizes:'192x192',type:'image/png',purpose:'any maskable'}]};
-  const blob=new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'});
-  const link=document.createElement('link');link.rel='manifest';link.href=URL.createObjectURL(blob);document.head.appendChild(link);
-})();
+<link rel="manifest" href="./manifest.json">
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(()=>{}).catch(()=>{});});}
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;if(!sessionStorage.getItem('pwa-dismissed'))setTimeout(()=>document.getElementById('pwa-banner').classList.add('show'),2000);});
