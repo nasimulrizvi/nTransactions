@@ -11,8 +11,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="nTransactions">
-<link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/nasimulrizvi/index.html/3b6de7a346128753e3ad407293251b8e4d45969f/Transactions.svg">
-<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/nasimulrizvi/index.html/refs/heads/main/favicon.png">
+<link rel="icon" type="image/svg+xml" href="./favicon.ico">
+<link rel="apple-touch-icon" href="./favicon.png">
+<link rel="manifest" href="./manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -381,19 +382,15 @@ if(_bc) _bc.onmessage = (e) => {
     S.customIncCats=d.customIncCats||S.customIncCats||[];
     S.expCatOrder=d.expCatOrder||S.expCatOrder||[];
     S.incCatOrder=d.incCatOrder||S.incCatOrder||[];
-      S.hiddenExpCats=d.hiddenExpCats||S.hiddenExpCats||[];
-      S.hiddenIncCats=d.hiddenIncCats||S.hiddenIncCats||[];
-      S.hiddenExpCats=d.hiddenExpCats||S.hiddenExpCats||[];
-      S.hiddenIncCats=d.hiddenIncCats||S.hiddenIncCats||[];
-      S.hiddenExpCats=d.hiddenExpCats||S.hiddenExpCats||[];
-      S.hiddenIncCats=d.hiddenIncCats||S.hiddenIncCats||[];
+    S.hiddenExpCats=d.hiddenExpCats||S.hiddenExpCats||[];
+    S.hiddenIncCats=d.hiddenIncCats||S.hiddenIncCats||[];
     S.lastSync=d.ts;
     saveLocal();setSyncDot('ok');renderMain();
   }
 };
 
 // ============ PWA ============
-<link rel="manifest" href="./manifest.json">
+
 if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('./sw.js',{scope:'./'}).then(()=>{}).catch(()=>{});});}
 let deferredPrompt=null;
 window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;if(!sessionStorage.getItem('pwa-dismissed'))setTimeout(()=>document.getElementById('pwa-banner').classList.add('show'),2000);});
