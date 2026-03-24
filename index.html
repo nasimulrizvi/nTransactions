@@ -554,6 +554,21 @@ function saveLocal(){
   try{localStorage.setItem('ntx4',JSON.stringify({transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,customExpCats:S.customExpCats,customIncCats:S.customIncCats,expCatOrder:S.expCatOrder,incCatOrder:S.incCatOrder,hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],month:S.month,lastSync:S.lastSync}));}catch(e){}
 }
 function save(){saveLocal();scheduleSync();}
+function scheduleSync(){if(!fbUser)return;clearTimeout(syncTimeout);syncTimeout=setTimeout(pushSync,600);}
+async function pushSync(){
+  if(!fbUser)return;setSyncDot('busy');
+  try{
+    const ts=Date.now();
+    const payload={transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,
+      customExpCats:S.customExpCats||[],customIncCats:S.customIncCats||[],
+      expCatOrder:S.expCatOrder||[],incCatOrder:S.incCatOrder||[],
+      hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],ts};
+    S.lastSync=ts;
+    await fbDb.ref('users/'+fbUser.uid+'/data').set(payload);
+    saveLocal();setSyncDot('ok');
+    if(_bc)_bc.postMessage({type:'sync',...payload});
+  }catch(e){setSyncDot('err');clearTimeout(syncTimeout);syncTimeout=setTimeout(pushSync,4000);}
+}
 
 // ============ FIREBASE SYNC ============
 function setSyncDot(state){
