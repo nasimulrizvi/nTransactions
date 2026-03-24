@@ -183,7 +183,7 @@ body{font-family:'Outfit',sans-serif;background:#07090f;color:#e8edf5;min-height
 .modal-title{font-size:18px;font-weight:800;margin-bottom:18px;}
 .fg{margin-bottom:14px;}
 .fl{display:block;font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:7px;}
-.fi{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:15px;color:var(--text);font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;appearance:none;-webkit-appearance:none;}
+.fi{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:15px;color:var(--text);font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;-webkit-appearance:none;}
 .fi:focus{border-color:var(--green);}
 .fi::placeholder{color:var(--text3);}
 select.fi{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234a5568' stroke-width='2.5' stroke-linecap='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:36px;}
@@ -279,7 +279,7 @@ select.fi{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='
 (function(){var s=document.createElement('script');s.src='https://cdn.vercel-insights.com/v1/speed-insights/script.js';s.defer=true;document.head.appendChild(s);window.si=window.si||function(){(window.siq=window.siq||[]).push(arguments);};})();
 (function(){var s=document.createElement('script');s.src='https://cdn.vercel-insights.com/v1/analytics/script.js';s.defer=true;document.head.appendChild(s);window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};})();
 </script>
-  <!-- © nTransactions · Designed & Built by Md. Nasimul Islam Rizvi · Gazipur, Bangladesh
+<!-- © nTransactions · Designed & Built by Md. Nasimul Islam Rizvi · Gazipur, Bangladesh
      Source: github.com/nasimulrizvi/nTransactions
      License: CC BY-NC 4.0 with attribution requirement -->
 <meta name="author" content="Md. Nasimul Islam Rizvi">
@@ -305,8 +305,8 @@ select.fi{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='
         <button class="hbtn" onclick="changeMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
       </div>
       <button class="hbtn" onclick="openSyncModal()" title="Account &amp; Sync" style="padding:6px 8px;">
-        <div class="sync-dot" id="sync-dot"></div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <div class="sync-dot" id="sync-dot" style="display:none;"></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="sync-svg" style="width:14px;height:14px;display:none;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       </button>
     </div>
   </header>
@@ -348,7 +348,7 @@ select.fi{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='
     </div>
     <div class="sidebar-footer">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span>Built by Md. Nasimul Islam Rizvi</span>
+      <span>nTransactions v2.1</span>
     </div>
   </nav>
 </div>
@@ -556,20 +556,12 @@ function saveLocal(){
 function save(){saveLocal();scheduleSync();}
 
 // ============ FIREBASE SYNC ============
-function setSyncDot(state){const el=document.getElementById('sync-dot');if(el)el.className='sync-dot'+(state?' '+state:'');}
-function scheduleSync(){if(!fbUser)return;clearTimeout(syncTimeout);syncTimeout=setTimeout(pushSync,600);}
-async function pushSync(){
-  if(!fbUser)return;setSyncDot('busy');
-  try{
-    const ts=Date.now();
-    const payload={transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,
-      customExpCats:S.customExpCats||[],customIncCats:S.customIncCats||[],
-      expCatOrder:S.expCatOrder||[],incCatOrder:S.incCatOrder||[],
-      hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],ts};
-    await fbDb.ref('users/'+fbUser.uid+'/data').set(payload);
-    S.lastSync=ts;saveLocal();setSyncDot('ok');
-    if(_bc)_bc.postMessage({type:'sync',...payload});
-  }catch(e){setSyncDot('err');clearTimeout(syncTimeout);syncTimeout=setTimeout(pushSync,4000);}
+function setSyncDot(state){
+  const el=document.getElementById('sync-dot');
+  const sv=document.getElementById('sync-svg');
+  const showAlert=state==='err'||state==='busy';
+  if(el){el.className='sync-dot'+(state?' '+state:'');el.style.display=showAlert?'block':'none';}
+  if(sv)sv.style.display=showAlert?'block':'none';
 }
 function startRealtimeSync(){
   if(_dbListener||!fbUser)return;
@@ -1048,7 +1040,8 @@ function showLoanReceipt(loanId){
   const extras=l.extraEntries||[];const payments=l.payments||[];
   const tc=l.type==='deposit'?'#2563eb':l.type==='loan_recv'?'#d97706':'#7c3aed';
   const tb=l.type==='deposit'?'#eff6ff':l.type==='loan_recv'?'#fffbeb':'#f5f3ff';
-  const infoRows=[['Person / Organization',l.person],['Type',receiptLabel],['Date',fmtD(l.date)],['Due Date',l.dueDate?fmtD(l.dueDate):'Not specified'],['Wallet',wn],...(l.note?[['Note',l.note]]:[])];
+  const issuedBy=fbUser?(fbUser.displayName||fbUser.email.split('@')[0]||'nTransactions'):'nTransactions';
+  const infoRows=[['Person / Organization',l.person],['Type',receiptLabel],['Date',fmtD(l.date)],['Due Date',l.dueDate?fmtD(l.dueDate):'Not specified'],['Issued By',issuedBy],...(l.note?[['Note',l.note]]:[])];
   const previewHTML='<div class="receipt-preview"><div style="text-align:center;border-bottom:2px solid #0ce97f;padding-bottom:12px;margin-bottom:14px;"><div style="font-size:20px;font-weight:900;color:#0a0f1e;">n<span style="color:#0ce97f;">Transactions</span></div><div style="font-size:9px;color:#888;margin-top:3px;text-transform:uppercase;letter-spacing:1.2px;">Financial Receipt</div><div style="display:inline-block;margin-top:7px;padding:4px 12px;background:'+tb+';border-radius:8px;font-size:11px;font-weight:700;color:'+tc+';">'+receiptLabel+'</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">'+infoRows.map(([lb,v])=>'<div><div style="font-size:9px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.8px;">'+lb+'</div><div style="font-size:12px;font-weight:700;color:#1a1a2e;margin-top:2px;">'+v+'</div></div>').join('')+'</div><div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:11px;"><div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;">Amount Summary</div><div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">Initial Amount</span><span style="font-weight:700;color:#374151;">'+fmt(l.amount)+'</span></div>'+extras.map((e,i)=>'<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">Extra '+(i+1)+(e.note?' - '+e.note:'')+'</span><span style="font-weight:700;color:#374151;">'+fmt(e.amount)+'</span></div>').join('')+(extras.length?'<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid #e5e7eb;"><span style="font-weight:700;color:#374151;">Total</span><span style="font-weight:800;color:#374151;">'+fmt(total)+'</span></div>':'')+'<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">Total Paid</span><span style="font-weight:700;color:#059669;">'+fmt(paid)+'</span></div><div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;"><span style="font-weight:700;color:#374151;">Remaining</span><span style="font-weight:800;color:'+(remain<=0?'#059669':'#dc2626')+';">'+fmt(remain)+'</span></div>'+(remain<=0?'<div style="text-align:center;margin-top:6px;background:#d1fae5;border-radius:6px;padding:5px;font-size:12px;font-weight:700;color:#059669;">Fully Settled</div>':'')+'</div>'+(payments.length?'<div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:10px 0 5px;">Payments ('+payments.length+')</div>'+payments.map((p,i)=>'<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">'+(i+1)+'. '+fmtD(p.date)+(p.note?' - '+p.note:'')+'</span><span style="font-weight:700;color:#059669;">'+fmt(p.amount)+'</span></div>').join(''):'')+'</div>';
   openModal(`<div class="modal-title">Loan Receipt</div>
   ${previewHTML}
@@ -1075,7 +1068,8 @@ function buildReceiptHTML(l){
   const tc=l.type==='deposit'?'#2563eb':l.type==='loan_recv'?'#d97706':isSettled?'#059669':'#7c3aed';
   const tb=l.type==='deposit'?'#eff6ff':l.type==='loan_recv'?'#fffbeb':isSettled?'#d1fae5':'#f5f3ff';
   const tbd=l.type==='deposit'?'#bfdbfe':l.type==='loan_recv'?'#fde68a':isSettled?'#6ee7b7':'#ddd6fe';
-  const dr=[['Person / Organization',l.person],['Transaction Type',receiptLabel],['Date of Transaction',fmtD(l.date)],['Due Date',l.dueDate?fmtD(l.dueDate):'Not specified'],['Linked Wallet',wn],...(l.note?[['Note / Remarks',l.note]]:[])];
+  const issuedByFull=fbUser?(fbUser.displayName||fbUser.email.split('@')[0]||'nTransactions'):'nTransactions';
+  const dr=[['Person / Organization',l.person],['Transaction Type',receiptLabel],['Date of Transaction',fmtD(l.date)],['Due Date',l.dueDate?fmtD(l.dueDate):'Not specified'],['Issued By',issuedByFull],...(l.note?[['Note / Remarks',l.note]]:[])];
   const amtRows=[{lb:'Initial Amount',v:fmt(l.amount),col:'#374151',bold:false},...extras.map((e,i)=>({lb:'Additional Entry '+(i+1)+(e.note?' - '+e.note:''),v:fmt(e.amount),col:'#374151',bold:false})),...(extras.length?[{lb:'Total Amount',v:fmt(total),col:'#1a1a2e',bold:true}]:[]),{lb:'Total Paid / Settled',v:fmt(paid),col:'#059669',bold:false},{lb:'Remaining Balance',v:fmt(remain),col:remain<=0?'#059669':'#dc2626',bold:true}];
   const pRows=payments.map((p,i)=>`<tr style="${i%2===0?'background:#f9fafb;':''}"><td style="padding:9px 14px;color:#6b7280;">${i+1}</td><td style="padding:9px 14px;">${fmtD(p.date)}</td><td style="padding:9px 14px;font-weight:700;color:#059669;font-family:'Outfit',sans-serif;">${fmt(p.amount)}</td><td style="padding:9px 14px;color:#6b7280;">${p.wallet?getWlt(p.wallet).name:'-'}</td><td style="padding:9px 14px;color:#6b7280;">${p.note||'-'}</td></tr>`).join('');
   const eRows=extras.map((e,i)=>`<tr style="${i%2===0?'background:#f9fafb;':''}"><td style="padding:9px 14px;color:#6b7280;">${i+1}</td><td style="padding:9px 14px;">${fmtD(e.date)}</td><td style="padding:9px 14px;font-weight:700;color:#374151;font-family:'Outfit',sans-serif;">${fmt(e.amount)}</td><td style="padding:9px 14px;color:#6b7280;">${e.wallet?getWlt(e.wallet).name:'-'}</td><td style="padding:9px 14px;color:#6b7280;">${e.note||'-'}</td></tr>`).join('');
@@ -1084,7 +1078,7 @@ function buildReceiptHTML(l){
 
 // ============ MODALS ============
 function openModal(html){document.getElementById('mc').innerHTML=html;document.getElementById('modal-overlay').classList.add('open');}
-function closeModal(){document.getElementById('modal-overlay').classList.remove('open');}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');window._submitting=false;}
 function handleOvClick(e){if(e.target===document.getElementById('modal-overlay'))closeModal();}
 function toggleBal(){balHidden=!balHidden;renderMain();}
 function toggleNet(){netHidden=!netHidden;renderMain();}
@@ -1100,7 +1094,7 @@ function openSyncModal(){
     <div class="auth-user-card">
       <div class="auth-avatar">${initials}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${displayName}</div>
+        <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px;">${displayName}<svg width="14" height="14" viewBox="0 0 24 24" fill="#4d9fff" style="flex-shrink:0;"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
         <div style="font-size:11px;color:var(--text3);margin-top:3px;">${email}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:1px;">Last synced: ${lastSync}</div>
       </div>
@@ -1197,6 +1191,7 @@ function txModalHTML(){
 }
 function swTxT(t){txType=t;document.getElementById('mc').innerHTML=txModalHTML();}
 function submitTx(){
+  if(window._submitting)return; window._submitting=true; setTimeout(()=>window._submitting=false,2000);
   const amt=parseFloat(document.getElementById('tx-amt').value);const wEl=document.getElementById('tx-w');const w=wEl?wEl.value:'';const dt=document.getElementById('tx-dt').value;const note=document.getElementById('tx-note').value.trim();const catEl=document.getElementById('tx-cat');const catVal=catEl?catEl.value:'';
   if(!amt||amt<=0)return alert('Enter a valid amount.');
   if(txType!=='transfer'&&!catVal)return alert('Select a category.');
@@ -1314,6 +1309,7 @@ function openAddSubEntry(loanId){
   openModal(`<div class="modal-title">Add More - ${loan.person}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Type: <b style="color:var(--text);">${cfg.label}</b></div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Remaining: <b style="color:var(--red);">${fmt(loanRemain(loan))}</b></div></div><div class="fg"><label class="fl">Additional Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="se-amt" placeholder="0.00" min="0"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="se-w"><option value="">-- No wallet --</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="se-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="se-nt" placeholder="e.g. second installment"></div><button class="btn btn-p" onclick="submitSubEntry('${loanId}')">Add to Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 function submitSubEntry(loanId){
+  if(window._submitting)return; window._submitting=true; setTimeout(()=>window._submitting=false,2000);
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const amt=parseFloat(document.getElementById('se-amt').value);const w=document.getElementById('se-w').value;const dt=document.getElementById('se-dt').value;const nt=document.getElementById('se-nt').value.trim();if(!amt||amt<=0)return alert('Enter a valid amount.');if(!dt)return alert('Select a date.');
   if(w){const cfg=LOAN_TYPES[loan.type];const wObj=S.wallets.find(x=>x.id===w);if(wObj){if(cfg.walletDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}}
   if(!loan.extraEntries)loan.extraEntries=[];loan.extraEntries.push({id:uid(),amount:amt,wallet:w||'',date:dt,note:nt});save();closeModal();renderMain();
@@ -1325,6 +1321,7 @@ function delLoanSubEntry(loanId,idx){
 }
 function lnTypeChanged(){const tp=document.getElementById('ln-tp').value;const info=document.getElementById('ln-wallet-info');const msgs={deposit:'Taking a Deposit: money will be added to wallet',loan_recv:'Loan Received: money will be added to wallet',loan_given:'Loan Given: money will be deducted from wallet'};if(info)info.innerHTML=msgs[tp]||'';}
 function submitLoan(){
+  if(window._submitting)return; window._submitting=true; setTimeout(()=>window._submitting=false,2000);
   const tp=document.getElementById('ln-tp').value;const pr=document.getElementById('ln-pr').value.trim();const amt=parseFloat(document.getElementById('ln-amt').value);const w=document.getElementById('ln-w').value;const dt=document.getElementById('ln-dt').value;const dd=document.getElementById('ln-dd').value;const nt=document.getElementById('ln-nt').value.trim();
   if(!pr)return alert('Enter a person name.');if(!amt||amt<=0)return alert('Enter a valid amount.');if(!dt)return alert('Select a date.');
   if(w){const cfg=LOAN_TYPES[tp];const wObj=S.wallets.find(x=>x.id===w);if(wObj){if(cfg.walletDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}}
@@ -1336,6 +1333,7 @@ function openAddLoanPayment(loanId){
   openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Person: <b style="color:var(--text);">${loan.person}</b></div><div style="font-size:12px;color:var(--text3);margin-top:4px;">Remaining: <b style="color:var(--red);">${fmt(remain)}</b></div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="${remain.toFixed(2)}" min="0" max="${remain}" value="${remain.toFixed(2)}"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="lp-w"><option value="">-- No wallet --</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="lp-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div><button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 function submitLoanPayment(loanId){
+  if(window._submitting)return; window._submitting=true; setTimeout(()=>window._submitting=false,2000);
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const amt=parseFloat(document.getElementById('lp-amt').value);const w=document.getElementById('lp-w').value;const dt=document.getElementById('lp-dt').value;const nt=document.getElementById('lp-nt').value.trim();const remain=loanRemain(loan);
   if(!amt||amt<=0)return alert('Enter a valid amount.');if(amt>remain+0.01)return alert(`Cannot exceed remaining ${fmt(remain)}.`);if(!dt)return alert('Select a date.');
   if(w){const cfg=LOAN_TYPES[loan.type];const wObj=S.wallets.find(x=>x.id===w);if(wObj){if(cfg.childDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}}
