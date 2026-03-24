@@ -33,7 +33,7 @@ body{font-family:'Outfit',sans-serif;background:#07090f;color:#e8edf5;min-height
   --blue:#4d9fff;--blue-d:rgba(77,159,255,0.12);
   --amber:#ffb020;--amber-d:rgba(255,176,32,0.12);
   --purple:#9d6fff;--purple-d:rgba(157,111,255,0.12);
-  --nav:72px;--r:16px;
+  --nav:58px;--r:16px;
 }
 /* THEME: Midnight Blue */
 body.theme-midnight{
@@ -53,6 +53,21 @@ body.theme-slate{
   --border:rgba(255,255,255,0.08);--borderl:rgba(255,255,255,0.04);
   --text:#e2e2f0;--text2:#7a7a9a;--text3:#44445a;
 }
+/* THEME: Light */
+body.theme-light{
+  --bg:#f0f2f7;--bg2:#e8eaf0;--bg3:#dde0ea;--card:rgba(0,0,0,0.04);--card-solid:#e8eaf0;
+  --border:rgba(0,0,0,0.09);--borderl:rgba(0,0,0,0.05);
+  --text:#131720;--text2:#4a5568;--text3:#8892a4;
+  --green:#00b85c;--green-d:rgba(0,184,92,0.10);
+  --red:#e02040;--red-d:rgba(224,32,64,0.10);
+  --blue:#2a7de1;--blue-d:rgba(42,125,225,0.10);
+  --amber:#c87800;--amber-d:rgba(200,120,0,0.10);
+  --purple:#6d3fcc;--purple-d:rgba(109,63,204,0.10);
+}
+body.theme-light .bottom-nav{background:rgba(220,224,235,0.88);border-color:rgba(0,0,0,0.10);box-shadow:0 4px 24px rgba(0,0,0,0.12),inset 0 1px 0 rgba(255,255,255,0.7);}
+body.theme-light .header{background:rgba(240,242,247,0.94);}
+body.theme-light .modal{background:#eaedf5;}
+body.theme-light .bal-card{background:linear-gradient(135deg,#dce8f8 0%,#d4e4f4 60%,#ccdaf0 100%);border-color:rgba(42,125,225,0.18);}
 /* THEME: Warm Dark */
 body.theme-warm{
   --bg:#0f0a07;--bg2:#181108;--bg3:#221808;--card:rgba(255,176,32,0.04);--card-solid:#1a1408;
@@ -144,13 +159,12 @@ body.theme-warm{
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 .main{padding-bottom:calc(var(--nav) + 20px);}
 .bottom-nav{position:fixed!important;bottom:10px;left:50%;transform:translateX(-50%);width:calc(100% - 20px);max-width:500px;height:var(--nav);background:rgba(10,13,22,0.76);backdrop-filter:blur(32px) saturate(160%);-webkit-backdrop-filter:blur(32px) saturate(160%);border-radius:24px;border:1px solid rgba(255,255,255,0.1);z-index:100;padding-bottom:0;box-shadow:0 8px 36px rgba(0,0,0,0.55),inset 0 1px 0 rgba(255,255,255,0.07);}
-.bottom-nav-row{display:flex;align-items:center;justify-content:space-around;height:72px;}
-.nav-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 10px;border-radius:14px;cursor:pointer;transition:all .2s;flex:1;color:var(--text3);}
+.bottom-nav-row{display:flex;align-items:center;justify-content:space-around;height:58px;}
+.nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border-radius:12px;cursor:pointer;transition:all .2s;flex:1;color:var(--text3);}
 .nav-item.active{color:var(--green);}
 .nav-item svg{width:22px;height:22px;}
 .nav-label{font-size:10px;font-weight:600;letter-spacing:.3px;}
-.nav-pip{width:4px;height:4px;border-radius:50%;background:var(--green);opacity:0;transition:opacity .2s;}
-.nav-item.active .nav-pip{opacity:1;}
+.nav-pip{display:none!important;}
 .fab{position:fixed;bottom:calc(var(--nav) + 14px);right:18px;width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,#0ce97f,#00c46a);color:#07090f;border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99;box-shadow:0 4px 20px rgba(12,233,127,.45);transition:all .2s;animation:fabGlow 3s infinite;}
 @keyframes fabGlow{0%,100%{box-shadow:0 4px 20px rgba(12,233,127,.45),0 0 0 0 rgba(12,233,127,.2);}50%{box-shadow:0 4px 28px rgba(12,233,127,.55),0 0 0 8px rgba(12,233,127,0);}}
 .fab:active{transform:scale(.92);}
@@ -1447,6 +1461,7 @@ const THEMES={
   forest:{label:'Forest Dark',bg:'#060e08',accent:'#0ce97f'},
   slate:{label:'Slate',bg:'#0a0a0e',accent:'#9d6fff'},
   warm:{label:'Warm Dark',bg:'#0f0a07',accent:'#ffb020'},
+  light:{label:'Light',bg:'#f0f2f7',accent:'#2a7de1'},
 };
 function applyTheme(t){
   const b=document.body;
@@ -1456,12 +1471,15 @@ function applyTheme(t){
   // Update meta theme-color
   const mc=document.querySelector('meta[name="theme-color"]');
   if(mc)mc.content=THEMES[t]?THEMES[t].bg:'#07090f';
+  // Light theme: add body class for text overrides
+  if(t==='light')document.body.style.setProperty('color-scheme','light');
+  else document.body.style.removeProperty('color-scheme');
   // Re-render theme picker if modal is open
   const tp=document.getElementById('theme-picker');
   if(tp){
     const labels={dark:'Default Dark',midnight:'Midnight Blue',forest:'Forest Dark',slate:'Slate',warm:'Warm Dark'};
-    const previews={dark:'#07090f',midnight:'#05080f',forest:'#060e08',slate:'#0a0a0e',warm:'#0f0a07'};
-    const accents={dark:'#0ce97f',midnight:'#4d9fff',forest:'#0ce97f',slate:'#9d6fff',warm:'#ffb020'};
+    const previews={dark:'#07090f',midnight:'#05080f',forest:'#060e08',slate:'#0a0a0e',warm:'#0f0a07',light:'#f0f2f7'};
+    const accents={dark:'#0ce97f',midnight:'#4d9fff',forest:'#0ce97f',slate:'#9d6fff',warm:'#ffb020',light:'#2a7de1'};
     tp.innerHTML=Object.keys(THEMES).map(k=>{
       const isActive=(t===k);
       return `<button onclick="applyTheme('${k}')" style="padding:9px 6px;border-radius:10px;border:1.5px solid ${isActive?accents[k]:'var(--border)'};background:${isActive?'rgba(255,255,255,0.06)':'var(--bg)'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s;font-family:'Outfit',sans-serif;"><span style="width:22px;height:22px;border-radius:7px;background:${previews[k]};border:1px solid rgba(255,255,255,.12);display:inline-block;box-shadow:inset 0 0 0 5px ${accents[k]}22;"></span><span style="font-size:9px;font-weight:700;color:${isActive?accents[k]:'var(--text3)'};text-align:center;line-height:1.2;">${labels[k]}</span></button>`;
