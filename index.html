@@ -35,6 +35,30 @@ body{font-family:'Outfit',sans-serif;background:#07090f;color:#e8edf5;min-height
   --purple:#9d6fff;--purple-d:rgba(157,111,255,0.12);
   --nav:72px;--r:16px;
 }
+/* THEME: Midnight Blue */
+body.theme-midnight{
+  --bg:#05080f;--bg2:#080d18;--bg3:#0d1425;--card:rgba(77,159,255,0.05);--card-solid:#0b1222;
+  --border:rgba(77,159,255,0.10);--borderl:rgba(77,159,255,0.05);
+  --text:#dde8ff;--text2:#6d85b8;--text3:#3d5080;
+}
+/* THEME: Forest Dark */
+body.theme-forest{
+  --bg:#060e08;--bg2:#0a1510;--bg3:#0f1e14;--card:rgba(12,233,127,0.04);--card-solid:#0a1812;
+  --border:rgba(12,233,127,0.09);--borderl:rgba(12,233,127,0.04);
+  --text:#d6f0e0;--text2:#5a8a6a;--text3:#2e5040;
+}
+/* THEME: Slate */
+body.theme-slate{
+  --bg:#0a0a0e;--bg2:#121218;--bg3:#1a1a22;--card:rgba(255,255,255,0.04);--card-solid:#141420;
+  --border:rgba(255,255,255,0.08);--borderl:rgba(255,255,255,0.04);
+  --text:#e2e2f0;--text2:#7a7a9a;--text3:#44445a;
+}
+/* THEME: Warm Dark */
+body.theme-warm{
+  --bg:#0f0a07;--bg2:#181108;--bg3:#221808;--card:rgba(255,176,32,0.04);--card-solid:#1a1408;
+  --border:rgba(255,176,32,0.09);--borderl:rgba(255,176,32,0.04);
+  --text:#f0e8d6;--text2:#8a7050;--text3:#504030;
+}
 #app{position:relative;max-width:520px;margin:0 auto;min-height:100dvh;z-index:1;}
 
 /* SIDEBAR BACKDROP */
@@ -1109,7 +1133,7 @@ function openSyncModal(){
     <div class="auth-user-card">
       <div class="auth-avatar">${initials}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px;">${displayName}<svg width="14" height="14" viewBox="0 0 24 24" fill="#4d9fff" style="flex-shrink:0;"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg></div>
+        <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px;">${displayName}<svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;"><defs><radialGradient id="vbg" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#d0d0d0"/></radialGradient><filter id="vshadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0.5" stdDeviation="0.6" flood-color="rgba(0,0,0,0.35)"/></filter></defs><circle cx="12" cy="12" r="11" fill="url(#vbg)" filter="url(#vshadow)"/><circle cx="12" cy="12" r="11" fill="none" stroke="#888" stroke-width="0.5"/><path d="M12 3.5 L13.8 8.2 L18.9 8.2 L14.8 11.1 L16.4 15.8 L12 13.0 L7.6 15.8 L9.2 11.1 L5.1 8.2 L10.2 8.2 Z" fill="none" stroke="#bbb" stroke-width="0.4" opacity="0.3"/><polyline points="7.5,12.2 10.8,15.5 16.5,9.0" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <div style="font-size:11px;color:var(--text3);margin-top:3px;">${email}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:1px;">Last synced: ${lastSync}</div>
       </div>
@@ -1123,7 +1147,13 @@ function openSyncModal(){
       Your data syncs automatically across all devices.<br>
       Sync is powered by <b style="color:var(--amber);">Firebase</b>.
     </div>
+    <div style="margin-top:14px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px 14px;">
+      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:10px;">Choose Theme</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;" id="theme-picker"></div>
+    </div>
     <button class="btn btn-s" onclick="closeModal()" style="margin-top:10px;">Close</button>`);
+  // Populate theme picker after modal renders
+  setTimeout(()=>{const tp=document.getElementById('theme-picker');if(tp)applyTheme(localStorage.getItem('ntx_theme')||'dark');},0);
   } else {
     openModal(`<div class="modal-title">Sign In</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.7;">Sign in to sync your data across all devices securely.</div>
@@ -1314,9 +1344,28 @@ function submitBgtCat(){const cat=document.getElementById('b-cat').value;const a
 function showBgtTab(tab){const m=document.getElementById('bgt-monthly');const y=document.getElementById('bgt-yearly');const tm=document.getElementById('btab-m');const ty=document.getElementById('btab-y');if(!m||!y)return;if(tab==='monthly'){m.style.display='';y.style.display='none';if(tm)tm.classList.add('active');if(ty)ty.classList.remove('active');}else{m.style.display='none';y.style.display='';if(ty)ty.classList.add('active');if(tm)tm.classList.remove('active');}}
 
 // ============ LOANS MODALS ============
+async function pickFromContacts(){
+  if(!('contacts' in navigator && 'ContactsManager' in window)){
+    alert('Contacts API is not supported on this device/browser. Please type the name manually.');return;
+  }
+  try{
+    const contacts=await navigator.contacts.select(['name'],{multiple:false});
+    if(contacts&&contacts.length>0){
+      const name=(contacts[0].name&&contacts[0].name[0])||'';
+      const el=document.getElementById('ln-pr');
+      if(el&&name)el.value=name;
+    }
+  }catch(e){
+    if(e.name!=='AbortError') alert('Could not access contacts: '+e.message);
+  }
+}
 function openAddLoan(){
   const wOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
-  openModal(`<div class="modal-title">New Loan / Deposit Entry</div><div class="fg"><label class="fl">Type</label><select class="fi" id="ln-tp" onchange="lnTypeChanged()"><option value="deposit">Taking a Deposit</option><option value="loan_recv">Loan Received</option><option value="loan_given">Loan Given</option></select></div><div id="ln-wallet-info" style="font-size:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--blue);">Taking a Deposit: money will be added to wallet</div><div class="fg"><label class="fl">Person / Organization</label><input type="text" class="fi" id="ln-pr" placeholder="Name"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="ln-amt" placeholder="0.00" min="0"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="ln-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="ln-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Due Date (optional)</label><input type="date" class="fi" id="ln-dd"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="ln-nt" placeholder="Additional details"></div><button class="btn btn-p" onclick="submitLoan()">Add Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+  const contactsAPI=('contacts' in navigator && 'ContactsManager' in window);
+  const cBtnStyle=contactsAPI?'background:var(--blue-d);border:1px solid rgba(77,159,255,.3);color:var(--blue);cursor:pointer;':'background:var(--bg3);border:1px solid var(--border);color:var(--text3);cursor:not-allowed;opacity:.5;';
+  const cBtnClick=contactsAPI?'pickFromContacts()':"alert('Contacts API not available on this browser. Please type the name manually.')";
+  const contactBtn=`<button type="button" onclick="${cBtnClick}" style="display:inline-flex;align-items:center;gap:5px;padding:8px 12px;border-radius:10px;${cBtnStyle}font-size:12px;font-weight:700;font-family:'Outfit',sans-serif;white-space:nowrap;flex-shrink:0;transition:all .2s;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts</button>`;
+  openModal(`<div class="modal-title">New Loan / Deposit Entry</div><div class="fg"><label class="fl">Type</label><select class="fi" id="ln-tp" onchange="lnTypeChanged()"><option value="deposit">Taking a Deposit</option><option value="loan_recv">Loan Received</option><option value="loan_given">Loan Given</option></select></div><div id="ln-wallet-info" style="font-size:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--blue);">Taking a Deposit: money will be added to wallet</div><div class="fg"><label class="fl">Person / Organization</label><div style="display:flex;gap:8px;align-items:center;"><input type="text" class="fi" id="ln-pr" placeholder="Type name or pick from Contacts" style="flex:1;min-width:0;">${contactBtn}</div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="ln-amt" placeholder="0.00" min="0"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="ln-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="ln-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Due Date (optional)</label><input type="date" class="fi" id="ln-dd"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="ln-nt" placeholder="Additional details"></div><button class="btn btn-p" onclick="submitLoan()">Add Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 function openAddSubEntry(loanId){
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const cfg=LOAN_TYPES[loan.type];
@@ -1391,8 +1440,39 @@ function wltDragLeave(e){e.currentTarget.classList.remove('drag-over');}
 function wltDragEnd(e){document.querySelectorAll('.wlt-card').forEach(el=>{el.classList.remove('dragging','drag-over');});}
 function wltDrop(e){e.preventDefault();const targetId=e.currentTarget.dataset.wid;if(!wltDragSrcId||wltDragSrcId===targetId)return;const si=S.wallets.findIndex(w=>w.id===wltDragSrcId);const ti=S.wallets.findIndex(w=>w.id===targetId);if(si<0||ti<0)return;const[moved]=S.wallets.splice(si,1);S.wallets.splice(ti,0,moved);save();renderMain();}
 
+// ============ THEME ============
+const THEMES={
+  dark:{label:'Default Dark',bg:'#07090f',accent:'#0ce97f'},
+  midnight:{label:'Midnight Blue',bg:'#05080f',accent:'#4d9fff'},
+  forest:{label:'Forest Dark',bg:'#060e08',accent:'#0ce97f'},
+  slate:{label:'Slate',bg:'#0a0a0e',accent:'#9d6fff'},
+  warm:{label:'Warm Dark',bg:'#0f0a07',accent:'#ffb020'},
+};
+function applyTheme(t){
+  const b=document.body;
+  Object.keys(THEMES).forEach(k=>b.classList.remove('theme-'+k));
+  if(t&&t!=='dark')b.classList.add('theme-'+t);
+  localStorage.setItem('ntx_theme',t||'dark');
+  // Update meta theme-color
+  const mc=document.querySelector('meta[name="theme-color"]');
+  if(mc)mc.content=THEMES[t]?THEMES[t].bg:'#07090f';
+  // Re-render theme picker if modal is open
+  const tp=document.getElementById('theme-picker');
+  if(tp){
+    const labels={dark:'Default Dark',midnight:'Midnight Blue',forest:'Forest Dark',slate:'Slate',warm:'Warm Dark'};
+    const previews={dark:'#07090f',midnight:'#05080f',forest:'#060e08',slate:'#0a0a0e',warm:'#0f0a07'};
+    const accents={dark:'#0ce97f',midnight:'#4d9fff',forest:'#0ce97f',slate:'#9d6fff',warm:'#ffb020'};
+    tp.innerHTML=Object.keys(THEMES).map(k=>{
+      const isActive=(t===k);
+      return `<button onclick="applyTheme('${k}')" style="padding:9px 6px;border-radius:10px;border:1.5px solid ${isActive?accents[k]:'var(--border)'};background:${isActive?'rgba(255,255,255,0.06)':'var(--bg)'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s;font-family:'Outfit',sans-serif;"><span style="width:22px;height:22px;border-radius:7px;background:${previews[k]};border:1px solid rgba(255,255,255,.12);display:inline-block;box-shadow:inset 0 0 0 5px ${accents[k]}22;"></span><span style="font-size:9px;font-weight:700;color:${isActive?accents[k]:'var(--text3)'};text-align:center;line-height:1.2;">${labels[k]}</span></button>`;
+    }).join('');
+  }
+}
+function loadSavedTheme(){const t=localStorage.getItem('ntx_theme')||'dark';applyTheme(t);}
+
 // ============ INIT ============
 load();
+loadSavedTheme();
 go('dashboard');
 initAuth();
 </script>
