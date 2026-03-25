@@ -368,6 +368,16 @@ body.theme-light .loan-type-badge{border:1px solid rgba(0,0,0,0.06);}
 body.theme-light .hbtn svg{stroke:var(--text2);}
 body.theme-light .logo span{-webkit-text-fill-color:transparent;}
 body.theme-light .receipt-preview{box-shadow:0 2px 12px rgba(0,0,0,0.10);}
+
+/* Profile photo */
+.profile-avatar-wrap{position:relative;cursor:pointer;flex-shrink:0;}
+.profile-avatar-wrap:hover .avatar-overlay{opacity:1;}
+.avatar-overlay{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .2s;}
+.avatar-overlay svg{width:14px;height:14px;color:#fff;}
+#avatar-upload{display:none;}
+.hdr-avatar{width:32px;height:32px;border-radius:50%;background:var(--green-d);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--green);flex-shrink:0;overflow:hidden;border:2px solid rgba(255,255,255,0.12);transition:all .2s;}
+.hdr-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+body.theme-light .hdr-avatar{border-color:rgba(0,0,0,0.10);background:var(--blue-d);color:var(--blue);}
 </style>
 <script>
 (function(){var s=document.createElement('script');s.src='https://cdn.vercel-insights.com/v1/speed-insights/script.js';s.defer=true;document.head.appendChild(s);window.si=window.si||function(){(window.siq=window.siq||[]).push(arguments);};})();
@@ -398,9 +408,11 @@ body.theme-light .receipt-preview{box-shadow:0 2px 12px rgba(0,0,0,0.10);}
         <button class="hbtn" onclick="openMonthPicker()" id="month-btn">Mar 2026</button>
         <button class="hbtn" onclick="changeMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
       </div>
-      <button class="hbtn" onclick="openSyncModal()" title="Account &amp; Sync" style="padding:6px 8px;">
-        <div class="sync-dot" id="sync-dot" style="display:none;"></div>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="sync-svg" style="width:14px;height:14px;display:none;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <button class="hbtn" onclick="openSyncModal()" title="Account &amp; Sync" style="padding:3px;background:none;border:none;position:relative;">
+        <div class="sync-dot" id="sync-dot" style="display:none;position:absolute;top:0;right:0;z-index:2;"></div>
+        <div class="hdr-avatar" id="hdr-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </div>
       </button>
     </div>
   </header>
@@ -770,7 +782,7 @@ function fmtInt(n){return '৳'+Math.abs(Math.round(n||0)).toLocaleString('en-US
 function fmtSigned(n){const abs=Math.abs(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});return(n<0?'-':'')+'৳'+abs;}
 function fmtIntSigned(n){const abs=Math.abs(Math.round(n||0)).toLocaleString('en-US');return(n<0?'-':'')+'৳'+abs;}
 function fmtD(d){if(!d)return'';return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});}
-function fmtMY(ym){if(!ym)return'';const[y,m]=ym.split('-');return['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1]+' '+y;}
+function fmtMY(ym){if(!ym)return'';const[y,m]=ym.split('-');const mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1];return mn+" '"+y.slice(2);}
 function getCat(type,id){return(type==='expense'?getExpCats():getIncCats()).find(c=>c.id===id)||{label:id||'?',icon:'📋'};}
 function getWlt(id){return S.wallets.find(w=>w.id===id)||{name:'Unknown',color:'#4a5568'};}
 function totalBal(){return S.wallets.reduce((s,w)=>s+(w.balance||0),0);}
@@ -869,6 +881,7 @@ function renderMain(){
   else if(S.view==='loans')html=rLoans();
   el.innerHTML=`<div class="main-inner fade-up">${html}</div>`;
   if(!fbUser)setSyncDot('');
+  updateHeaderAvatar();
 }
 
 // ============ DASHBOARD ============
@@ -1225,9 +1238,12 @@ function openSyncModal(){
     const displayName=fbUser.displayName||email.split('@')[0]||'User';
     const initials=displayName.slice(0,2).toUpperCase();
     const lastSync=S.lastSync?new Date(S.lastSync).toLocaleString():'Never';
-    openModal(`<div class="modal-title">Account &amp; Sync</div>
+    const avatarHTML=_profilePhoto
+      ?`<div class="profile-avatar-wrap" onclick="document.getElementById('avatar-upload').click()" style="flex-shrink:0;"><img src="${_profilePhoto}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--border);display:block;"><div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`
+      :`<div class="profile-avatar-wrap auth-avatar" onclick="document.getElementById('avatar-upload').click()" style="width:48px;height:48px;">${initials}<div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`;
+    openModal(`<input type="file" id="avatar-upload" accept="image/*" onchange="handleProfilePhotoSelect(this)"><div class="modal-title">Account &amp; Sync</div>
     <div class="auth-user-card">
-      <div class="auth-avatar">${initials}</div>
+      ${avatarHTML}
       <div style="flex:1;min-width:0;">
         <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px;">${displayName}<svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;"><defs><radialGradient id="vbg" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#d0d0d0"/></radialGradient><filter id="vshadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0.5" stdDeviation="0.6" flood-color="rgba(0,0,0,0.35)"/></filter></defs><circle cx="12" cy="12" r="11" fill="url(#vbg)" filter="url(#vshadow)"/><circle cx="12" cy="12" r="11" fill="none" stroke="#888" stroke-width="0.5"/><path d="M12 3.5 L13.8 8.2 L18.9 8.2 L14.8 11.1 L16.4 15.8 L12 13.0 L7.6 15.8 L9.2 11.1 L5.1 8.2 L10.2 8.2 Z" fill="none" stroke="#bbb" stroke-width="0.4" opacity="0.3"/><polyline points="7.5,12.2 10.8,15.5 16.5,9.0" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <div style="font-size:11px;color:var(--text3);margin-top:3px;">${email}</div>
@@ -1238,6 +1254,10 @@ function openSyncModal(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
       <button class="btn btn-p" onclick="doManualSync()" style="margin:0;padding:11px;font-size:13px;">Sync Now</button>
       <button class="btn btn-s" onclick="doSignOut()" style="margin:0;padding:11px;font-size:13px;color:var(--red);">Sign Out</button>
+    </div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--text2);display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <span style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--blue);" onclick="document.getElementById('avatar-upload').click()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>${_profilePhoto?'Change Photo':'Set Profile Photo'}</span>
+      ${_profilePhoto?`<button onclick="removeProfilePhoto()" style="background:none;border:none;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">Remove</button>`:''}
     </div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;">
       Your data syncs automatically across all devices.<br>
@@ -1327,7 +1347,7 @@ function openAddTx(){txType='expense';openModal(txModalHTML());}
 function txCatOpts(type){const cats=type==='expense'?getExpCats():getIncCats();return'<option value="">Select a category</option>'+cats.map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('');}
 function txModalHTML(){
   const wOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
-  let body=txType!=='transfer'?`<div class="fg"><label class="fl">Wallet</label><select class="fi" id="tx-w">${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="tx-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label><select class="fi" id="tx-cat">${txCatOpts(txType)}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?"></div>`:`<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${wOpts}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="tx-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason"></div>`;
+  let body=txType!=='transfer'?`<div class="fg"><label class="fl">Wallet</label><select class="fi" id="tx-w">${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="tx-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label><select class="fi" id="tx-cat">${txCatOpts(txType)}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?"></div><div class="fg"><label class="fl">Photo (optional)</label><div id="tx-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="tx-photo-img" style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--border);" /><button onclick="clearTxPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="tx-photo-input" accept="image/*" style="display:none;" onchange="handleTxPhoto(this)"><button type="button" onclick="document.getElementById('tx-photo-input').click()" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;width:100%;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Attach Photo</button></div>`:`<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${wOpts}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="tx-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason"></div>`;
   return`<div class="modal-title">Add Transaction</div><div class="tab-grp"><button class="tab-btn te ${txType==='expense'?'active':''}" onclick="swTxT('expense')">Expense</button><button class="tab-btn ti ${txType==='income'?'active':''}" onclick="swTxT('income')">Cash In</button><button class="tab-btn tt ${txType==='transfer'?'active':''}" onclick="swTxT('transfer')">Transfer</button></div>${body}<button class="btn btn-p" onclick="submitTx()">Save Transaction</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`;
 }
 function swTxT(t){txType=t;document.getElementById('mc').innerHTML=txModalHTML();}
@@ -1337,7 +1357,7 @@ function submitTx(){
   if(!amt||amt<=0)return alert('Enter a valid amount.');
   if(txType!=='transfer'&&!catVal)return alert('Select a category.');
   if(!w)return alert('Select a wallet.');if(!dt)return alert('Select a date.');
-  const tx={id:uid(),type:txType,category:catVal,amount:amt,wallet:w,date:dt,note,at:new Date().toISOString()};
+  const tx={id:uid(),type:txType,category:catVal,amount:amt,wallet:w,date:dt,note,photo:_txPhoto||'',at:new Date().toISOString()};_txPhoto='';
   if(txType==='transfer'){const twEl=document.getElementById('tx-tw');tx.toWallet=twEl?twEl.value:'';if(tx.wallet===tx.toWallet)return alert('Cannot transfer to same wallet.');const fw=S.wallets.find(x=>x.id===tx.wallet);const tw=S.wallets.find(x=>x.id===tx.toWallet);if(fw)fw.balance-=amt;if(tw)tw.balance+=amt;}
   else if(txType==='expense'){const fw=S.wallets.find(x=>x.id===tx.wallet);if(fw)fw.balance-=amt;}
   else{const tw=S.wallets.find(x=>x.id===tx.wallet);if(tw)tw.balance+=amt;}
@@ -1350,7 +1370,8 @@ function showTxD(id){
   else if(t.type==='income'){const c=getCat('income',t.category);icon=catIco(t.category,32);label=c.label;ac='var(--green)';pfx='+';}
   else{icon=ico('wallet_type',32);label='Transfer';ac='var(--blue)';pfx='';}
   const w=getWlt(t.wallet);
-  openModal(`<div class="modal-title">Transaction Detail</div><div style="text-align:center;padding:16px 0 20px;"><div style="display:flex;justify-content:center;margin-bottom:8px;opacity:.7;">${icon}</div><div style="font-size:13px;color:var(--text2);margin-bottom:6px;">${label}</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:${ac};">${pfx}${fmt(t.amount)}</div></div><div class="card" style="margin-bottom:18px;"><div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">Date</span><span style="font-weight:700;margin-left:auto;">${fmtD(t.date)}</span></div><div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">Type</span><span style="font-weight:700;margin-left:auto;text-transform:capitalize;">${t.type}</span></div><div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">Wallet</span><span style="font-weight:700;margin-left:auto;">${w.name}</span></div>${t.type==='transfer'?`<div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">To Wallet</span><span style="font-weight:700;margin-left:auto;">${getWlt(t.toWallet).name}</span></div>`:''}<div class="tx-item" style="cursor:default;border-bottom:none;"><span style="color:var(--text3);">Note</span><span style="font-weight:700;margin-left:auto;">${t.note||'-'}</span></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><button class="btn btn-s" onclick="openEditTx('${t.id}')" style="margin:0;display:flex;align-items:center;justify-content:center;gap:7px;">${EDIT_SVG} Edit</button><button class="btn btn-d" onclick="delTx('${t.id}')" style="margin:0;display:flex;align-items:center;justify-content:center;gap:7px;">${TRASH_SVG} Delete</button></div><button class="btn btn-s" onclick="closeModal()" style="font-size:16px;font-weight:800;padding:15px;">Close</button>`);
+  const txPhotoHTML=t.photo?`<div style="margin-bottom:14px;"><img src="${t.photo}" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;border:1px solid var(--border);"></div>`:'';
+  openModal(`<div class="modal-title">Transaction Detail</div>${txPhotoHTML}<div style="text-align:center;padding:16px 0 20px;"><div style="display:flex;justify-content:center;margin-bottom:8px;opacity:.7;">${icon}</div><div style="font-size:13px;color:var(--text2);margin-bottom:6px;">${label}</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:${ac};">${pfx}${fmt(t.amount)}</div></div><div class="card" style="margin-bottom:18px;"><div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">Date</span><span style="font-weight:700;margin-left:auto;">${fmtD(t.date)}</span></div><div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">Type</span><span style="font-weight:700;margin-left:auto;text-transform:capitalize;">${t.type}</span></div><div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">Wallet</span><span style="font-weight:700;margin-left:auto;">${w.name}</span></div>${t.type==='transfer'?`<div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">To Wallet</span><span style="font-weight:700;margin-left:auto;">${getWlt(t.toWallet).name}</span></div>`:''}<div class="tx-item" style="cursor:default;border-bottom:none;"><span style="color:var(--text3);">Note</span><span style="font-weight:700;margin-left:auto;">${t.note||'-'}</span></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><button class="btn btn-s" onclick="openEditTx('${t.id}')" style="margin:0;display:flex;align-items:center;justify-content:center;gap:7px;">${EDIT_SVG} Edit</button><button class="btn btn-d" onclick="delTx('${t.id}')" style="margin:0;display:flex;align-items:center;justify-content:center;gap:7px;">${TRASH_SVG} Delete</button></div><button class="btn btn-s" onclick="closeModal()" style="font-size:16px;font-weight:800;padding:15px;">Close</button>`);
 }
 function delTx(id){
   const t=S.transactions.find(x=>x.id===id);if(!t)return;if(!confirm('Delete this transaction? Wallet balance will be reversed.'))return;
@@ -1461,7 +1482,7 @@ function openAddLoan(){
   const cBtnStyle=contactsAPI?'background:var(--blue-d);border:1px solid rgba(77,159,255,.3);color:var(--blue);cursor:pointer;':'background:var(--bg3);border:1px solid var(--border);color:var(--text3);cursor:not-allowed;opacity:.5;';
   const cBtnClick=contactsAPI?'pickFromContacts()':"alert('Contacts API not available on this browser. Please type the name manually.')";
   const contactBtn=`<button type="button" onclick="${cBtnClick}" style="display:inline-flex;align-items:center;gap:5px;padding:8px 12px;border-radius:10px;${cBtnStyle}font-size:12px;font-weight:700;font-family:'Outfit',sans-serif;white-space:nowrap;flex-shrink:0;transition:all .2s;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts</button>`;
-  openModal(`<div class="modal-title">New Loan / Deposit Entry</div><div class="fg"><label class="fl">Type</label><select class="fi" id="ln-tp" onchange="lnTypeChanged()"><option value="deposit">Taking a Deposit</option><option value="loan_recv">Loan Received</option><option value="loan_given">Loan Given</option></select></div><div id="ln-wallet-info" style="font-size:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--blue);">Taking a Deposit: money will be added to wallet</div><div class="fg"><label class="fl">Person / Organization</label><div style="display:flex;gap:8px;align-items:center;"><input type="text" class="fi" id="ln-pr" placeholder="Type name or pick from Contacts" style="flex:1;min-width:0;">${contactBtn}</div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="ln-amt" placeholder="0.00" min="0"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="ln-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="ln-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Due Date (optional)</label><input type="date" class="fi" id="ln-dd"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="ln-nt" placeholder="Additional details"></div><button class="btn btn-p" onclick="submitLoan()">Add Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+  openModal(`<div class="modal-title">New Loan / Deposit Entry</div><div class="fg"><label class="fl">Type</label><select class="fi" id="ln-tp" onchange="lnTypeChanged()"><option value="deposit">Taking a Deposit</option><option value="loan_recv">Loan Received</option><option value="loan_given">Loan Given</option></select></div><div id="ln-wallet-info" style="font-size:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--blue);">Taking a Deposit: money will be added to wallet</div><div class="fg"><label class="fl">Person / Organization</label><div style="display:flex;gap:8px;align-items:center;"><input type="text" class="fi" id="ln-pr" placeholder="Type name or pick from Contacts" style="flex:1;min-width:0;">${contactBtn}</div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="ln-amt" placeholder="0.00" min="0"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="ln-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="ln-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Due Date (optional)</label><input type="date" class="fi" id="ln-dd"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="ln-nt" placeholder="Additional details"></div><div class="fg"><label class="fl">Photo (optional)</label><div id="ln-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="ln-photo-img" style="width:100%;max-height:140px;object-fit:cover;border-radius:10px;border:1px solid var(--border);" /><button onclick="document.getElementById('ln-photo-preview').style.display='none';document.getElementById('ln-photo-input').value='';" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="ln-photo-input" accept="image/*" style="display:none;" onchange="handleLnPhoto(this)"><button type="button" onclick="document.getElementById('ln-photo-input').click()" style="display:flex;align-items:center;gap:7px;padding:9px 14px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;width:100%;justify-content:center;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Attach Photo</button></div><button class="btn btn-p" onclick="submitLoan()">Add Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 function openAddSubEntry(loanId){
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const cfg=LOAN_TYPES[loan.type];
@@ -1559,7 +1580,7 @@ function applyTheme(t){
   // Re-render theme picker if modal is open
   const tp=document.getElementById('theme-picker');
   if(tp){
-    const labels={dark:'Default Dark',midnight:'Midnight Blue',forest:'Forest Dark',slate:'Slate',warm:'Warm Dark'};
+    const labels={dark:'Default Dark',midnight:'Midnight Blue',forest:'Forest Dark',slate:'Slate',warm:'Warm Dark',light:'Light'};
     const previews={dark:'#07090f',midnight:'#05080f',forest:'#060e08',slate:'#0a0a0e',warm:'#0f0a07',light:'#f0f2f7'};
     const accents={dark:'#0ce97f',midnight:'#4d9fff',forest:'#0ce97f',slate:'#9d6fff',warm:'#ffb020',light:'#2a7de1'};
     tp.innerHTML=Object.keys(THEMES).map(k=>{
@@ -1570,11 +1591,95 @@ function applyTheme(t){
 }
 function loadSavedTheme(){const t=localStorage.getItem('ntx_theme')||'dark';applyTheme(t);}
 
+
+// ============ PROFILE PHOTO ============
+let _profilePhoto = localStorage.getItem('ntx_profile_photo') || '';
+
+function getProfilePhotoHTML(size=42, initialsText='', fontSize=18){
+  if(_profilePhoto){
+    return `<img src="${_profilePhoto}" style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;display:block;">`;
+  }
+  return `<span style="font-size:${fontSize}px;font-weight:700;">${initialsText}</span>`;
+}
+
+function updateHeaderAvatar(){
+  const el=document.getElementById('hdr-avatar');
+  if(!el)return;
+  if(_profilePhoto){
+    el.innerHTML=`<img src="${_profilePhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+    el.style.background='none';
+    el.style.border='2px solid rgba(255,255,255,0.18)';
+  } else if(fbUser){
+    const displayName=fbUser.displayName||fbUser.email.split('@')[0]||'U';
+    const initials=displayName.slice(0,2).toUpperCase();
+    el.innerHTML=`<span style="font-size:12px;font-weight:700;">${initials}</span>`;
+    el.style.background='';el.style.border='';
+  } else {
+    el.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+    el.style.background='';el.style.border='';
+  }
+}
+
+function handleProfilePhotoSelect(input){
+  const file=input.files[0];
+  if(!file)return;
+  if(file.size>2*1024*1024){alert('Photo must be under 2MB.');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _profilePhoto=e.target.result;
+    localStorage.setItem('ntx_profile_photo',_profilePhoto);
+    updateHeaderAvatar();
+    openSyncModal(); // re-render modal with new photo
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeProfilePhoto(){
+  _profilePhoto='';
+  localStorage.removeItem('ntx_profile_photo');
+  updateHeaderAvatar();
+  openSyncModal();
+}
+
+// ============ TX / LOAN PHOTO ============
+let _txPhoto='';
+function handleTxPhoto(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>3*1024*1024){alert('Photo must be under 3MB.');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _txPhoto=e.target.result;
+    const prev=document.getElementById('tx-photo-preview');
+    const img=document.getElementById('tx-photo-img');
+    if(prev&&img){img.src=_txPhoto;prev.style.display='block';}
+    const btn=input.nextElementSibling;if(btn)btn.style.display='none';
+  };
+  reader.readAsDataURL(file);
+}
+function clearTxPhoto(){
+  _txPhoto='';
+  const prev=document.getElementById('tx-photo-preview');
+  const inp=document.getElementById('tx-photo-input');
+  if(prev)prev.style.display='none';
+  if(inp)inp.value='';
+}
+function handleLnPhoto(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>3*1024*1024){alert('Photo must be under 3MB.');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const prev=document.getElementById('ln-photo-preview');
+    const img=document.getElementById('ln-photo-img');
+    if(prev&&img){img.src=e.target.result;prev.style.display='block';}
+  };
+  reader.readAsDataURL(file);
+}
 // ============ INIT ============
 load();
 loadSavedTheme();
 go('dashboard');
 initAuth();
+updateHeaderAvatar();
 </script>
 </body>
 </html>
