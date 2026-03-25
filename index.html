@@ -1103,6 +1103,7 @@ function rLoans(){
 
   function hCard(l){
     const sc=sC[l.type];
+    const cfg=LOAN_TYPES[l.type];
     const statusLabel=getLoanStatusLabel(l);
     const total=loanTotal(l);
     const lIcCol=l.type==='deposit'?'#4d9fff':l.type==='loan_recv'?'#ffb020':'#9d6fff';
@@ -1517,8 +1518,7 @@ function submitLoanPayment(loanId){
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const amt=parseFloat(document.getElementById('lp-amt').value);const w=document.getElementById('lp-w').value;const dt=document.getElementById('lp-dt').value;const nt=document.getElementById('lp-nt').value.trim();const remain=loanRemain(loan);
   if(!amt||amt<=0)return alert('Enter a valid amount.');
   // Allow up to 5% overpayment or ৳100 rounding tolerance, whichever is smaller
-  const maxAllowed=remain<=0?(amt):(remain+Math.min(remain*0.05,100));
-  if(remain>0&&amt>maxAllowed+0.01)return alert(`Amount too large. You can pay up to ${fmt(maxAllowed)} (allows small rounding).`);
+  if(remain>0){const maxAllowed=remain+Math.min(remain*0.05,100);if(amt>maxAllowed+0.01)return alert(`Amount too large. You can pay up to ${fmt(maxAllowed)} (allows small rounding).`);}
   if(!dt)return alert('Select a date.');
   if(w){const cfg=LOAN_TYPES[loan.type];const wObj=S.wallets.find(x=>x.id===w);if(wObj){if(cfg.childDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}}
   loan.payments.push({id:uid(),amount:amt,wallet:w||'',date:dt,note:nt});save();closeModal();renderMain();
