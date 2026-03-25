@@ -1511,12 +1511,33 @@ function submitLoan(){
 function openAddLoanPayment(loanId){
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const cfg=LOAN_TYPES[loan.type];const remain=loanRemain(loan);
   const wOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
-  openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Person: <b style="color:var(--text);">${loan.person}</b></div><div style="font-size:12px;color:var(--text3);margin-top:4px;">Remaining: <b style="color:var(--red);">${fmt(remain)}</b></div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="${remain.toFixed(2)}" min="0" max="${remain}" value="${remain.toFixed(2)}"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="lp-w"><option value="">-- No wallet --</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="lp-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div><button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+  const isSettled=remain<=0;
+  const remainLabel=isSettled
+    ?`<b style="color:var(--green);">Fully Settled</b>`
+    :`<b style="color:var(--red);">${fmt(remain)}</b>`;
+  const defaultAmt=isSettled?'':remain.toFixed(2);
+  const overHint=`<div style="font-size:11px;color:var(--text3);margin-top:8px;background:var(--amber-d);border:1px solid rgba(255,176,32,.2);border-radius:8px;padding:7px 10px;">You can record an amount <b style="color:var(--amber);">higher than the remaining</b> — e.g. rounding up to the nearest note. The difference will be shown as overpayment.</div>`;
+  const settledHint=isSettled?`<div style="font-size:11px;color:var(--amber);margin-top:6px;background:var(--amber-d);border:1px solid rgba(255,176,32,.2);border-radius:8px;padding:7px 10px;">This loan is already settled. You can still add a new payment (e.g. overpayment or correction).</div>`:'';
+  openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Person: <b style="color:var(--text);">${loan.person}</b></div><div style="font-size:12px;color:var(--text3);margin-top:4px;">Remaining: ${remainLabel}</div></div>${settledHint}<div class="fg" style="margin-top:${isSettled||remain>0?'14':'0'}px;"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="0.00" min="0" value="${defaultAmt}"></div>${!isSettled?overHint:''}</div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="lp-w"><option value="">-- No wallet --</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="lp-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div><button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 function submitLoanPayment(loanId){
   if(window._submitting)return; window._submitting=true; setTimeout(()=>window._submitting=false,2000);
-  const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const amt=parseFloat(document.getElementById('lp-amt').value);const w=document.getElementById('lp-w').value;const dt=document.getElementById('lp-dt').value;const nt=document.getElementById('lp-nt').value.trim();const remain=loanRemain(loan);
-  if(!amt||amt<=0)return alert('Enter a valid amount.');if(amt>remain+0.01)return alert(`Cannot exceed remaining ${fmt(remain)}.`);if(!dt)return alert('Select a date.');
+  const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;
+  const amt=parseFloat(document.getElementById('lp-amt').value);
+  const w=document.getElementById('lp-w').value;
+  const dt=document.getElementById('lp-dt').value;
+  const nt=document.getElementById('lp-nt').value.trim();
+  const remain=loanRemain(loan);
+  if(!amt||amt<=0)return alert('Enter a valid amount.');
+  if(!dt)return alert('Select a date.');
+  // Allow overpayment — warn if significantly over (>10% above remaining) but don't block
+  if(remain>0 && amt>remain+0.01){
+    const over=amt-remain;
+    const ok=confirm(`Payment (${fmt(amt)}) exceeds remaining (${fmt(remain)}) by ${fmt(over)}.
+
+This will be recorded as an overpayment. Continue?`);
+    if(!ok){window._submitting=false;return;}
+  }
   if(w){const cfg=LOAN_TYPES[loan.type];const wObj=S.wallets.find(x=>x.id===w);if(wObj){if(cfg.childDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}}
   loan.payments.push({id:uid(),amount:amt,wallet:w||'',date:dt,note:nt});save();closeModal();renderMain();
 }
@@ -1525,7 +1546,7 @@ function delLoanPayment(loanId,idx){
   if(p.wallet){const cfg=LOAN_TYPES[loan.type];const wObj=S.wallets.find(x=>x.id===p.wallet);if(wObj){if(cfg.childDir==='in')wObj.balance-=p.amount;else wObj.balance+=p.amount;}}
   loan.payments.splice(idx,1);save();renderMain();
 }
-function settleFullLoan(loanId){const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;if(loanRemain(loan)<=0)return;openAddLoanPayment(loanId);}
+function settleFullLoan(loanId){const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;openAddLoanPayment(loanId);}
 function delLoan(id){if(!confirm('Delete this loan record?'))return;S.loans=S.loans.filter(x=>x.id!==id);save();renderMain();}
 
 // ============ EXPORT ============
