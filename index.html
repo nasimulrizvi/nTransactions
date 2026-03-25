@@ -1256,10 +1256,11 @@ function openSyncModal(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
       <button class="btn btn-p" onclick="doManualSync()" style="margin:0;padding:11px;font-size:13px;">Sync Now</button>
       <button class="btn btn-s" onclick="doSignOut()" style="margin:0;padding:11px;font-size:13px;color:var(--red);">Sign Out</button>
-    </div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;">
-      Your data syncs automatically across all devices.
-    </div>
+    <div style="display: flex; justify-content: center;">
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;">
+    Your data syncs automatically across all devices.
+  </div>
+</div>
     <div style="margin-top:14px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px 14px;">
       <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:10px;">Choose Theme</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;" id="theme-picker"></div>
