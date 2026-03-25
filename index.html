@@ -454,7 +454,7 @@ body.theme-light .hdr-avatar{border-color:rgba(0,0,0,0.10);background:var(--blue
     </div>
     <div class="sidebar-footer">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-      <span>Build & Design by Nasimul</span>
+      <span>nTransactions v2.1</span>
     </div>
   </nav>
 </div>
@@ -1118,6 +1118,7 @@ function rLoans(){
         <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--green);">${fmt(total)}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:2px;">${settledDate}</div>
         <div style="display:flex;gap:6px;margin-top:7px;justify-content:flex-end;">
+          <button class="sm-btn-g" onclick="openAddLoanPayment('${l.id}')" style="font-size:10px;padding:4px 9px;">+ ${cfg.childLabel}</button>
           <button class="sm-btn" onclick="showLoanReceipt('${l.id}')" style="background:rgba(77,159,255,.08);border-color:rgba(77,159,255,.25);color:var(--blue);display:flex;align-items:center;gap:4px;">${RECEIPT_SVG} Receipt</button>
           <button class="del-btn" onclick="delLoan('${l.id}')">${TRASH_SVG}</button>
         </div>
@@ -1254,10 +1255,6 @@ function openSyncModal(){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
       <button class="btn btn-p" onclick="doManualSync()" style="margin:0;padding:11px;font-size:13px;">Sync Now</button>
       <button class="btn btn-s" onclick="doSignOut()" style="margin:0;padding:11px;font-size:13px;color:var(--red);">Sign Out</button>
-    </div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--text2);display:flex;align-items:center;justify-content:space-between;gap:10px;">
-      <span style="cursor:pointer;display:flex;align-items:center;gap:6px;color:var(--blue);" onclick="document.getElementById('avatar-upload').click()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>${_profilePhoto?'Change Photo':'Set Profile Photo'}</span>
-      ${_profilePhoto?`<button onclick="removeProfilePhoto()" style="background:none;border:none;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;">Remove</button>`:''}
     </div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;">
       Your data syncs automatically across all devices.<br>
@@ -1511,33 +1508,19 @@ function submitLoan(){
 function openAddLoanPayment(loanId){
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const cfg=LOAN_TYPES[loan.type];const remain=loanRemain(loan);
   const wOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
-  const isSettled=remain<=0;
-  const remainLabel=isSettled
-    ?`<b style="color:var(--green);">Fully Settled</b>`
-    :`<b style="color:var(--red);">${fmt(remain)}</b>`;
-  const defaultAmt=isSettled?'':remain.toFixed(2);
-  const overHint=`<div style="font-size:11px;color:var(--text3);margin-top:8px;background:var(--amber-d);border:1px solid rgba(255,176,32,.2);border-radius:8px;padding:7px 10px;">You can record an amount <b style="color:var(--amber);">higher than the remaining</b> — e.g. rounding up to the nearest note. The difference will be shown as overpayment.</div>`;
-  const settledHint=isSettled?`<div style="font-size:11px;color:var(--amber);margin-top:6px;background:var(--amber-d);border:1px solid rgba(255,176,32,.2);border-radius:8px;padding:7px 10px;">This loan is already settled. You can still add a new payment (e.g. overpayment or correction).</div>`:'';
-  openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Person: <b style="color:var(--text);">${loan.person}</b></div><div style="font-size:12px;color:var(--text3);margin-top:4px;">Remaining: ${remainLabel}</div></div>${settledHint}<div class="fg" style="margin-top:${isSettled||remain>0?'14':'0'}px;"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="0.00" min="0" value="${defaultAmt}"></div>${!isSettled?overHint:''}</div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="lp-w"><option value="">-- No wallet --</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="lp-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div><button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+  const remColor=remain<=0?'var(--green)':'var(--red)';
+  const remLabel=remain<=0?'Fully Settled':'Remaining';
+  const defaultAmt=remain>0?remain.toFixed(2):'';
+  openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Person: <b style="color:var(--text);">${loan.person}</b></div><div style="font-size:12px;color:var(--text3);margin-top:4px;">${remLabel}: <b style="color:${remColor};">${fmt(remain)}</b></div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="0.00" min="0" step="0.01" value="${defaultAmt}"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="lp-w"><option value="">-- No wallet --</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="lp-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div><button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 function submitLoanPayment(loanId){
   if(window._submitting)return; window._submitting=true; setTimeout(()=>window._submitting=false,2000);
-  const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;
-  const amt=parseFloat(document.getElementById('lp-amt').value);
-  const w=document.getElementById('lp-w').value;
-  const dt=document.getElementById('lp-dt').value;
-  const nt=document.getElementById('lp-nt').value.trim();
-  const remain=loanRemain(loan);
+  const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const amt=parseFloat(document.getElementById('lp-amt').value);const w=document.getElementById('lp-w').value;const dt=document.getElementById('lp-dt').value;const nt=document.getElementById('lp-nt').value.trim();const remain=loanRemain(loan);
   if(!amt||amt<=0)return alert('Enter a valid amount.');
+  // Allow up to 5% overpayment or ৳100 rounding tolerance, whichever is smaller
+  const maxAllowed=remain<=0?(amt):(remain+Math.min(remain*0.05,100));
+  if(remain>0&&amt>maxAllowed+0.01)return alert(`Amount too large. You can pay up to ${fmt(maxAllowed)} (allows small rounding).`);
   if(!dt)return alert('Select a date.');
-  // Allow overpayment — warn if significantly over (>10% above remaining) but don't block
-  if(remain>0 && amt>remain+0.01){
-    const over=amt-remain;
-    const ok=confirm(`Payment (${fmt(amt)}) exceeds remaining (${fmt(remain)}) by ${fmt(over)}.
-
-This will be recorded as an overpayment. Continue?`);
-    if(!ok){window._submitting=false;return;}
-  }
   if(w){const cfg=LOAN_TYPES[loan.type];const wObj=S.wallets.find(x=>x.id===w);if(wObj){if(cfg.childDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}}
   loan.payments.push({id:uid(),amount:amt,wallet:w||'',date:dt,note:nt});save();closeModal();renderMain();
 }
