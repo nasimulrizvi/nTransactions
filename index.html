@@ -495,7 +495,7 @@ if(_bc) _bc.onmessage = (e) => {
     S.transactions=d.transactions||S.transactions;
     S.wallets=d.wallets||S.wallets;
     S.budgets=d.budgets||S.budgets;
-    S.loans=d.loans||S.loans;
+    S.loans=normalizeLoans(d.loans||S.loans);
     S.customExpCats=d.customExpCats||S.customExpCats||[];
     S.customIncCats=d.customIncCats||S.customIncCats||[];
     S.expCatOrder=d.expCatOrder||S.expCatOrder||[];
@@ -683,6 +683,7 @@ function load(){
     if(!S.customExpCats)S.customExpCats=[];
     if(!S.customIncCats)S.customIncCats=[];
     if(!S.loans)S.loans=[];
+    S.loans=normalizeLoans(S.loans);
     if(!S.expCatOrder)S.expCatOrder=[];
     if(!S.incCatOrder)S.incCatOrder=[];
     if(!S.hiddenExpCats)S.hiddenExpCats=[];
@@ -692,6 +693,12 @@ function load(){
 function saveLocal(){
   try{localStorage.setItem('ntx4',JSON.stringify({transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,customExpCats:S.customExpCats,customIncCats:S.customIncCats,expCatOrder:S.expCatOrder,incCatOrder:S.incCatOrder,hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],month:S.month,lastSync:S.lastSync}));}catch(e){}
 }
+function normalizeLoan(l){
+  if(!l.payments)l.payments=[];
+  if(!l.extraEntries)l.extraEntries=[];
+  return l;
+}
+function normalizeLoans(arr){return(arr||[]).map(normalizeLoan);}
 function save(){saveLocal();scheduleSync();}
 function scheduleSync(){if(!fbUser)return;clearTimeout(syncTimeout);syncTimeout=setTimeout(pushSync,600);}
 async function pushSync(){
@@ -729,7 +736,7 @@ function startRealtimeSync(){
     S.transactions=d.transactions||S.transactions;
     S.wallets=d.wallets||S.wallets;
     S.budgets=d.budgets||S.budgets;
-    S.loans=d.loans||S.loans;
+    S.loans=normalizeLoans(d.loans||S.loans);
     S.customExpCats=d.customExpCats||S.customExpCats||[];
     S.customIncCats=d.customIncCats||S.customIncCats||[];
     S.expCatOrder=d.expCatOrder||S.expCatOrder||[];
@@ -752,7 +759,7 @@ async function pullSync(){
         S.transactions=d.transactions||S.transactions;
         S.wallets=d.wallets||S.wallets;
         S.budgets=d.budgets||S.budgets;
-        S.loans=d.loans||S.loans;
+        S.loans=normalizeLoans(d.loans||S.loans);
         S.customExpCats=d.customExpCats||S.customExpCats||[];
         S.customIncCats=d.customIncCats||S.customIncCats||[];
         S.expCatOrder=d.expCatOrder||S.expCatOrder||[];
@@ -1088,7 +1095,7 @@ function rLoans(){
     <div class="loan-actions">
       <button class="sm-btn-g" onclick="openAddLoanPayment('${l.id}')">+ ${cfg.childLabel}</button>
       <button class="sm-btn-b" onclick="openAddSubEntry('${l.id}')">+ Add More</button>
-      <button class="sm-btn" onclick="showLoanReceipt('${l.id}')" style="display:flex;align-items:center;gap:5px;background:rgba(77,159,255,.08);border-color:rgba(77,159,255,.25);color:var(--blue);">${RECEIPT_SVG} Receipt</button>
+      <button class="sm-btn" onclick="showLoanReceipt('${l.id}')" style="display:flex;align-items:center;gap:5px;background:var(--amber-d);border-color:rgba(255,176,32,.35);color:var(--amber);">${RECEIPT_SVG} Receipt</button>
       <button class="del-btn" style="margin-left:auto;" onclick="delLoan('${l.id}')">${TRASH_SVG}</button>
     </div></div>`;
   }
@@ -1118,7 +1125,7 @@ function rLoans(){
         </div>
         <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;">
           ${showPayBtn?`<button class="sm-btn-g" onclick="openAddLoanPayment('${l.id}')" style="font-size:10px;padding:4px 9px;">+ ${cfg.childLabel}</button>`:''}
-          <button class="sm-btn" onclick="showLoanReceipt('${l.id}')" style="background:rgba(77,159,255,.08);border-color:rgba(77,159,255,.25);color:var(--blue);display:flex;align-items:center;gap:4px;">${RECEIPT_SVG} Receipt</button>
+          <button class="sm-btn" onclick="showLoanReceipt('${l.id}')" style="background:var(--amber-d);border-color:rgba(255,176,32,.35);color:var(--amber);display:flex;align-items:center;gap:4px;">${RECEIPT_SVG} Receipt</button>
           <button class="del-btn" onclick="delLoan('${l.id}')">${TRASH_SVG}</button>
         </div>
       </div>
@@ -1574,11 +1581,14 @@ function openAddLoanPayment(loanId){
   const remColor=remain<=0?'var(--green)':'var(--red)';
   const remLabel=remain<=0?'Fully Settled':'Remaining';
   const defaultAmt=remain>0?remain.toFixed(2):'';
-  openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Person: <b style="color:var(--text);">${loan.person}</b></div><div style="font-size:12px;color:var(--text3);margin-top:4px;">${remLabel}: <b style="color:${remColor};">${fmt(remain)}</b></div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="0" min="0" step="0.01" value="${defaultAmt}"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="lp-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="lp-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div><button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+  openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">${loan.person}</div><div style="font-size:12px;color:var(--text3);">${remLabel}: <b style="color:${remColor};">${fmt(remain)}</b></div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="0" min="0" step="0.01" value="${defaultAmt}"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="lp-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="lp-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div><button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 function submitLoanPayment(loanId){
   if(window._submitting)return; window._submitting=true; setTimeout(()=>window._submitting=false,2000);
-  const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const amt=parseFloat(document.getElementById('lp-amt').value);const w=document.getElementById('lp-w').value;const dt=document.getElementById('lp-dt').value;const nt=document.getElementById('lp-nt').value.trim();const remain=loanRemain(loan);
+  const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;
+  if(!loan.payments)loan.payments=[];
+  if(!loan.extraEntries)loan.extraEntries=[];
+  const amt=parseFloat(document.getElementById('lp-amt').value);const w=document.getElementById('lp-w').value;const dt=document.getElementById('lp-dt').value;const nt=document.getElementById('lp-nt').value.trim();const remain=loanRemain(loan);
   if(!amt||amt<=0)return alert('Enter a valid amount.');
   // Allow up to 5% overpayment or ৳100 rounding tolerance, whichever is smaller
   if(remain>0){const maxAllowed=remain+Math.min(remain*0.05,100);if(amt>maxAllowed+0.01)return alert(`Amount too large. You can pay up to ${fmt(maxAllowed)} (allows small rounding).`);}
