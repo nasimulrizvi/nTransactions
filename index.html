@@ -1257,7 +1257,7 @@ function openSyncModal(){
       <button class="btn btn-p" onclick="doManualSync()" style="margin:0;padding:11px;font-size:13px;">Sync Now</button>
       <button class="btn btn-s" onclick="doSignOut()" style="margin:0;padding:11px;font-size:13px;color:var(--red);">Sign Out</button>
     </div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;">
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;text-align:center;">
       Your data syncs automatically across all devices.
     </div>
     <div style="margin-top:14px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px 14px;">
@@ -1506,6 +1506,7 @@ function submitLoan(){
   S.loans.push({id:uid(),type:tp,person:pr,amount:amt,wallet:w||'',date:dt,dueDate:dd,note:nt,payments:[],at:new Date().toISOString()});save();closeModal();renderMain();
 }
 function openAddLoanPayment(loanId){
+  window._submitting=false;
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const cfg=LOAN_TYPES[loan.type];const remain=loanRemain(loan);
   const wOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
   const remColor=remain<=0?'var(--green)':'var(--red)';
