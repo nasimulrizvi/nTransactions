@@ -141,7 +141,7 @@ body.theme-light .wlt-card.drag-over{border-color:rgba(42,125,225,.4);background
   body{overflow-x:hidden;}
   #app{max-width:none!important;margin-left:0!important;width:100%!important;}
   .main{padding-bottom:calc(var(--nav) + 20px)!important;}
-  .main-inner{width:100%;padding:0 32px;max-width:890px;margin:0 auto;}
+  .main-inner{width:100%;padding:0 32px;max-width:860px;margin:0 auto;}
   .section{padding:16px 0 0;}
   .header .logo{display:block!important;}
   .header{padding:10px 32px;}
@@ -149,9 +149,9 @@ body.theme-light .wlt-card.drag-over{border-color:rgba(42,125,225,.4);background
   .sb-backdrop{display:none!important;}
   .bottom-nav{
     position:fixed!important;
-    bottom:10px!important;left:50%!important;top:auto!important;
+    bottom:14px!important;left:50%!important;top:auto!important;
     transform:translateX(-50%)!important;
-    width:calc(100% - 35px)!important;max-width:600px!important;
+    width:calc(100% - 40px)!important;max-width:600px!important;
     height:var(--nav)!important;min-width:unset!important;
     border-top:none!important;border-right:none!important;
     background:rgba(8,10,18,0.72)!important;
@@ -216,7 +216,7 @@ body.theme-light .wlt-card.drag-over{border-color:rgba(42,125,225,.4);background
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
 .main{padding-bottom:calc(var(--nav) + 20px);}
 .bottom-nav{position:fixed!important;bottom:10px;left:50%;transform:translateX(-50%);width:calc(100% - 20px);max-width:500px;height:var(--nav);background:rgba(8,10,18,0.52);backdrop-filter:blur(40px) saturate(200%);-webkit-backdrop-filter:blur(40px) saturate(200%);border-radius:24px;border:1px solid rgba(255,255,255,0.13);z-index:100;padding-bottom:0;box-shadow:0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.10);}
-.bottom-nav-row{display:flex;align-items:center;justify-content:space-around;height:65px;}
+.bottom-nav-row{display:flex;align-items:center;justify-content:space-evenly;height:65px;}
 .nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 10px;border-radius:12px;cursor:pointer;transition:all .2s;flex:1;color:var(--text3);}
 .nav-item.active{color:var(--green);}
 .nav-item svg{width:22px;height:22px;}
@@ -444,7 +444,7 @@ body.theme-light .hdr-avatar{border-color:rgba(0,0,0,0.10);background:var(--blue
       </div>
       <div class="nav-item" id="nav-transactions" onclick="go('transactions')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-        <span class="nav-label">Transactions</span><div class="nav-pip"></div>
+        <span class="nav-label">Records</span><div class="nav-pip"></div>
       </div>
       <div class="nav-item" id="nav-wallets" onclick="go('wallets')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>
@@ -956,7 +956,7 @@ function rTxs(){
   if(txQ){const q=txQ.toLowerCase();txs=txs.filter(t=>{const c=t.type==='expense'?getCat('expense',t.category):getCat('income',t.category);return c.label.toLowerCase().includes(q)||(t.note&&t.note.toLowerCase().includes(q));});}
   const groups={};txs.forEach(t=>{const k=fmtD(t.date);if(!groups[k])groups[k]=[];groups[k].push(t);});
   return`<div class="section" style="padding-top:16px;">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;">Transactions</div><button class="sm-btn" onclick="openExportModal()" style="padding:6px 10px;display:flex;align-items:center;gap:5px;" title="Export to Excel">${EXPORT_SVG}<span style="font-size:11px;">Export</span></button></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;">Records</div></div>
     <div class="filter-bar" style="margin-bottom:10px;"><button class="fc ${txDuration==='all'?'active':''}" onclick="setTxDur('all')">Lifetime</button><button class="fc ${txDuration==='yearly'?'active':''}" onclick="setTxDur('yearly')">Year ${curYear()}</button><button class="fc ${txDuration==='monthly'?'active':''}" onclick="setTxDur('monthly')">${fmtMY(S.month)}</button></div>
     <div class="filter-bar"><button class="fc ${txF==='all'?'active':''}" onclick="setTxF('all')">All</button><button class="fc ${txF==='expense'?'active':''}" onclick="setTxF('expense')">Expense</button><button class="fc ${txF==='income'?'active':''}" onclick="setTxF('income')">Income</button><button class="fc ${txF==='transfer'?'active':''}" onclick="setTxF('transfer')">Transfer</button></div>
     <div class="srch-wrap"><span class="srch-ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span><input type="text" placeholder="Search by category or note..." value="${txQ}" oninput="doSearch(this.value)" id="txs-inp"></div>
@@ -1239,31 +1239,95 @@ function openSyncModal(){
     const initials=displayName.slice(0,2).toUpperCase();
     const lastSync=S.lastSync?new Date(S.lastSync).toLocaleString():'Never';
     const avatarHTML=_profilePhoto
-      ?`<div class="profile-avatar-wrap" onclick="document.getElementById('avatar-upload').click()" style="flex-shrink:0;"><img src="${_profilePhoto}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--border);display:block;"><div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`
-      :`<div class="profile-avatar-wrap auth-avatar" onclick="document.getElementById('avatar-upload').click()" style="width:48px;height:48px;">${initials}<div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`;
-    openModal(`<input type="file" id="avatar-upload" accept="image/*" onchange="handleProfilePhotoSelect(this)"><div class="modal-title">Account &amp; Sync</div>
-    <div class="auth-user-card">
+      ?`<div class="profile-avatar-wrap" onclick="document.getElementById('avatar-upload').click()" style="flex-shrink:0;"><img src="${_profilePhoto}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border);display:block;"><div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`
+      :`<div class="profile-avatar-wrap auth-avatar" onclick="document.getElementById('avatar-upload').click()" style="width:52px;height:52px;font-size:20px;">${initials}<div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`;
+    const remNotif=_remindersEnabled?'On':'Off';
+    const remColor=_remindersEnabled?'var(--green)':'var(--text3)';
+    openModal(`<input type="file" id="avatar-upload" accept="image/*" onchange="handleProfilePhotoSelect(this)">
+    <div class="modal-title" style="margin-bottom:14px;">Settings</div>
+
+    <!-- ACCOUNT CARD -->
+    <div class="auth-user-card" style="margin-bottom:12px;">
       ${avatarHTML}
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px;">${displayName}<svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;display:inline-block;vertical-align:middle;"><defs><radialGradient id="vbg" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#d0d0d0"/></radialGradient><filter id="vshadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0.5" stdDeviation="0.6" flood-color="rgba(0,0,0,0.35)"/></filter></defs><circle cx="12" cy="12" r="11" fill="url(#vbg)" filter="url(#vshadow)"/><circle cx="12" cy="12" r="11" fill="none" stroke="#888" stroke-width="0.5"/><path d="M12 3.5 L13.8 8.2 L18.9 8.2 L14.8 11.1 L16.4 15.8 L12 13.0 L7.6 15.8 L9.2 11.1 L5.1 8.2 L10.2 8.2 Z" fill="none" stroke="#bbb" stroke-width="0.4" opacity="0.3"/><polyline points="7.5,12.2 10.8,15.5 16.5,9.0" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div style="font-size:11px;color:var(--text3);margin-top:3px;">${email}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:1px;">Last synced: ${lastSync}</div>
+        <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px;">${displayName}<svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;"><defs><radialGradient id="vbg" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#d0d0d0"/></radialGradient><filter id="vshadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0.5" stdDeviation="0.6" flood-color="rgba(0,0,0,0.35)"/></filter></defs><circle cx="12" cy="12" r="11" fill="url(#vbg)" filter="url(#vshadow)"/><circle cx="12" cy="12" r="11" fill="none" stroke="#888" stroke-width="0.5"/><polyline points="7.5,12.2 10.8,15.5 16.5,9.0" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">${email}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px;display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;"></span>Last synced: ${lastSync}</div>
       </div>
-      <div class="sync-dot ok" style="margin-left:4px;"></div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;">
-      <button class="btn btn-p" onclick="doManualSync()" style="margin:0;padding:11px;font-size:13px;">Sync Now</button>
-      <button class="btn btn-s" onclick="doSignOut()" style="margin:0;padding:11px;font-size:13px;color:var(--red);">Sign Out</button>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
+      <button class="btn btn-p" onclick="doManualSync()" style="margin:0;padding:11px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sync Now</button>
+      <button class="btn btn-s" onclick="doSignOut()" style="margin:0;padding:11px;font-size:13px;color:var(--red);display:flex;align-items:center;justify-content:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Sign Out</button>
     </div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:12px;color:var(--text2);line-height:1.7;text-align:center;">
-      Your data syncs automatically across all devices.
+
+    <!-- SECTION DIVIDER -->
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">Data & Export</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
+      <div onclick="openExportModal()" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;border-bottom:1px solid var(--borderl);transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
+        <div style="width:34px;height:34px;border-radius:10px;background:var(--green-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${EXPORT_SVG.replace('width="15" height="15"','width="16" height="16"').replace('stroke="currentColor"','stroke="var(--green)"')}</div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Export to Excel</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Download transactions as .xlsx</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div onclick="openImportInfo()" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
+        <div style="width:34px;height:34px;border-radius:10px;background:var(--blue-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Backup & Sync Info</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Data syncs automatically across devices</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
     </div>
-    <div style="margin-top:14px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px 14px;">
-      <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:10px;">Choose Theme</div>
+
+    <!-- REMINDERS -->
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">Reminders</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--borderl);">
+        <div style="width:34px;height:34px;border-radius:10px;background:var(--amber-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Loan Due Reminders</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Notify before loan due dates</div></div>
+        <button onclick="toggleReminders()" style="padding:5px 12px;border-radius:8px;border:1px solid ${_remindersEnabled?'rgba(12,233,127,.35)':'var(--border)'};background:${_remindersEnabled?'var(--green-d)':'var(--bg)'};color:${remColor};font-size:11px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;" id="rem-toggle-btn">${remNotif}</button>
+      </div>
+      <div onclick="openReminderSettings()" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
+        <div style="width:34px;height:34px;border-radius:10px;background:var(--purple-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg></div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Reminder Settings</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Days before due date, frequency</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
+    <!-- THEME -->
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">Appearance</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:13px 14px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;">Choose Theme</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;" id="theme-picker"></div>
     </div>
-    <button class="btn btn-s" onclick="closeModal()" style="margin-top:10px;">Close</button>`);
-  // Populate theme picker after modal renders
+
+    <!-- DEVELOPER INFO -->
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">About</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
+      <div style="padding:14px;border-bottom:1px solid var(--borderl);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--green-d),var(--blue-d));border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:var(--green);flex-shrink:0;">n</div>
+          <div>
+            <div style="font-size:14px;font-weight:800;">nTransactions</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:1px;">Personal Finance Tracker · v2.0</div>
+          </div>
+        </div>
+      </div>
+      <div style="padding:13px 14px;border-bottom:1px solid var(--borderl);">
+        <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:7px;">Developer</div>
+        <div style="font-size:13px;font-weight:700;">Md. Nasimul Islam Rizvi</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">Gazipur, Bangladesh</div>
+      </div>
+      <div style="padding:13px 14px;">
+        <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Contact</div>
+        <a href="mailto:nasimul@techie.com" style="display:flex;align-items:center;gap:8px;text-decoration:none;margin-bottom:6px;">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--green-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+          <span style="font-size:12px;font-weight:600;color:var(--green);">nasimul@techie.com</span>
+        </a>
+        <a href="https://github.com/nasimulrizvi/nTransactions" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--blue-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></div>
+          <span style="font-size:12px;font-weight:600;color:var(--blue);">github.com/nasimulrizvi/nTransactions</span>
+        </a>
+      </div>
+    </div>
+
+    <button class="btn btn-s" onclick="closeModal()" style="margin-top:2px;">Close</button>`);
   setTimeout(()=>{const tp=document.getElementById('theme-picker');if(tp)applyTheme(localStorage.getItem('ntx_theme')||'dark');},0);
   } else {
     openModal(`<div class="modal-title">Sign In</div>
@@ -1676,6 +1740,72 @@ function handleLnPhoto(input){
   };
   reader.readAsDataURL(file);
 }
+// ============ REMINDERS ============
+let _remindersEnabled=localStorage.getItem('ntx_reminders')==='true';
+function toggleReminders(){
+  _remindersEnabled=!_remindersEnabled;
+  localStorage.setItem('ntx_reminders',_remindersEnabled?'true':'false');
+  if(_remindersEnabled&&'Notification' in window){
+    Notification.requestPermission().then(p=>{
+      if(p==='granted')checkLoanReminders();
+    });
+  }
+  const btn=document.getElementById('rem-toggle-btn');
+  if(btn){
+    btn.textContent=_remindersEnabled?'On':'Off';
+    btn.style.color=_remindersEnabled?'var(--green)':'var(--text3)';
+    btn.style.borderColor=_remindersEnabled?'rgba(12,233,127,.35)':'var(--border)';
+    btn.style.background=_remindersEnabled?'var(--green-d)':'var(--bg)';
+  }
+}
+function checkLoanReminders(){
+  if(!_remindersEnabled||!('Notification' in window)||Notification.permission!=='granted')return;
+  const today=new Date();today.setHours(0,0,0,0);
+  const days=parseInt(localStorage.getItem('ntx_rem_days')||'3');
+  S.loans.filter(l=>l.dueDate&&loanRemain(l)>0).forEach(l=>{
+    const due=new Date(l.dueDate+'T00:00:00');
+    const diff=Math.round((due-today)/(1000*60*60*24));
+    if(diff>=0&&diff<=days){
+      new Notification('nTransactions - Loan Due Soon',{
+        body:`${l.person} - ${fmtD(l.dueDate)} (${diff===0?'Today':diff+' day'+(diff>1?'s':'')})`,
+        icon:'./favicon.png'
+      });
+    }
+  });
+}
+function openReminderSettings(){
+  const days=localStorage.getItem('ntx_rem_days')||'3';
+  openModal(`<div class="modal-title">Reminder Settings</div>
+  <div class="fg"><label class="fl">Notify days before due date</label>
+  <select class="fi" id="rem-days">
+    <option value="1" ${days==='1'?'selected':''}>1 day before</option>
+    <option value="2" ${days==='2'?'selected':''}>2 days before</option>
+    <option value="3" ${days==='3'?'selected':''}>3 days before</option>
+    <option value="5" ${days==='5'?'selected':''}>5 days before</option>
+    <option value="7" ${days==='7'?'selected':''}>7 days before</option>
+  </select></div>
+  <div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.25);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--amber);margin-bottom:14px;">Reminders require browser notification permission and only trigger when the app is open.</div>
+  <button class="btn btn-p" onclick="saveReminderSettings()">Save</button>
+  <button class="btn btn-s" onclick="openSyncModal()" style="margin-top:8px;">Back</button>`);
+}
+function saveReminderSettings(){
+  const d=document.getElementById('rem-days').value;
+  localStorage.setItem('ntx_rem_days',d);
+  openSyncModal();
+}
+function openImportInfo(){
+  openModal(`<div class="modal-title">Backup & Sync</div>
+  <div style="background:var(--green-d);border:1px solid rgba(12,233,127,.25);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+    <div style="font-size:13px;color:var(--green);font-weight:600;">Real-time sync is active</div>
+  </div>
+  <div style="font-size:13px;color:var(--text2);line-height:1.8;margin-bottom:14px;">Your data is automatically synced to Firebase in real-time. Any changes made on one device will instantly appear on all other signed-in devices.</div>
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:13px 14px;font-size:12px;color:var(--text3);line-height:1.7;">
+    <b style="color:var(--text2);">Tip:</b> Use Export to Excel from Settings to keep a local backup of your transaction history at any time.
+  </div>
+  <button class="btn btn-s" onclick="openSyncModal()" style="margin-top:14px;">Back</button>`);
+}
+
 // ============ INIT ============
 load();
 loadSavedTheme();
