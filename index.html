@@ -1106,20 +1106,26 @@ function rLoans(){
     const cfg=LOAN_TYPES[l.type];
     const statusLabel=getLoanStatusLabel(l);
     const total=loanTotal(l);
+    const remain=loanRemain(l);
     const lIcCol=l.type==='deposit'?'#4d9fff':l.type==='loan_recv'?'#ffb020':'#9d6fff';
     const lastPay=l.payments&&l.payments.length?l.payments[l.payments.length-1]:null;
     const settledDate=lastPay?fmtD(lastPay.date):fmtD(l.date);
-    return`<div class="hist-card">
-      <div class="hist-icon" style="background:${lIcCol}18;color:${lIcCol};">${loanIco(l.type,18)}</div>
+    const showPayBtn=remain<0;
+    return`<div class="hist-card" style="align-items:flex-start;">
+      <div class="hist-icon" style="background:${lIcCol}18;color:${lIcCol};flex-shrink:0;margin-top:2px;">${loanIco(l.type,18)}</div>
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.person}</div>
-        <span class="loan-type-badge" style="background:rgba(12,233,127,.1);color:var(--green);margin-top:4px;display:inline-block;">${statusLabel}</span>
-      </div>
-      <div style="text-align:right;flex-shrink:0;">
-        <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--green);">${fmt(total)}</div>
-        <div style="font-size:10px;color:var(--text3);margin-top:2px;">${settledDate}</div>
-        <div style="display:flex;gap:6px;margin-top:7px;justify-content:flex-end;">
-          <button class="sm-btn-g" onclick="openAddLoanPayment('${l.id}')" style="font-size:10px;padding:4px 9px;">+ ${cfg.childLabel}</button>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;">
+          <div style="min-width:0;">
+            <div style="font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.person}</div>
+            <span class="loan-type-badge" style="background:rgba(12,233,127,.1);color:var(--green);margin-top:4px;display:inline-block;">${statusLabel}</span>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:var(--green);">${fmt(total)}</div>
+            <div style="font-size:10px;color:var(--text3);margin-top:2px;">${settledDate}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;">
+          ${showPayBtn?`<button class="sm-btn-g" onclick="openAddLoanPayment('${l.id}')" style="font-size:10px;padding:4px 9px;">+ ${cfg.childLabel}</button>`:''}
           <button class="sm-btn" onclick="showLoanReceipt('${l.id}')" style="background:rgba(77,159,255,.08);border-color:rgba(77,159,255,.25);color:var(--blue);display:flex;align-items:center;gap:4px;">${RECEIPT_SVG} Receipt</button>
           <button class="del-btn" onclick="delLoan('${l.id}')">${TRASH_SVG}</button>
         </div>
