@@ -152,7 +152,7 @@ body.theme-light .wlt-card.drag-over{border-color:rgba(42,125,225,.4);background
     position:fixed!important;
     bottom:14px!important;left:50%!important;top:auto!important;
     transform:translateX(-50%)!important;
-    width:calc(100% - 40px)!important;max-width:640px!important;
+    width:calc(100% - 40px)!important;max-width:860px!important;
     height:var(--nav)!important;min-width:unset!important;
     border-top:none!important;border-right:none!important;
     background:rgba(8,10,18,0.72)!important;
@@ -995,23 +995,60 @@ function rDash(){
     <div class="card" style="padding:16px;"><canvas id="chart-trend" style="width:100%;max-height:180px;"></canvas></div>
   </div>`:''}
 
-  <!-- CHART 2: Donut - Category Spending -->
+  <!-- CHART 2: Donut monthly + yearly side by side -->
   ${chartVis.donut&&hasCatData?`
-  <div class="section" style="padding-top:14px;">
-    <div class="sec-hdr"><div class="sec-title">Spending by Category</div><span style="font-size:11px;color:var(--text3);">${fmtMY(S.month)}</span></div>
-    <div class="card" style="padding:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <div style="flex:0 0 150px;max-width:150px;margin:0 auto;"><canvas id="chart-donut" style="width:100%;"></canvas></div>
-      <div style="flex:1;min-width:120px;" id="donut-legend"></div>
+  <div class="section dash-grid-full" style="padding-top:14px;">
+    <div class="sec-hdr"><div class="sec-title">Spending by Category</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="card" style="padding:16px;">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">${fmtMY(S.month)} — Monthly</div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div style="flex:0 0 130px;max-width:130px;margin:0 auto;"><canvas id="chart-donut" style="width:100%;"></canvas></div>
+          <div style="flex:1;min-width:110px;" id="donut-legend"></div>
+        </div>
+      </div>
+      <div class="card" style="padding:16px;">
+        <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">${yr} — Yearly</div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+          <div style="flex:0 0 130px;max-width:130px;margin:0 auto;"><canvas id="chart-donut-yr" style="width:100%;"></canvas></div>
+          <div style="flex:1;min-width:110px;" id="donut-legend-yr"></div>
+        </div>
+      </div>
     </div>
   </div>`:''}
 
-  <!-- CHART 3: Savings Gauge -->
+  <!-- CHART 3: Savings needle gauge + Loan arcs gauge side by side -->
   ${chartVis.savings&&hasSavings?`
-  <div class="section" style="padding-top:14px;">
-    <div class="sec-hdr"><div class="sec-title">Savings Progress</div><span style="font-size:11px;color:var(--text3);">${mSavBgt?fmtMY(S.month):yr}</span></div>
-    <div class="card" style="padding:16px;text-align:center;"><canvas id="chart-gauge" style="max-height:150px;margin:0 auto;display:block;"></canvas><div id="gauge-label" style="margin-top:6px;font-size:12px;color:var(--text3);"></div></div>
+  <div class="section dash-grid-full" style="padding-top:14px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <!-- Savings Needle Gauge -->
+      <div class="card" style="padding:16px;">
+        <div class="sec-hdr" style="margin-bottom:8px;"><div class="sec-title">Savings Progress</div><span style="font-size:11px;color:var(--text3);">${mSavBgt?fmtMY(S.month):yr}</span></div>
+        <div style="position:relative;text-align:center;">
+          <canvas id="chart-gauge" style="max-height:140px;margin:0 auto;display:block;"></canvas>
+          <div id="gauge-needle-wrap" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></div>
+          <div id="gauge-label" style="margin-top:4px;font-size:12px;color:var(--text3);"></div>
+        </div>
+      </div>
+      <!-- Loan Multi-arc Gauge -->
+      <div class="card" style="padding:16px;">
+        <div class="sec-hdr" style="margin-bottom:8px;"><div class="sec-title">Loan Overview</div><button class="see-all" onclick="go('loans')">See All</button></div>
+        <div style="position:relative;text-align:center;">
+          <canvas id="chart-loan-gauge" style="max-height:140px;margin:0 auto;display:block;"></canvas>
+          <div id="loan-gauge-label" style="margin-top:4px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>`:(iOwe>0||owesMe>0||depPend>0)?`
+  <div class="section dash-grid-full" style="padding-top:14px;">
+    <div class="card" style="padding:16px;">
+      <div class="sec-hdr" style="margin-bottom:8px;"><div class="sec-title">Loan Overview</div><button class="see-all" onclick="go('loans')">See All</button></div>
+      <div style="position:relative;text-align:center;">
+        <canvas id="chart-loan-gauge" style="max-height:140px;margin:0 auto;display:block;"></canvas>
+        <div id="loan-gauge-label" style="margin-top:4px;"></div>
+      </div>
+    </div>
   </div>`:''}
-
   <!-- CHART 4: Category Trend - Multi-line -->
   ${chartVis.catTrend&&hasCatTrend?`
   <div class="section dash-grid-full" style="padding-top:14px;">
@@ -1034,46 +1071,40 @@ function drawDashCharts(){
   const isDark=!document.body.classList.contains('theme-light');
   const textCol=isDark?'rgba(255,255,255,0.35)':'rgba(0,0,0,0.35)';
   const gridCol=isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)';
+  const COLS=['#ff3d5a','#ffb020','#4d9fff','#9d6fff','#0ce97f','#ff6b35'];
+  const bgBorder=isDark?'#0d1018':'#eef0f7';
 
-  // ---- CHART 1: 12-month Area (Income & Expense) ----
+  // ---- CHART 1: 12-month Area ----
   const c1=document.getElementById('chart-trend');
   if(c1&&chartVis.trend){
     destroyChart('trend');
     const months12=[];
     for(let i=11;i>=0;i--){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);const ym=d.toISOString().slice(0,7);const s=mStats(ym);months12.push({lbl:d.toLocaleDateString('en-US',{month:'short'}),exp:s.exp,inc:s.inc});}
-    _charts['trend']=new Chart(c1,{
-      type:'line',
-      data:{
-        labels:months12.map(m=>m.lbl),
-        datasets:[
-          {label:'Income',data:months12.map(m=>m.inc),borderColor:'#0ce97f',backgroundColor:'rgba(12,233,127,0.08)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#0ce97f',borderWidth:2},
-          {label:'Expense',data:months12.map(m=>m.exp),borderColor:'#ff3d5a',backgroundColor:'rgba(255,61,90,0.08)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#ff3d5a',borderWidth:2}
-        ]
-      },
-      options:{responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',padding:10,callbacks:{label:ctx=>`${ctx.dataset.label}: ৳${Math.round(ctx.raw).toLocaleString()}`}}},scales:{x:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10}}},y:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},callback:v=>'৳'+Math.round(v/1000)+'k'}}}}
-    });
+    _charts['trend']=new Chart(c1,{type:'line',data:{labels:months12.map(m=>m.lbl),datasets:[{label:'Income',data:months12.map(m=>m.inc),borderColor:'#0ce97f',backgroundColor:'rgba(12,233,127,0.08)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#0ce97f',borderWidth:2},{label:'Expense',data:months12.map(m=>m.exp),borderColor:'#ff3d5a',backgroundColor:'rgba(255,61,90,0.08)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#ff3d5a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',padding:10,callbacks:{label:ctx=>`${ctx.dataset.label}: ৳${Math.round(ctx.raw).toLocaleString()}`}}},scales:{x:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10}}},y:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},callback:v=>'৳'+Math.round(v/1000)+'k'}}}}});
   }
 
-  // ---- CHART 2: Donut - Category ----
-  const c2=document.getElementById('chart-donut');
-  if(c2&&chartVis.donut){
-    destroyChart('donut');
-    const cats=catSpendAll(S.month).slice(0,6);
-    const total=cats.reduce((s,c)=>s+c.amount,0);
-    if(total>0){
-      const COLS=['#ff3d5a','#ffb020','#4d9fff','#9d6fff','#0ce97f','#ff6b35'];
-      _charts['donut']=new Chart(c2,{
-        type:'doughnut',
-        data:{labels:cats.map(c=>c.label),datasets:[{data:cats.map(c=>c.amount),backgroundColor:COLS,borderWidth:2,borderColor:isDark?'#0d1018':'#eef0f7',hoverOffset:6}]},
-        options:{responsive:true,cutout:'68%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',callbacks:{label:ctx=>`${ctx.label}: ৳${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw/total*100).toFixed(1)}%)`}}}}
-      });
-      // Custom legend
-      const leg=document.getElementById('donut-legend');
-      if(leg)leg.innerHTML=cats.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${COLS[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);">${(c.amount/total*100).toFixed(0)}%</span></div>`).join('');
-    }
+  // ---- CHART 2a: Donut Monthly ----
+  function drawDonut(canvasId,legendId,catsData,total){
+    const c=document.getElementById(canvasId);if(!c)return;
+    destroyChart(canvasId);
+    if(total<=0)return;
+    _charts[canvasId]=new Chart(c,{type:'doughnut',data:{labels:catsData.map(x=>x.label),datasets:[{data:catsData.map(x=>x.amount),backgroundColor:COLS,borderWidth:2,borderColor:bgBorder,hoverOffset:6}]},options:{responsive:true,cutout:'68%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',callbacks:{label:ctx=>`${ctx.label}: ৳${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw/total*100).toFixed(1)}%)`}}}}});
+    const leg=document.getElementById(legendId);
+    if(leg)leg.innerHTML=catsData.map((x,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${COLS[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);">${(x.amount/total*100).toFixed(0)}%</span></div>`).join('');
+  }
+  if(chartVis.donut){
+    const mCats=catSpendAll(S.month).slice(0,6);const mTotal=mCats.reduce((s,c)=>s+c.amount,0);
+    drawDonut('chart-donut','donut-legend',mCats,mTotal);
+    // yearly donut
+    const yr=curYear();
+    const yrTxs=S.transactions.filter(t=>t.type==='expense'&&t.date&&t.date.startsWith(yr));
+    const yrMap={};yrTxs.forEach(t=>{yrMap[t.category]=(yrMap[t.category]||0)+t.amount;});
+    const yrCats=Object.entries(yrMap).map(([id,amount])=>({...getCat('expense',id),id,amount})).sort((a,b)=>b.amount-a.amount).slice(0,6);
+    const yrTotal=yrCats.reduce((s,c)=>s+c.amount,0);
+    drawDonut('chart-donut-yr','donut-legend-yr',yrCats,yrTotal);
   }
 
-  // ---- CHART 3: Gauge (Savings) ----
+  // ---- CHART 3a: Needle Gauge (Savings) ----
   const c3=document.getElementById('chart-gauge');
   if(c3&&chartVis.savings){
     destroyChart('gauge');
@@ -1083,16 +1114,31 @@ function drawDashCharts(){
     const net=mSavBgt?mStats(S.month).net:yrStats(curYear()).simpleNet;
     if(bgt&&bgt.amount>0){
       const pct=Math.max(0,Math.min(100,(net/bgt.amount)*100));
-      const col=pct>=100?'#0ce97f':pct>=50?'#ffb020':'#ff3d5a';
+      const col=pct>=100?'#0ce97f':pct>=60?'#ffb020':'#ff3d5a';
+      // Semicircular gauge: 5 colour segments
       _charts['gauge']=new Chart(c3,{
         type:'doughnut',
-        data:{datasets:[{data:[pct,100-pct],backgroundColor:[col,'rgba(255,255,255,0.05)'],borderWidth:0,circumference:220,rotation:250}]},
-        options:{responsive:true,maintainAspectRatio:true,cutout:'78%',plugins:{legend:{display:false},tooltip:{enabled:false}}}
+        data:{datasets:[
+          {data:[20,20,20,20,20],backgroundColor:['#0ce97f','#7cd67f','#ffb020','#ff8020','#ff3d5a'],borderWidth:0,circumference:180,rotation:270,hoverOffset:0},
+          {data:[100],backgroundColor:['rgba(0,0,0,0)'],borderWidth:0,circumference:180,rotation:270}
+        ]},
+        options:{responsive:true,maintainAspectRatio:false,cutout:'72%',plugins:{legend:{display:false},tooltip:{enabled:false}}}
       });
-      const lbl=document.getElementById('gauge-label');
-      if(lbl)lbl.innerHTML=`<span style="font-family:'Space Mono',monospace;font-size:20px;font-weight:700;color:${col};">${pct.toFixed(0)}%</span><br><span style="font-size:11px;color:var(--text3);">of ${mSavBgt?'monthly':'yearly'} savings goal</span>`;
+      // Draw needle via canvas overlay
+      setTimeout(()=>{
+        const wrap=document.getElementById('gauge-needle-wrap');
+        if(!wrap)return;
+        const rect=c3.getBoundingClientRect();
+        const needleSvg=buildNeedleSVG(pct,rect.width,rect.height);
+        wrap.innerHTML=needleSvg;
+        const lbl=document.getElementById('gauge-label');
+        if(lbl)lbl.innerHTML=`<span style="font-family:'Space Mono',monospace;font-size:18px;font-weight:700;color:${col};">${pct.toFixed(0)}%</span><br><span style="font-size:11px;color:var(--text3);">of ${mSavBgt?'monthly':'yearly'} savings goal (${fmt(bgt.amount)})</span>`;
+      },80);
     }
   }
+
+  // ---- CHART 3b: Loan Multi-arc Gauge (SVG) ----
+  drawLoanGauge();
 
   // ---- CHART 4: Category Trend Multi-line ----
   const c4=document.getElementById('chart-cattrend');
@@ -1103,18 +1149,87 @@ function drawDashCharts(){
     const top4=catSpendAll(S.month).slice(0,4);
     if(top4.length>=2){
       const CATCOLS=['#ff3d5a','#ffb020','#4d9fff','#9d6fff'];
-      const datasets=top4.map((cat,i)=>({
-        label:cat.label,
-        data:months6.map(m=>{return S.transactions.filter(t=>t.date&&t.date.startsWith(m.ym)&&t.type==='expense'&&t.category===cat.id).reduce((s,t)=>s+t.amount,0);}),
-        borderColor:CATCOLS[i],backgroundColor:CATCOLS[i]+'22',fill:false,tension:0.4,pointRadius:3,borderWidth:2
-      }));
-      _charts['cattrend']=new Chart(c4,{
-        type:'line',
-        data:{labels:months6.map(m=>m.lbl),datasets},
-        options:{responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:textCol,font:{size:10},boxWidth:10,padding:10}},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',callbacks:{label:ctx=>`${ctx.dataset.label}: ৳${Math.round(ctx.raw).toLocaleString()}`}}},scales:{x:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10}}},y:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},callback:v=>'৳'+Math.round(v).toLocaleString()}}}}
-      });
+      const datasets=top4.map((cat,i)=>({label:cat.label,data:months6.map(m=>S.transactions.filter(t=>t.date&&t.date.startsWith(m.ym)&&t.type==='expense'&&t.category===cat.id).reduce((s,t)=>s+t.amount,0)),borderColor:CATCOLS[i],backgroundColor:CATCOLS[i]+'22',fill:false,tension:0.4,pointRadius:3,borderWidth:2}));
+      _charts['cattrend']=new Chart(c4,{type:'line',data:{labels:months6.map(m=>m.lbl),datasets},options:{responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:textCol,font:{size:10},boxWidth:10,padding:10}},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',callbacks:{label:ctx=>`${ctx.dataset.label}: ৳${Math.round(ctx.raw).toLocaleString()}`}}},scales:{x:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10}}},y:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},callback:v=>'৳'+Math.round(v).toLocaleString()}}}}});
     }
   }
+}
+
+// Build SVG needle for semicircular gauge
+function buildNeedleSVG(pct,w,h){
+  if(!w||!h)return'';
+  // needle rotates from -90deg (0%) to +90deg (100%), pivot at bottom-center of semicircle
+  const angle=-90+(pct/100)*180; // degrees
+  const rad=angle*Math.PI/180;
+  const cx=w/2;
+  const cy=h*0.72; // approx center of semicircle vertically
+  const r=Math.min(w,h)*0.36;
+  const nx=cx+r*0.82*Math.cos(rad);
+  const ny=cy+r*0.82*Math.sin(rad);
+  const isDark=!document.body.classList.contains('theme-light');
+  const needleCol=isDark?'#e8edf5':'#1a1a2e';
+  return`<svg width="${w}" height="${h}" style="position:absolute;top:0;left:0;">
+    <line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${needleCol}" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="${cx}" cy="${cy}" r="5" fill="${needleCol}"/>
+    <text x="${cx}" y="${cy+18}" text-anchor="middle" font-size="10" fill="rgba(255,255,255,0.3)">0%</text>
+    <text x="${cx-r*0.9}" y="${cy+4}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)">0</text>
+    <text x="${cx+r*0.9}" y="${cy+4}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.3)">100</text>
+  </svg>`;
+}
+
+// Loan multi-arc gauge drawn as SVG
+function drawLoanGauge(){
+  const c=document.getElementById('chart-loan-gauge');
+  if(!c)return;
+  const iOwe=S.loans.filter(l=>l.type==='loan_recv'&&loanRemain(l)>0).reduce((s,l)=>s+loanRemain(l),0);
+  const owesMe=S.loans.filter(l=>l.type==='loan_given'&&loanRemain(l)>0).reduce((s,l)=>s+loanRemain(l),0);
+  const depPend=S.loans.filter(l=>l.type==='deposit'&&loanRemain(l)>0).reduce((s,l)=>s+loanRemain(l),0);
+  const total=iOwe+owesMe+depPend;
+  const lbl=document.getElementById('loan-gauge-label');
+  if(total<=0){
+    c.style.display='none';
+    if(lbl)lbl.innerHTML=`<div style="padding:20px 0;font-size:13px;color:var(--green);font-weight:700;">All Clear ✓</div>`;
+    return;
+  }
+  c.style.display='none'; // hide canvas, use SVG
+  const parent=c.parentElement;
+  const existSvg=parent.querySelector('.loan-gauge-svg');
+  if(existSvg)existSvg.remove();
+  const W=220,H=130,cx=W/2,cy=H-10;
+  const R1=80,R2=65,R3=50; // outer to inner arcs
+  function arcPath(cx,cy,r,startDeg,endDeg){
+    const s=startDeg*Math.PI/180,e=endDeg*Math.PI/180;
+    const x1=cx+r*Math.cos(s),y1=cy+r*Math.sin(s);
+    const x2=cx+r*Math.cos(e),y2=cy+r*Math.sin(e);
+    const large=endDeg-startDeg>180?1:0;
+    return`M${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2}`;
+  }
+  // track arcs (bg) from 180deg to 0deg (top semicircle)
+  const trackStart=180,trackEnd=360;
+  // value arcs
+  const maxVal=Math.max(iOwe,owesMe,depPend,1);
+  function valEnd(val){return trackStart+(val/maxVal)*(trackEnd-trackStart);}
+  const svgLines=[
+    `<path d="${arcPath(cx,cy,R1,trackStart,trackEnd)}" stroke="rgba(255,255,255,0.06)" stroke-width="12" fill="none" stroke-linecap="round"/>`,
+    `<path d="${arcPath(cx,cy,R2,trackStart,trackEnd)}" stroke="rgba(255,255,255,0.06)" stroke-width="12" fill="none" stroke-linecap="round"/>`,
+    `<path d="${arcPath(cx,cy,R3,trackStart,trackEnd)}" stroke="rgba(255,255,255,0.06)" stroke-width="12" fill="none" stroke-linecap="round"/>`,
+  ];
+  if(owesMe>0)svgLines.push(`<path d="${arcPath(cx,cy,R1,trackStart,valEnd(owesMe))}" stroke="#0ce97f" stroke-width="12" fill="none" stroke-linecap="round"/>`);
+  if(iOwe>0)svgLines.push(`<path d="${arcPath(cx,cy,R2,trackStart,valEnd(iOwe))}" stroke="#ff3d5a" stroke-width="12" fill="none" stroke-linecap="round"/>`);
+  if(depPend>0)svgLines.push(`<path d="${arcPath(cx,cy,R3,trackStart,valEnd(depPend))}" stroke="#4d9fff" stroke-width="12" fill="none" stroke-linecap="round"/>`);
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  svg.setAttribute('width','100%');
+  svg.setAttribute('style','max-height:140px;display:block;margin:0 auto;');
+  svg.classList.add('loan-gauge-svg');
+  svg.innerHTML=svgLines.join('');
+  parent.insertBefore(svg,c);
+  if(lbl)lbl.innerHTML=`
+    <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:4px;">
+      ${owesMe>0?`<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:var(--green);font-weight:700;"><span style="width:8px;height:8px;border-radius:2px;background:#0ce97f;display:inline-block;"></span>Owe Me</div><div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--green);">${fmt(owesMe)}</div></div>`:''}
+      ${iOwe>0?`<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:var(--red);font-weight:700;"><span style="width:8px;height:8px;border-radius:2px;background:#ff3d5a;display:inline-block;"></span>I Owe</div><div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--red);">${fmt(iOwe)}</div></div>`:''}
+      ${depPend>0?`<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:var(--blue);font-weight:700;"><span style="width:8px;height:8px;border-radius:2px;background:#4d9fff;display:inline-block;"></span>Deposits</div><div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--blue);">${fmt(depPend)}</div></div>`:''}
+    </div>`;
 }
 
 function txHTML(t){
@@ -1987,8 +2102,8 @@ function saveReminderSettings(){
 function openChartSettings(){
   const items=[
     {key:'trend',label:'12-Month Overview',desc:'Area chart — income vs expense trend'},
-    {key:'donut',label:'Spending by Category',desc:'Donut chart — category breakdown'},
-    {key:'savings',label:'Savings Progress',desc:'Gauge chart — savings goal progress'},
+    {key:'donut',label:'Spending by Category',desc:'Donut charts — monthly & yearly breakdown'},
+    {key:'savings',label:'Savings & Loan Gauge',desc:'Needle gauge + loan arc progress'},
     {key:'catTrend',label:'Category Trend',desc:'Multi-line chart — top categories over 6 months'},
   ];
   openModal(`<div class="modal-title">Dashboard Charts</div>
