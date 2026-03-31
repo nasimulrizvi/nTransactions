@@ -17,6 +17,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
@@ -141,17 +142,17 @@ body.theme-light .wlt-card.drag-over{border-color:rgba(42,125,225,.4);background
   body{overflow-x:hidden;}
   #app{max-width:none!important;margin-left:0!important;width:100%!important;}
   .main{padding-bottom:calc(var(--nav) + 20px)!important;}
-  .main-inner{width:90%!important;padding:0 32px;max-width:1000px!important;margin:0 auto;}
+  .main-inner{width:100%;padding:0 40px;max-width:1100px;margin:0 auto;}
   .section{padding:16px 0 0;}
   .header .logo{display:block!important;}
-  .header{padding:10px 32px;}
+  .header{padding:10px 40px;max-width:none;}
   .hdr-month-nav{display:flex!important;}
   .sb-backdrop{display:none!important;}
   .bottom-nav{
     position:fixed!important;
     bottom:14px!important;left:50%!important;top:auto!important;
     transform:translateX(-50%)!important;
-    width:calc(100% - 40px)!important;max-width:600px!important;
+    width:calc(100% - 40px)!important;max-width:640px!important;
     height:var(--nav)!important;min-width:unset!important;
     border-top:none!important;border-right:none!important;
     background:rgba(8,10,18,0.72)!important;
@@ -171,7 +172,7 @@ body.theme-light .wlt-card.drag-over{border-color:rgba(42,125,225,.4);background
     box-shadow:0 4px 28px rgba(0,0,0,0.14),inset 0 1px 0 rgba(255,255,255,0.80)!important;
   }
   .bottom-nav-row{
-    display:flex!important;flex-direction:row!important;justify-content:space-around!important;
+    display:flex!important;flex-direction:row!important;justify-content:space-evenly!important;
     align-items:center!important;height:65px!important;width:100%!important;
     max-width:none!important;margin:0!important;padding:0 8px!important;
     gap:0!important;flex:1!important;overflow:visible!important;
@@ -193,11 +194,18 @@ body.theme-light .wlt-card.drag-over{border-color:rgba(42,125,225,.4);background
   .sidebar-brand{display:none!important;}
   .sidebar-month-nav{display:none!important;}
   .sidebar-footer{display:none!important;}
-  .fab{right:calc(50% - 300px + 18px);bottom:calc(var(--nav) + 18px);width:54px;height:54px;border-radius:17px;}
+  .fab{right:calc(50% - 550px + 18px);bottom:calc(var(--nav) + 18px);width:54px;height:54px;border-radius:17px;}
   .modal-overlay{align-items:center;}
   .modal{border-radius:22px;max-width:520px;max-height:88dvh;transform:scale(.95);}
   .modal-overlay.open .modal{transform:scale(1);}
   .modal-handle{display:none;}
+  /* Dashboard 2-col grid on desktop */
+  .dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .dash-grid-full{grid-column:1/-1;}
+}
+@media(min-width:1366px){
+  .main-inner{max-width:1280px;}
+  .fab{right:calc(50% - 640px + 18px);}
 }
 
 .sidebar-brand{display:none;}
@@ -628,18 +636,19 @@ let S={transactions:[],wallets:[],budgets:[],loans:[],customExpCats:[],customInc
 let txF='all',txQ='',txDuration='all',loanF='all',txType='expense',editWltId='',selColor=COLORS[0];
 let syncTimeout=null,balHidden=false,netHidden=true;
 
-// ============ CHART TOGGLES ============
-let chartToggles = JSON.parse(localStorage.getItem('ntx_chart_toggles') || '{"monthlyExpense":true,"categoryPie":true,"savingsGauge":true,"categoryTrend":true}');
+// Chart visibility (persisted in localStorage)
+const CHART_DEFAULTS={trend:true,donut:true,savings:true,catTrend:true};
+let chartVis=JSON.parse(localStorage.getItem('ntx_charts')||'null')||{...CHART_DEFAULTS};
+function saveChartVis(){localStorage.setItem('ntx_charts',JSON.stringify(chartVis));}
 
-function saveChartToggles() {
-  localStorage.setItem('ntx_chart_toggles', JSON.stringify(chartToggles));
-}
+// Active Chart.js instances (destroy before re-render)
+let _charts={};
+function destroyChart(id){if(_charts[id]){try{_charts[id].destroy();}catch(e){}delete _charts[id];}}
+function destroyAllCharts(){Object.keys(_charts).forEach(id=>destroyChart(id));}
 
-function toggleChart(chartId) {
-  chartToggles[chartId] = !chartToggles[chartId];
-  saveChartToggles();
-  renderMain(); // refresh dashboard
-}
+// Swipe
+const VIEWS=['dashboard','transactions','wallets','budget','loans'];
+let _swipeX=0,_swipeY=0,_swipeMoved=false;
 
 function todayYM(){return new Date().toISOString().slice(0,7);}
 function todayD(){return new Date().toISOString().slice(0,10);}
@@ -874,32 +883,9 @@ function resetSbTimer(){
 document.addEventListener('DOMContentLoaded',()=>{
 });
 
-// ============ SWIPE NAVIGATION ============
-let touchStartX = 0;
-let touchEndX = 0;
-const swipeThreshold = 50;
-
-function handleTouchStart(e) {
-  touchStartX = e.changedTouches[0].screenX;
-}
-function handleTouchEnd(e) {
-  touchEndX = e.changedTouches[0].screenX;
-  const deltaX = touchEndX - touchStartX;
-  if (Math.abs(deltaX) < swipeThreshold) return;
-  const views = ['dashboard', 'transactions', 'wallets', 'budget', 'loans'];
-  const currentIndex = views.indexOf(S.view);
-  if (deltaX > 0) { // swipe right → previous
-    if (currentIndex > 0) go(views[currentIndex - 1]);
-  } else { // swipe left → next
-    if (currentIndex < views.length - 1) go(views[currentIndex + 1]);
-  }
-}
-
-document.getElementById('main').addEventListener('touchstart', handleTouchStart, false);
-document.getElementById('main').addEventListener('touchend', handleTouchEnd, false);
-
 // ============ NAV ============
 function go(view){
+  destroyAllCharts();
   S.view=view;
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   const el=document.getElementById('nav-'+view);if(el)el.classList.add('active');
@@ -907,6 +893,7 @@ function go(view){
   renderMain();
 }
 function renderMain(){
+  destroyAllCharts();
   const el=document.getElementById('main');
   const mb=document.getElementById('month-btn');if(mb)mb.textContent=fmtMY(S.month);
   const sbmb=document.getElementById('sb-month-btn');if(sbmb)sbmb.textContent=fmtMY(S.month);
@@ -919,38 +906,57 @@ function renderMain(){
   el.innerHTML=`<div class="main-inner fade-up">${html}</div>`;
   if(!fbUser)setSyncDot('');
   updateHeaderAvatar();
-  drawCharts(); // after DOM update
+  // draw charts after DOM paint
+  if(S.view==='dashboard')setTimeout(()=>drawDashCharts(),60);
+}
+// Swipe navigation
+function _initSwipe(){
+  const main=document.getElementById('main');
+  if(!main)return;
+  main.addEventListener('touchstart',e=>{_swipeX=e.touches[0].clientX;_swipeY=e.touches[0].clientY;_swipeMoved=false;},{passive:true});
+  main.addEventListener('touchmove',e=>{
+    const dx=Math.abs(e.touches[0].clientX-_swipeX);
+    const dy=Math.abs(e.touches[0].clientY-_swipeY);
+    if(dx>dy&&dx>10)_swipeMoved=true;
+  },{passive:true});
+  main.addEventListener('touchend',e=>{
+    if(!_swipeMoved)return;
+    const dx=e.changedTouches[0].clientX-_swipeX;
+    if(Math.abs(dx)<50)return;
+    const cur=VIEWS.indexOf(S.view);
+    if(dx<0&&cur<VIEWS.length-1)go(VIEWS[cur+1]);
+    else if(dx>0&&cur>0)go(VIEWS[cur-1]);
+    _swipeMoved=false;
+  },{passive:true});
 }
 
 // ============ DASHBOARD ============
 function rDash(){
   const yr=curYear();const ys=yrStats(yr);const ms=mStats(S.month);
   const mSavBgt=getSavingsBgt('monthly',S.month);
-  // 12-month trend data
-  const months12 = [];
-  const today = new Date();
-  today.setMonth(today.getMonth()); // current month
-  for(let i=11; i>=0; i--){
-    const d = new Date();
-    d.setMonth(d.getMonth() - i);
-    const ym = d.toISOString().slice(0,7);
-    const stats = mStats(ym);
-    months12.push({
-      label: d.toLocaleDateString('en-US',{month:'short'}),
-      exp: stats.exp,
-      inc: stats.inc
-    });
-  }
-  const max12 = Math.max(...months12.flatMap(m=>[m.exp,m.inc]),1);
-  // Loan summary
+  const ySav=getSavingsBgt('yearly',yr);
   const iOwe=S.loans.filter(l=>l.type==='loan_recv'&&loanRemain(l)>0).reduce((s,l)=>s+loanRemain(l),0);
   const owesMe=S.loans.filter(l=>l.type==='loan_given'&&loanRemain(l)>0).reduce((s,l)=>s+loanRemain(l),0);
   const depPend=S.loans.filter(l=>l.type==='deposit'&&loanRemain(l)>0).reduce((s,l)=>s+loanRemain(l),0);
   const balDisplay=balHidden?'........':fmtSigned(ys.net);
   const balColor=ys.net<0?'var(--red)':'var(--text)';
+  const rec=[...S.transactions].sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,5);
+  // build 12-month data for charts
+  const months12=[];
+  for(let i=11;i>=0;i--){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);const ym=d.toISOString().slice(0,7);const s=mStats(ym);months12.push({ym,lbl:d.toLocaleDateString('en-US',{month:'short'}),exp:s.exp,inc:s.inc,net:s.net});}
+  const hasData12=months12.some(b=>b.exp>0||b.inc>0);
+  const expCats=catSpendAll(S.month);const totalExp=expCats.reduce((s,c)=>s+c.amount,0);
+  const hasCatData=expCats.length>0&&totalExp>0;
+  const hasSavings=(mSavBgt&&ms.net>0)||(ySav&&yrStats(yr).simpleNet>0);
+  // category trend: top 4 cats over last 6 months
+  const top4cats=catSpendAll(S.month).slice(0,4).map(c=>c.id);
+  const months6=months12.slice(6);
+  const hasCatTrend=top4cats.length>=2&&months6.some(m=>S.transactions.filter(t=>t.date&&t.date.startsWith(m.ym)&&t.type==='expense').length>0);
+
   return`
   <div class="section" style="padding-top:18px;">
     ${!fbUser?`<div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.3);border-radius:12px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;font-size:13px;"><span style="color:var(--amber);">${ico('user',16,'#ffb020')}</span><span style="flex:1;">Not logged in. Data is local only. <button onclick="openSyncModal()" style="background:none;border:none;color:var(--amber);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;">Sign In</button></span></div>`:''}
+    <!-- YEARLY BALANCE CARD -->
     <div class="bal-card">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:2px;">
         <div class="bal-label">Yearly Balance - ${yr}</div>
@@ -964,6 +970,7 @@ function rDash(){
         <div class="bal-stat"><div class="bsl" style="display:flex;align-items:center;gap:4px;">Net<button onclick="toggleNet()" style="background:none;border:none;padding:0;cursor:pointer;color:var(--text3);display:flex;align-items:center;">${netHidden?ico('eye',10):ico('eye_off',10)}</button></div><div class="bsv" style="font-size:12px;color:${ys.simpleNet>=0?'var(--green)':'var(--red)'};">${netHidden?'....':fmtIntSigned(ys.simpleNet)}</div></div>
       </div>
     </div>
+    <!-- MONTHLY CARD -->
     <div style="margin-top:12px;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:16px;padding:14px 16px;">
       <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">${fmtMY(S.month)} - Monthly</div>
       <div style="display:flex;gap:10px;">
@@ -973,30 +980,141 @@ function rDash(){
       </div>
       ${mSavBgt?`<div style="margin-top:10px;border-top:1px solid var(--borderl);padding-top:10px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;"><span>Monthly Savings Target</span><span style="color:var(--green);font-weight:700;">${fmtInt(mSavBgt.amount)}</span></div><div class="prog"><div class="prog-fill" style="width:${Math.min(100,(ms.net/mSavBgt.amount)*100)}%;background:${ms.net>=mSavBgt.amount?'var(--green)':'var(--amber)'};"></div></div></div>`:''}
     </div>
-    <!-- Loan Summary (after monthly panel) -->
-    ${(iOwe>0||owesMe>0||depPend>0)?`<div style="margin-top:12px;"><div class="sec-hdr"><div class="sec-title">Loan Summary</div><button class="see-all" onclick="go('loans')">See All</button></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;"><div class="stat-card" style="border-color:rgba(255,61,90,.14);padding:11px;"><div class="st-lbl" style="font-size:9px;">I Owe</div><div class="st-val c-red" style="font-size:13px;margin-top:5px;">${fmt(iOwe)}</div></div><div class="stat-card" style="border-color:rgba(12,233,127,.14);padding:11px;"><div class="st-lbl" style="font-size:9px;">Owe Me</div><div class="st-val c-green" style="font-size:13px;margin-top:5px;">${fmt(owesMe)}</div></div><div class="stat-card" style="border-color:rgba(77,159,255,.14);padding:11px;"><div class="st-lbl" style="font-size:9px;">Deposits</div><div class="st-val c-blue" style="font-size:13px;margin-top:5px;">${fmt(depPend)}</div></div></div></div>`:''}
-    <!-- 12-Month Trend (replaces old 6-month) -->
-    <div style="margin-top:14px;">
-      <div class="sec-title">12-Month Trend</div>
-      <div class="card" style="padding:14px;">
-        <div style="display:flex;align-items:flex-end;gap:2px;height:80px;">
-          ${months12.map(b=>{const hi=Math.max(3,(b.inc/max12)*70);const he=Math.max(3,(b.exp/max12)*70);return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;"><div style="width:100%;display:flex;align-items:flex-end;gap:2px;height:70px;"><div style="flex:1;background:var(--green);border-radius:3px 3px 0 0;height:${hi}px;opacity:.8;"></div><div style="flex:1;background:var(--red);border-radius:3px 3px 0 0;height:${he}px;opacity:.8;"></div></div><div style="font-size:8px;color:var(--text3);">${b.label}</div></div>`;}).join('')}
-        </div>
-      </div>
+  </div>
+
+  <!-- LOAN SUMMARY -->
+  ${(iOwe>0||owesMe>0||depPend>0)?`<div class="section" style="padding-top:14px;"><div class="sec-hdr"><div class="sec-title">Loan Summary</div><button class="see-all" onclick="go('loans')">See All</button></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;"><div class="stat-card" style="border-color:rgba(255,61,90,.14);padding:11px;"><div class="st-lbl" style="font-size:9px;">I Owe</div><div class="st-val c-red" style="font-size:13px;margin-top:5px;">${fmt(iOwe)}</div></div><div class="stat-card" style="border-color:rgba(12,233,127,.14);padding:11px;"><div class="st-lbl" style="font-size:9px;">Owe Me</div><div class="st-val c-green" style="font-size:13px;margin-top:5px;">${fmt(owesMe)}</div></div><div class="stat-card" style="border-color:rgba(77,159,255,.14);padding:11px;"><div class="st-lbl" style="font-size:9px;">Deposits</div><div class="st-val c-blue" style="font-size:13px;margin-top:5px;">${fmt(depPend)}</div></div></div></div>`:''}
+
+  <!-- CHARTS: desktop 2-col grid wrapper -->
+  <div class="dash-grid" style="margin-top:0;">
+
+  <!-- CHART 1: 12-Month Area Trend -->
+  ${chartVis.trend&&hasData12?`
+  <div class="section dash-grid-full" style="padding-top:14px;">
+    <div class="sec-hdr"><div class="sec-title">12-Month Overview</div><div style="display:flex;gap:10px;font-size:10px;font-weight:700;"><span style="color:var(--green);">● Income</span><span style="color:var(--red);">● Expense</span></div></div>
+    <div class="card" style="padding:16px;"><canvas id="chart-trend" style="width:100%;max-height:180px;"></canvas></div>
+  </div>`:''}
+
+  <!-- CHART 2: Donut - Category Spending -->
+  ${chartVis.donut&&hasCatData?`
+  <div class="section" style="padding-top:14px;">
+    <div class="sec-hdr"><div class="sec-title">Spending by Category</div><span style="font-size:11px;color:var(--text3);">${fmtMY(S.month)}</span></div>
+    <div class="card" style="padding:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="flex:0 0 150px;max-width:150px;margin:0 auto;"><canvas id="chart-donut" style="width:100%;"></canvas></div>
+      <div style="flex:1;min-width:120px;" id="donut-legend"></div>
     </div>
-    <!-- Charts Section (toggable) -->
-    <div style="margin-top:18px;">
-      <div class="sec-hdr"><div class="sec-title">Visualizations</div><div style="display:flex;gap:5px;"><button class="sm-btn" onclick="openChartSettings()">⚙️</button></div></div>
-      <div id="chart-monthly-expense" style="${chartToggles.monthlyExpense ? '' : 'display:none;'}"></div>
-      <div id="chart-category-pie" style="${chartToggles.categoryPie ? '' : 'display:none;'}"></div>
-      <div id="chart-savings-gauge" style="${chartToggles.savingsGauge ? '' : 'display:none;'}"></div>
-      <div id="chart-category-trend" style="${chartToggles.categoryTrend ? '' : 'display:none;'}"></div>
-    </div>
-    <div class="section" style="padding-top:14px;">
-      <div class="sec-hdr"><div class="sec-title">Recent Transactions</div><button class="see-all" onclick="go('transactions')">See All</button></div>
-      ${S.transactions.slice(0,5).length?`<div class="card">${S.transactions.slice(0,5).map(t=>txHTML(t)).join('')}</div>`:`<div class="empty"><div style="display:flex;justify-content:center;margin-bottom:12px;opacity:.4;">${ico('empty_tx',46)}</div><div class="empty-t">No transactions yet</div><div class="empty-s">Tap + to add your first one</div></div>`}
-    </div>
-    <div style="height:8px;"></div>`;
+  </div>`:''}
+
+  <!-- CHART 3: Savings Gauge -->
+  ${chartVis.savings&&hasSavings?`
+  <div class="section" style="padding-top:14px;">
+    <div class="sec-hdr"><div class="sec-title">Savings Progress</div><span style="font-size:11px;color:var(--text3);">${mSavBgt?fmtMY(S.month):yr}</span></div>
+    <div class="card" style="padding:16px;text-align:center;"><canvas id="chart-gauge" style="max-height:150px;margin:0 auto;display:block;"></canvas><div id="gauge-label" style="margin-top:6px;font-size:12px;color:var(--text3);"></div></div>
+  </div>`:''}
+
+  <!-- CHART 4: Category Trend - Multi-line -->
+  ${chartVis.catTrend&&hasCatTrend?`
+  <div class="section dash-grid-full" style="padding-top:14px;">
+    <div class="sec-hdr"><div class="sec-title">Category Trend</div><span style="font-size:11px;color:var(--text3);">Last 6 months</span></div>
+    <div class="card" style="padding:16px;"><canvas id="chart-cattrend" style="width:100%;max-height:180px;"></canvas></div>
+  </div>`:''}
+
+  </div><!-- end dash-grid -->
+
+  <!-- RECENT TRANSACTIONS -->
+  <div class="section" style="padding-top:14px;">
+    <div class="sec-hdr"><div class="sec-title">Recent Transactions</div><button class="see-all" onclick="go('transactions')">See All</button></div>
+    ${rec.length?`<div class="card">${rec.map(t=>txHTML(t)).join('')}</div>`:`<div class="empty"><div style="display:flex;justify-content:center;margin-bottom:12px;opacity:.4;">${ico('empty_tx',46)}</div><div class="empty-t">No transactions yet</div><div class="empty-s">Tap + to add your first one</div></div>`}
+  </div>
+  <div style="height:8px;"></div>`;
+}
+
+// ============ DRAW DASHBOARD CHARTS ============
+function drawDashCharts(){
+  const isDark=!document.body.classList.contains('theme-light');
+  const textCol=isDark?'rgba(255,255,255,0.35)':'rgba(0,0,0,0.35)';
+  const gridCol=isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)';
+
+  // ---- CHART 1: 12-month Area (Income & Expense) ----
+  const c1=document.getElementById('chart-trend');
+  if(c1&&chartVis.trend){
+    destroyChart('trend');
+    const months12=[];
+    for(let i=11;i>=0;i--){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);const ym=d.toISOString().slice(0,7);const s=mStats(ym);months12.push({lbl:d.toLocaleDateString('en-US',{month:'short'}),exp:s.exp,inc:s.inc});}
+    _charts['trend']=new Chart(c1,{
+      type:'line',
+      data:{
+        labels:months12.map(m=>m.lbl),
+        datasets:[
+          {label:'Income',data:months12.map(m=>m.inc),borderColor:'#0ce97f',backgroundColor:'rgba(12,233,127,0.08)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#0ce97f',borderWidth:2},
+          {label:'Expense',data:months12.map(m=>m.exp),borderColor:'#ff3d5a',backgroundColor:'rgba(255,61,90,0.08)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#ff3d5a',borderWidth:2}
+        ]
+      },
+      options:{responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',padding:10,callbacks:{label:ctx=>`${ctx.dataset.label}: ৳${Math.round(ctx.raw).toLocaleString()}`}}},scales:{x:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10}}},y:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},callback:v=>'৳'+Math.round(v/1000)+'k'}}}}
+    });
+  }
+
+  // ---- CHART 2: Donut - Category ----
+  const c2=document.getElementById('chart-donut');
+  if(c2&&chartVis.donut){
+    destroyChart('donut');
+    const cats=catSpendAll(S.month).slice(0,6);
+    const total=cats.reduce((s,c)=>s+c.amount,0);
+    if(total>0){
+      const COLS=['#ff3d5a','#ffb020','#4d9fff','#9d6fff','#0ce97f','#ff6b35'];
+      _charts['donut']=new Chart(c2,{
+        type:'doughnut',
+        data:{labels:cats.map(c=>c.label),datasets:[{data:cats.map(c=>c.amount),backgroundColor:COLS,borderWidth:2,borderColor:isDark?'#0d1018':'#eef0f7',hoverOffset:6}]},
+        options:{responsive:true,cutout:'68%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',callbacks:{label:ctx=>`${ctx.label}: ৳${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw/total*100).toFixed(1)}%)`}}}}
+      });
+      // Custom legend
+      const leg=document.getElementById('donut-legend');
+      if(leg)leg.innerHTML=cats.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${COLS[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);">${(c.amount/total*100).toFixed(0)}%</span></div>`).join('');
+    }
+  }
+
+  // ---- CHART 3: Gauge (Savings) ----
+  const c3=document.getElementById('chart-gauge');
+  if(c3&&chartVis.savings){
+    destroyChart('gauge');
+    const mSavBgt=getSavingsBgt('monthly',S.month);
+    const ySav=getSavingsBgt('yearly',curYear());
+    const bgt=mSavBgt||ySav;
+    const net=mSavBgt?mStats(S.month).net:yrStats(curYear()).simpleNet;
+    if(bgt&&bgt.amount>0){
+      const pct=Math.max(0,Math.min(100,(net/bgt.amount)*100));
+      const col=pct>=100?'#0ce97f':pct>=50?'#ffb020':'#ff3d5a';
+      _charts['gauge']=new Chart(c3,{
+        type:'doughnut',
+        data:{datasets:[{data:[pct,100-pct],backgroundColor:[col,'rgba(255,255,255,0.05)'],borderWidth:0,circumference:220,rotation:250}]},
+        options:{responsive:true,maintainAspectRatio:true,cutout:'78%',plugins:{legend:{display:false},tooltip:{enabled:false}}}
+      });
+      const lbl=document.getElementById('gauge-label');
+      if(lbl)lbl.innerHTML=`<span style="font-family:'Space Mono',monospace;font-size:20px;font-weight:700;color:${col};">${pct.toFixed(0)}%</span><br><span style="font-size:11px;color:var(--text3);">of ${mSavBgt?'monthly':'yearly'} savings goal</span>`;
+    }
+  }
+
+  // ---- CHART 4: Category Trend Multi-line ----
+  const c4=document.getElementById('chart-cattrend');
+  if(c4&&chartVis.catTrend){
+    destroyChart('cattrend');
+    const months6=[];
+    for(let i=5;i>=0;i--){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);months6.push({ym:d.toISOString().slice(0,7),lbl:d.toLocaleDateString('en-US',{month:'short'})});}
+    const top4=catSpendAll(S.month).slice(0,4);
+    if(top4.length>=2){
+      const CATCOLS=['#ff3d5a','#ffb020','#4d9fff','#9d6fff'];
+      const datasets=top4.map((cat,i)=>({
+        label:cat.label,
+        data:months6.map(m=>{return S.transactions.filter(t=>t.date&&t.date.startsWith(m.ym)&&t.type==='expense'&&t.category===cat.id).reduce((s,t)=>s+t.amount,0);}),
+        borderColor:CATCOLS[i],backgroundColor:CATCOLS[i]+'22',fill:false,tension:0.4,pointRadius:3,borderWidth:2
+      }));
+      _charts['cattrend']=new Chart(c4,{
+        type:'line',
+        data:{labels:months6.map(m=>m.lbl),datasets},
+        options:{responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},plugins:{legend:{position:'bottom',labels:{color:textCol,font:{size:10},boxWidth:10,padding:10}},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',callbacks:{label:ctx=>`${ctx.dataset.label}: ৳${Math.round(ctx.raw).toLocaleString()}`}}},scales:{x:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10}}},y:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},callback:v=>'৳'+Math.round(v).toLocaleString()}}}}
+      });
+    }
+  }
 }
 
 function txHTML(t){
@@ -1008,184 +1126,6 @@ function txHTML(t){
   const acHex=t.type==='expense'?'#ff3d5a':t.type==='income'?'#0ce97f':'#4d9fff';
   const w=getWlt(t.wallet);
   return`<div class="tx-item" onclick="showTxD('${t.id}')"><div class="tx-ico" style="background:${bg};color:${acHex};">${svgIcon}</div><div class="tx-inf"><div class="tx-name">${label}</div><div class="tx-meta">${w.name}${t.note?' · '+t.note:''}</div></div><div><div class="tx-amt" style="color:${ac};">${pfx}${fmt(t.amount)}</div><div class="tx-dt">${fmtD(t.date)}</div></div></div>`;
-}
-
-// ============ CHARTS (Canvas) ============
-function drawCharts() {
-  // Monthly Expense Overview (line chart)
-  if (chartToggles.monthlyExpense) {
-    const months = [];
-    const expenses = [];
-    const today = new Date();
-    for (let i=11; i>=0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const ym = d.toISOString().slice(0,7);
-      const exp = mStats(ym).exp;
-      months.push(d.toLocaleDateString('en-US',{month:'short'}));
-      expenses.push(exp);
-    }
-    const hasData = expenses.some(v=>v>0);
-    const canvasId = 'chart-monthly-expense';
-    if (hasData) {
-      document.getElementById(canvasId).innerHTML = `<canvas id="lineChart" width="400" height="200" style="width:100%; max-width:400px; height:200px;"></canvas>`;
-      const ctx = document.getElementById('lineChart').getContext('2d');
-      ctx.clearRect(0,0,400,200);
-      const w = 400, h = 200;
-      const padding = 30;
-      const maxExp = Math.max(...expenses,1);
-      const stepX = (w - 2*padding) / (expenses.length-1);
-      ctx.beginPath();
-      ctx.strokeStyle = getComputedStyle(document.body).getPropertyValue('--red');
-      ctx.lineWidth = 2;
-      for (let i=0; i<expenses.length; i++) {
-        const x = padding + i*stepX;
-        const y = h - padding - (expenses[i]/maxExp)*(h-2*padding);
-        if (i===0) ctx.moveTo(x,y);
-        else ctx.lineTo(x,y);
-      }
-      ctx.stroke();
-      // draw points
-      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--red');
-      for (let i=0; i<expenses.length; i++) {
-        const x = padding + i*stepX;
-        const y = h - padding - (expenses[i]/maxExp)*(h-2*padding);
-        ctx.beginPath();
-        ctx.arc(x,y,3,0,2*Math.PI);
-        ctx.fill();
-      }
-      // axis labels
-      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text2');
-      ctx.font = '10px Outfit';
-      for (let i=0; i<expenses.length; i+=2) {
-        const x = padding + i*stepX;
-        ctx.fillText(months[i], x-10, h-5);
-      }
-    } else {
-      document.getElementById(canvasId).innerHTML = ''; // hide if no data
-    }
-  }
-  // Category-wise Spending (pie chart)
-  if (chartToggles.categoryPie) {
-    const cats = catSpendAll(S.month);
-    if (cats.length) {
-      const total = cats.reduce((s,c)=>s+c.amount,0);
-      const canvasId = 'chart-category-pie';
-      document.getElementById(canvasId).innerHTML = `<canvas id="pieChart" width="300" height="200" style="width:100%; max-width:300px; height:200px;"></canvas>`;
-      const ctx = document.getElementById('pieChart').getContext('2d');
-      ctx.clearRect(0,0,300,200);
-      const centerX=150, centerY=100, radius=70;
-      let start=0;
-      const colors = ['#ff3d5a','#ffb020','#4d9fff','#9d6fff','#0ce97f','#f472b6'];
-      cats.forEach((cat,i) => {
-        const angle = (cat.amount/total)*2*Math.PI;
-        const end = start+angle;
-        ctx.beginPath();
-        ctx.fillStyle = colors[i%colors.length];
-        ctx.moveTo(centerX,centerY);
-        ctx.arc(centerX,centerY,radius,start,end);
-        ctx.fill();
-        // label
-        const mid = start+angle/2;
-        const x = centerX + (radius+15)*Math.cos(mid);
-        const y = centerY + (radius+10)*Math.sin(mid);
-        ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text');
-        ctx.font = '9px Outfit';
-        ctx.fillText(cat.label.slice(0,10), x-15, y);
-        start = end;
-      });
-    } else {
-      document.getElementById('chart-category-pie').innerHTML = '';
-    }
-  }
-  // Savings Progress (gauge)
-  if (chartToggles.savingsGauge) {
-    const yr = curYear();
-    const ySav = getSavingsBgt('yearly', yr);
-    const yrNet = yrStats(yr).simpleNet;
-    if (ySav && ySav.amount>0) {
-      const pct = Math.min(100, Math.max(0, (yrNet / ySav.amount)*100));
-      const canvasId = 'chart-savings-gauge';
-      document.getElementById(canvasId).innerHTML = `<canvas id="gaugeChart" width="200" height="120" style="width:100%; max-width:200px; height:120px;"></canvas>`;
-      const ctx = document.getElementById('gaugeChart').getContext('2d');
-      ctx.clearRect(0,0,200,120);
-      const centerX=100, centerY=80, radius=60;
-      const startAngle = -Math.PI/2;
-      const endAngle = startAngle + (pct/100)*Math.PI;
-      ctx.beginPath();
-      ctx.arc(centerX,centerY,radius,startAngle,startAngle+Math.PI);
-      ctx.strokeStyle = '#4a5568';
-      ctx.lineWidth = 12;
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(centerX,centerY,radius,startAngle,endAngle);
-      ctx.strokeStyle = pct>=100?'#0ce97f':'#ffb020';
-      ctx.stroke();
-      ctx.fillStyle = getComputedStyle(document.body).getPropertyValue('--text');
-      ctx.font = 'bold 16px "Space Mono"';
-      ctx.fillText(Math.round(pct)+'%', centerX-20, centerY+5);
-    } else {
-      document.getElementById('chart-savings-gauge').innerHTML = '';
-    }
-  }
-  // Category Trend Over Time (multi-line)
-  if (chartToggles.categoryTrend) {
-    const cats = getExpCats().slice(0,5);
-    const months12 = [];
-    const today = new Date();
-    for (let i=11; i>=0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      months12.push(d.toISOString().slice(0,7));
-    }
-    const datasets = cats.map(cat => {
-      return months12.map(ym => {
-        return mTxs(ym).filter(t=>t.type==='expense' && t.category===cat.id).reduce((s,t)=>s+t.amount,0);
-      });
-    });
-    const hasAny = datasets.some(arr=>arr.some(v=>v>0));
-    if (hasAny) {
-      const canvasId = 'chart-category-trend';
-      document.getElementById(canvasId).innerHTML = `<canvas id="multiLineChart" width="500" height="200" style="width:100%; max-width:500px; height:200px;"></canvas>`;
-      const ctx = document.getElementById('multiLineChart').getContext('2d');
-      ctx.clearRect(0,0,500,200);
-      const w=500, h=200, padding=40;
-      const maxVal = Math.max(...datasets.flat(),1);
-      const stepX = (w - 2*padding) / (months12.length-1);
-      const colors = ['#ff3d5a','#ffb020','#4d9fff','#9d6fff','#0ce97f'];
-      datasets.forEach((data, idx) => {
-        ctx.beginPath();
-        ctx.strokeStyle = colors[idx%colors.length];
-        ctx.lineWidth = 1.8;
-        for (let i=0; i<data.length; i++) {
-          const x = padding + i*stepX;
-          const y = h - padding - (data[i]/maxVal)*(h-2*padding);
-          if (i===0) ctx.moveTo(x,y);
-          else ctx.lineTo(x,y);
-        }
-        ctx.stroke();
-        // label at end
-        const lastX = padding + (data.length-1)*stepX;
-        const lastY = h - padding - (data[data.length-1]/maxVal)*(h-2*padding);
-        ctx.fillStyle = colors[idx%colors.length];
-        ctx.font = '9px Outfit';
-        ctx.fillText(cats[idx].label.slice(0,10), lastX+5, lastY);
-      });
-    } else {
-      document.getElementById('chart-category-trend').innerHTML = '';
-    }
-  }
-}
-
-function openChartSettings() {
-  openModal(`
-    <div class="modal-title">Chart Settings</div>
-    <div class="fg" style="margin-bottom:8px;"><label class="fl"><input type="checkbox" ${chartToggles.monthlyExpense ? 'checked' : ''} onchange="toggleChart('monthlyExpense')"> Monthly Expense Overview</label></div>
-    <div class="fg" style="margin-bottom:8px;"><label class="fl"><input type="checkbox" ${chartToggles.categoryPie ? 'checked' : ''} onchange="toggleChart('categoryPie')"> Category-wise Spending</label></div>
-    <div class="fg" style="margin-bottom:8px;"><label class="fl"><input type="checkbox" ${chartToggles.savingsGauge ? 'checked' : ''} onchange="toggleChart('savingsGauge')"> Savings Progress</label></div>
-    <div class="fg" style="margin-bottom:8px;"><label class="fl"><input type="checkbox" ${chartToggles.categoryTrend ? 'checked' : ''} onchange="toggleChart('categoryTrend')"> Category Trend Over Time</label></div>
-    <button class="btn btn-s" onclick="closeModal()">Close</button>
-  `);
 }
 
 // ============ TRANSACTIONS ============
@@ -1516,31 +1456,6 @@ function openSyncModal(){
       </div>
     </div>
 
-    <!-- CHARTS TOGGLE SECTION -->
-    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">Dashboard Charts</div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
-      <div onclick="toggleChart('monthlyExpense')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;border-bottom:1px solid var(--borderl);">
-        <div style="width:34px;height:34px;border-radius:10px;background:var(--red-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Monthly Expense Overview</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Line chart of expenses over 12 months</div></div>
-        <div style="width:24px;height:24px;border-radius:6px;background:${chartToggles.monthlyExpense?'var(--green-d)':'var(--bg)'};border:1px solid ${chartToggles.monthlyExpense?'rgba(12,233,127,.5)':'var(--border)'};display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${chartToggles.monthlyExpense?'var(--green)':'var(--text3)'}" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-      </div>
-      <div onclick="toggleChart('categoryPie')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;border-bottom:1px solid var(--borderl);">
-        <div style="width:34px;height:34px;border-radius:10px;background:var(--amber-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Category-wise Spending</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Pie chart of current month expenses</div></div>
-        <div style="width:24px;height:24px;border-radius:6px;background:${chartToggles.categoryPie?'var(--green-d)':'var(--bg)'};border:1px solid ${chartToggles.categoryPie?'rgba(12,233,127,.5)':'var(--border)'};display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${chartToggles.categoryPie?'var(--green)':'var(--text3)'}" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-      </div>
-      <div onclick="toggleChart('savingsGauge')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;border-bottom:1px solid var(--borderl);">
-        <div style="width:34px;height:34px;border-radius:10px;background:var(--green-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ico('savings',16,'var(--green)')}</div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Savings Progress</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Gauge for yearly savings goal</div></div>
-        <div style="width:24px;height:24px;border-radius:6px;background:${chartToggles.savingsGauge?'var(--green-d)':'var(--bg)'};border:1px solid ${chartToggles.savingsGauge?'rgba(12,233,127,.5)':'var(--border)'};display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${chartToggles.savingsGauge?'var(--green)':'var(--text3)'}" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-      </div>
-      <div onclick="toggleChart('categoryTrend')" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;">
-        <div style="width:34px;height:34px;border-radius:10px;background:var(--blue-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Category Trend Over Time</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Multi-line chart of top 5 categories</div></div>
-        <div style="width:24px;height:24px;border-radius:6px;background:${chartToggles.categoryTrend?'var(--green-d)':'var(--bg)'};border:1px solid ${chartToggles.categoryTrend?'rgba(12,233,127,.5)':'var(--border)'};display:flex;align-items:center;justify-content:center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="${chartToggles.categoryTrend?'var(--green)':'var(--text3)'}" stroke-width="3" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-      </div>
-    </div>
-
     <!-- REMINDERS -->
     <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">Reminders</div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
@@ -1556,11 +1471,18 @@ function openSyncModal(){
       </div>
     </div>
 
-    <!-- THEME -->
+    <!-- APPEARANCE + CHARTS -->
     <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">Appearance</div>
-    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:13px 14px;margin-bottom:16px;">
-      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;">Choose Theme</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;" id="theme-picker"></div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
+      <div style="padding:13px 14px;border-bottom:1px solid var(--borderl);">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;">Choose Theme</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;" id="theme-picker"></div>
+      </div>
+      <div onclick="openChartSettings()" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
+        <div style="width:34px;height:34px;border-radius:10px;background:var(--purple-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Dashboard Charts</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Choose which charts to display</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
     </div>
 
     <!-- DEVELOPER INFO -->
@@ -2062,6 +1984,35 @@ function saveReminderSettings(){
   localStorage.setItem('ntx_rem_days',d);
   openSyncModal();
 }
+function openChartSettings(){
+  const items=[
+    {key:'trend',label:'12-Month Overview',desc:'Area chart — income vs expense trend'},
+    {key:'donut',label:'Spending by Category',desc:'Donut chart — category breakdown'},
+    {key:'savings',label:'Savings Progress',desc:'Gauge chart — savings goal progress'},
+    {key:'catTrend',label:'Category Trend',desc:'Multi-line chart — top categories over 6 months'},
+  ];
+  openModal(`<div class="modal-title">Dashboard Charts</div>
+  <div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Choose which charts appear on your Home screen. Charts with no data hide automatically.</div>
+  <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
+  ${items.map((it,i)=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:13px 14px;${i<items.length-1?'border-bottom:1px solid var(--borderl);':''}">
+      <div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:700;">${it.label}</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">${it.desc}</div></div>
+      <button onclick="toggleChart('${it.key}')" id="cv-${it.key}" style="padding:5px 14px;border-radius:8px;border:1px solid ${chartVis[it.key]?'rgba(12,233,127,.35)':'var(--border)'};background:${chartVis[it.key]?'var(--green-d)':'var(--bg)'};color:${chartVis[it.key]?'var(--green)':'var(--text3)'};font-size:11px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;min-width:44px;">${chartVis[it.key]?'On':'Off'}</button>
+    </div>`).join('')}
+  </div>
+  <button class="btn btn-s" onclick="openSyncModal()">Back</button>`);
+}
+function toggleChart(key){
+  chartVis[key]=!chartVis[key];
+  saveChartVis();
+  const btn=document.getElementById('cv-'+key);
+  if(btn){
+    btn.textContent=chartVis[key]?'On':'Off';
+    btn.style.color=chartVis[key]?'var(--green)':'var(--text3)';
+    btn.style.borderColor=chartVis[key]?'rgba(12,233,127,.35)':'var(--border)';
+    btn.style.background=chartVis[key]?'var(--green-d)':'var(--bg)';
+  }
+}
 function openImportInfo(){
   openModal(`<div class="modal-title">Backup & Sync</div>
   <div style="background:var(--green-d);border:1px solid rgba(12,233,127,.25);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
@@ -2081,6 +2032,7 @@ loadSavedTheme();
 go('dashboard');
 initAuth();
 updateHeaderAvatar();
+_initSwipe();
 </script>
 </body>
 </html>
