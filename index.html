@@ -203,9 +203,9 @@ body.theme-light .wlt-card.drag-over{border-color:rgba(42,125,225,.4);background
   .modal-overlay.open .modal{transform:scale(1);}
   .modal-handle{display:none;}
   /* Mobile: donut and gauge grids stack vertically */
-.donut-grid,.gauge-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+.donut-grid,.gauge-grid{display:grid;grid-template-columns:1fr;gap:14px;}
 @media(min-width:1024px){
-  .donut-grid,.gauge-grid{grid-template-columns:1fr 1fr;}
+  .donut-grid,.gauge-grid{grid-template-columns:1fr 1fr;gap:16px;}
 }
 }
 @media(min-width:1366px){
@@ -1005,14 +1005,14 @@ function rDash(){
   <div class="section dash-grid-full" style="padding-top:14px;">
     <div class="sec-hdr"><div class="sec-title">Spending by Category</div></div>
     <div class="donut-grid">
-      <div class="card" style="padding:16px;">
+      <div class="card" id="donut-card-m" style="padding:16px;">
         <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">${fmtMY(S.month)} — Monthly</div>
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
           <div style="flex:0 0 130px;max-width:130px;margin:0 auto;"><canvas id="chart-donut" style="width:100%;"></canvas></div>
           <div style="flex:1;min-width:110px;" id="donut-legend"></div>
         </div>
       </div>
-      <div class="card" style="padding:16px;">
+      <div class="card" id="donut-card-y" style="padding:16px;">
         <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">${yr} — Yearly</div>
         <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
           <div style="flex:0 0 130px;max-width:130px;margin:0 auto;"><canvas id="chart-donut-yr" style="width:100%;"></canvas></div>
@@ -1069,7 +1069,7 @@ function drawDashCharts(){
   const isDark=!document.body.classList.contains('theme-light');
   const textCol=isDark?'rgba(255,255,255,0.35)':'rgba(0,0,0,0.35)';
   const gridCol=isDark?'rgba(255,255,255,0.05)':'rgba(0,0,0,0.06)';
-  const COLS=['#ff3d5a','#ffb020','#4d9fff','#9d6fff','#0ce97f','#ff6b35'];
+  const COLS=['#ff3d5a','#ffb020','#4d9fff','#9d6fff','#0ce97f','#ff6b35','#e040fb','#00bcd4','#8bc34a','#f06292','#26c6da','#ffd54f'];
   const bgBorder=isDark?'#0d1018':'#eef0f7';
 
   // ---- CHART 1: 12-month Area ----
@@ -1081,25 +1081,32 @@ function drawDashCharts(){
     _charts['trend']=new Chart(c1,{type:'line',data:{labels:months12.map(m=>m.lbl),datasets:[{label:'Income',data:months12.map(m=>m.inc),borderColor:'#0ce97f',backgroundColor:'rgba(12,233,127,0.08)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#0ce97f',borderWidth:2},{label:'Expense',data:months12.map(m=>m.exp),borderColor:'#ff3d5a',backgroundColor:'rgba(255,61,90,0.08)',fill:true,tension:0.4,pointRadius:3,pointBackgroundColor:'#ff3d5a',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',padding:10,callbacks:{label:ctx=>`${ctx.dataset.label}: ৳${Math.round(ctx.raw).toLocaleString()}`}}},scales:{x:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10}}},y:{grid:{color:gridCol},ticks:{color:textCol,font:{size:10},callback:v=>'৳'+Math.round(v/1000)+'k'}}}}});
   }
 
-  // ---- CHART 2a: Donut Monthly ----
+  // ---- CHART 2: Donut (monthly + yearly, all categories) ----
   function drawDonut(canvasId,legendId,catsData,total){
     const c=document.getElementById(canvasId);if(!c)return;
     destroyChart(canvasId);
     if(total<=0)return;
-    _charts[canvasId]=new Chart(c,{type:'doughnut',data:{labels:catsData.map(x=>x.label),datasets:[{data:catsData.map(x=>x.amount),backgroundColor:COLS,borderWidth:2,borderColor:bgBorder,hoverOffset:6}]},options:{responsive:true,cutout:'68%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',callbacks:{label:ctx=>`${ctx.label}: ৳${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw/total*100).toFixed(1)}%)`}}}}});
+    const usedCols=catsData.map((_,i)=>COLS[i%COLS.length]);
+    _charts[canvasId]=new Chart(c,{type:'doughnut',data:{labels:catsData.map(x=>x.label),datasets:[{data:catsData.map(x=>x.amount),backgroundColor:usedCols,borderWidth:2,borderColor:bgBorder,hoverOffset:6}]},options:{responsive:true,cutout:'68%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',callbacks:{label:ctx=>`${ctx.label}: ৳${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw/total*100).toFixed(1)}%)`}}}}});
     const leg=document.getElementById(legendId);
-    if(leg)leg.innerHTML=catsData.map((x,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${COLS[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);">${(x.amount/total*100).toFixed(0)}%</span></div>`).join('');
+    if(leg)leg.innerHTML=catsData.map((x,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${usedCols[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);flex-shrink:0;">${(x.amount/total*100).toFixed(0)}%</span></div>`).join('');
   }
   if(chartVis.donut){
-    const mCats=catSpendAll(S.month).slice(0,6);const mTotal=mCats.reduce((s,c)=>s+c.amount,0);
+    // monthly — all cats
+    const mCats=catSpendAll(S.month);const mTotal=mCats.reduce((s,c)=>s+c.amount,0);
     drawDonut('chart-donut','donut-legend',mCats,mTotal);
-    // yearly donut
+    // yearly — all cats, no limit
     const yr=curYear();
     const yrTxs=S.transactions.filter(t=>t.type==='expense'&&t.date&&t.date.startsWith(yr));
     const yrMap={};yrTxs.forEach(t=>{yrMap[t.category]=(yrMap[t.category]||0)+t.amount;});
-    const yrCats=Object.entries(yrMap).map(([id,amount])=>({...getCat('expense',id),id,amount})).sort((a,b)=>b.amount-a.amount).slice(0,6);
+    const yrCats=Object.entries(yrMap).map(([id,amount])=>({...getCat('expense',id),id,amount})).sort((a,b)=>b.amount-a.amount);
     const yrTotal=yrCats.reduce((s,c)=>s+c.amount,0);
     drawDonut('chart-donut-yr','donut-legend-yr',yrCats,yrTotal);
+    // sync card heights
+    setTimeout(()=>{
+      const d1=document.getElementById('donut-card-m'),d2=document.getElementById('donut-card-y');
+      if(d1&&d2){const h=Math.max(d1.scrollHeight,d2.scrollHeight);d1.style.minHeight=h+'px';d2.style.minHeight=h+'px';}
+    },120);
   }
 
   // ---- CHART 3a: Savings Needle Gauge (pure SVG) ----
@@ -1124,7 +1131,7 @@ function drawDashCharts(){
   }
 }
 
-// ============ SAVINGS GAUGE (pure SVG semicircle + needle) ============
+// ============ SAVINGS GAUGE (pure SVG, correct semicircle) ============
 function drawSavingsGauge(){
   const wrap=document.getElementById('savings-gauge-wrap');
   if(!wrap)return;
@@ -1133,71 +1140,69 @@ function drawSavingsGauge(){
   const ySav=getSavingsBgt('yearly',curYear());
   const bgt=mSavBgt||ySav;
   const net=mSavBgt?mStats(S.month).net:yrStats(curYear()).simpleNet;
-  if(!bgt||bgt.amount<=0){wrap.innerHTML='<div style="padding:30px 0;font-size:12px;color:var(--text3);">No savings goal set</div>';return;}
+  if(!bgt||bgt.amount<=0){
+    wrap.innerHTML='<div style="padding:30px 0;font-size:12px;color:var(--text3);">No savings goal set</div>';
+    return;
+  }
   const pct=Math.max(0,Math.min(100,(net/bgt.amount)*100));
   const col=pct>=100?'#0ce97f':pct>=75?'#7cd67f':pct>=50?'#ffb020':pct>=25?'#ff8020':'#ff3d5a';
-
-  // SVG dimensions — semicircle
-  const W=220,H=130;
-  const cx=W/2,cy=H-18; // pivot point
-  const R=88,stroke=18;
-  const r=R; // arc radius at center of stroke
-
-  // Arc helper: angles in degrees, 0=right, going clockwise
-  // Semicircle from 180° (left) to 0° (right), i.e. top half
-  function polarX(deg){return cx+r*Math.cos(deg*Math.PI/180);}
-  function polarY(deg){return cy+r*Math.sin(deg*Math.PI/180);}
-  function arcD(startDeg,endDeg){
-    const x1=polarX(startDeg),y1=polarY(startDeg);
-    const x2=polarX(endDeg),y2=polarY(endDeg);
-    const large=Math.abs(endDeg-startDeg)>180?1:0;
-    const sweep=endDeg>startDeg?1:0;
-    return`M${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large},${sweep} ${x2.toFixed(2)},${y2.toFixed(2)}`;
-  }
-
-  // 5 colour segments: red→orange→amber→yellow-green→green, left to right
-  const segCols=['#ff3d5a','#ff8020','#ffb020','#7cd67f','#0ce97f'];
-  const segStart=180,segEnd=0; // 180→360 going through 270 (top)
-  // We go from 180 down to 0 (counter-clockwise in standard coords)
-  // In SVG: 180° is left, 0° is right, -180° to 0° goes through top = use 180→360
-  // Redefine: start=180, each step = -36 degrees
-  const segs=segCols.map((c,i)=>{
-    const s=180-i*36;
-    const e=180-(i+1)*36;
-    return`<path d="${arcD(s,e)}" stroke="${c}" stroke-width="${stroke}" fill="none" stroke-linecap="butt"/>`;
-  });
-
-  // Needle: 0% = 180° (left), 100% = 0° (right), needle angle = 180 - pct*1.8
-  const needleAngleDeg=180-pct*1.8;
-  const needleAngleRad=needleAngleDeg*Math.PI/180;
-  const nl=r*0.78;
-  const nx=cx+nl*Math.cos(needleAngleRad);
-  const ny=cy+nl*Math.sin(needleAngleRad);
-  // short tail
-  const tl=14;
-  const tx=cx-tl*Math.cos(needleAngleRad);
-  const ty=cy-tl*Math.sin(needleAngleRad);
   const isDark=!document.body.classList.contains('theme-light');
   const nc=isDark?'#e8edf5':'#1a1a2e';
 
-  const svgHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-height:140px;display:block;margin:0 auto;overflow:visible;">
-    <!-- track -->
-    <path d="${arcD(180,0)}" stroke="rgba(255,255,255,0.07)" stroke-width="${stroke}" fill="none" stroke-linecap="butt"/>
-    <!-- segments red→green left→right -->
+  // Fixed SVG coordinate system:
+  // viewBox="0 0 240 140", cx=120, cy=120 (pivot near bottom)
+  // Semicircle: left endpoint (180°) to right endpoint (0°) going through top (270°)
+  // In SVG: x=cx+r*cos(deg), y=cy+r*sin(deg), deg in standard math (counter-clockwise from right)
+  // 180° = left, 270° = top, 0° = right
+  // Arc from 180° to 0° going counter-clockwise through 270° = sweep-flag=0, large-arc=1
+  const VW=240,VH=140,cx=120,cy=118,R=88,sw=20;
+
+  function pt(deg){
+    const rad=deg*Math.PI/180;
+    return{x:(cx+R*Math.cos(rad)).toFixed(2),y:(cy+R*Math.sin(rad)).toFixed(2)};
+  }
+  // Arc segment from angleDeg1 to angleDeg2, counter-clockwise (sweep=0)
+  // Going from 180° down to 0° counter-clockwise means decreasing degrees
+  function seg(d1,d2){
+    const p1=pt(d1),p2=pt(d2);
+    // Since d2 < d1, sweep=0, large-arc = abs(d1-d2)>180 ? 1:0
+    const large=Math.abs(d1-d2)>180?1:0;
+    return`M${p1.x},${p1.y} A${R},${R} 0 ${large},0 ${p2.x},${p2.y}`;
+  }
+
+  // 5 segments: 180→144→108→72→36→0, colors red→orange→amber→yellow-green→green
+  const segCols=['#ff3d5a','#ff8020','#ffb020','#7cd67f','#0ce97f'];
+  const breaks=[180,144,108,72,36,0];
+  const segs=segCols.map((c,i)=>
+    `<path d="${seg(breaks[i],breaks[i+1])}" stroke="${c}" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`
+  );
+
+  // Track (full semicircle bg): 180→0 counter-clockwise
+  const trackPath=`M${pt(180).x},${pt(180).y} A${R},${R} 0 1,0 ${pt(0).x},${pt(0).y}`;
+
+  // Needle: 0%→180°(left), 100%→0°(right), angle = 180 - pct*1.8
+  const nDeg=180-pct*1.8;
+  const nRad=nDeg*Math.PI/180;
+  const nLen=R*0.76, tLen=13;
+  const nx=(cx+nLen*Math.cos(nRad)).toFixed(2);
+  const ny=(cy+nLen*Math.sin(nRad)).toFixed(2);
+  const tx=(cx-tLen*Math.cos(nRad)).toFixed(2);
+  const ty=(cy-tLen*Math.sin(nRad)).toFixed(2);
+
+  wrap.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="max-height:145px;display:block;margin:0 auto;overflow:visible;">
+    <path d="${trackPath}" stroke="rgba(255,255,255,0.06)" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>
     ${segs.join('')}
-    <!-- needle -->
-    <line x1="${tx.toFixed(2)}" y1="${ty.toFixed(2)}" x2="${nx.toFixed(2)}" y2="${ny.toFixed(2)}" stroke="${nc}" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="${tx}" y1="${ty}" x2="${nx}" y2="${ny}" stroke="${nc}" stroke-width="2.8" stroke-linecap="round"/>
     <circle cx="${cx}" cy="${cy}" r="6" fill="${nc}"/>
-    <!-- labels -->
-    <text x="${cx-r*0.93}" y="${cy+13}" text-anchor="middle" font-size="9" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.28)">0</text>
-    <text x="${cx+r*0.93}" y="${cy+13}" text-anchor="middle" font-size="9" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.28)">100</text>
+    <text x="${(cx-R*0.96).toFixed(0)}" y="${(cy+15).toFixed(0)}" text-anchor="middle" font-size="10" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.3)">0</text>
+    <text x="${(cx+R*0.96).toFixed(0)}" y="${(cy+15).toFixed(0)}" text-anchor="middle" font-size="10" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.3)">100</text>
   </svg>`;
-  wrap.innerHTML=svgHTML;
+
   const lbl=document.getElementById('gauge-label');
   if(lbl)lbl.innerHTML=`<span style="font-family:'Space Mono',monospace;font-size:20px;font-weight:700;color:${col};">${pct.toFixed(0)}%</span><br><span style="font-size:11px;color:var(--text3);">of ${mSavBgt?'monthly':'yearly'} savings goal (${fmt(bgt.amount)})</span>`;
 }
 
-// ============ LOAN GAUGE (pure SVG, Image 3 style, flat ends, no gap) ============
+// ============ LOAN GAUGE (pure SVG, 270° arc, 3 needles per value) ============
 function drawLoanGauge(){
   const wrap=document.getElementById('loan-gauge-wrap');
   if(!wrap)return;
@@ -1212,62 +1217,59 @@ function drawLoanGauge(){
     return;
   }
 
-  // SVG: full circle gauge (270° arc like Image 3), 3 concentric arcs
-  // Arc from 135° to 405° (=45°), sweeping 270° clockwise
-  const W=220,H=190;
-  const cx=W/2,cy=H/2+10;
-  const R1=82,R2=64,R3=46; // outer=owesMe(green), mid=iOwe(red), inner=dep(blue)
-  const sw=16; // stroke width
+  // 270° arc: start=135°, end=405°(=45°) clockwise (sweep=1)
+  const VW=220,VH=195,cx=110,cy=115;
+  const R1=82,R2=64,R3=46,sw=16;
   const startDeg=135,totalDeg=270;
   const maxVal=Math.max(iOwe,owesMe,depPend,1);
 
-  function arcPath(cx,cy,r,sDeg,spanDeg){
-    if(spanDeg<=0)return'';
-    const s=sDeg*Math.PI/180;
-    const e=(sDeg+spanDeg)*Math.PI/180;
-    const x1=cx+r*Math.cos(s),y1=cy+r*Math.sin(s);
-    const x2=cx+r*Math.cos(e),y2=cy+r*Math.sin(e);
+  function ptA(r,deg){
+    const rad=deg*Math.PI/180;
+    return{x:(cx+r*Math.cos(rad)).toFixed(2),y:(cy+r*Math.sin(rad)).toFixed(2)};
+  }
+  function arcP(r,sDeg,spanDeg){
+    if(spanDeg<=0.01)return'';
+    const p1=ptA(r,sDeg);
+    const eDeg=sDeg+spanDeg;
+    const p2=ptA(r,eDeg);
     const large=spanDeg>180?1:0;
-    return`M${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)}`;
+    return`M${p1.x},${p1.y} A${r},${r} 0 ${large},1 ${p2.x},${p2.y}`;
+  }
+  function needle(r,val,col){
+    const span=(val/maxVal)*totalDeg;
+    const eDeg=startDeg+span;
+    const rad=eDeg*Math.PI/180;
+    const nl=r*0.72,tl=10;
+    const nx=(cx+nl*Math.cos(rad)).toFixed(2),ny=(cy+nl*Math.sin(rad)).toFixed(2);
+    const tx=(cx-tl*Math.cos(rad)).toFixed(2),ty=(cy-tl*Math.sin(rad)).toFixed(2);
+    return`<line x1="${tx}" y1="${ty}" x2="${nx}" y2="${ny}" stroke="${col}" stroke-width="2.2" stroke-linecap="round"/>`;
   }
 
-  const trackAlpha='rgba(255,255,255,0.07)';
+  const track='rgba(255,255,255,0.07)';
   const lines=[];
-  // Track rings (full arcs)
-  lines.push(`<path d="${arcPath(cx,cy,R1,startDeg,totalDeg)}" stroke="${trackAlpha}" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
-  lines.push(`<path d="${arcPath(cx,cy,R2,startDeg,totalDeg)}" stroke="${trackAlpha}" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
-  lines.push(`<path d="${arcPath(cx,cy,R3,startDeg,totalDeg)}" stroke="${trackAlpha}" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
-
+  // Tracks
+  lines.push(`<path d="${arcP(R1,startDeg,totalDeg)}" stroke="${track}" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
+  lines.push(`<path d="${arcP(R2,startDeg,totalDeg)}" stroke="${track}" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
+  lines.push(`<path d="${arcP(R3,startDeg,totalDeg)}" stroke="${track}" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
   // Value arcs
-  const span1=(owesMe/maxVal)*totalDeg;
-  const span2=(iOwe/maxVal)*totalDeg;
-  const span3=(depPend/maxVal)*totalDeg;
-  if(owesMe>0)lines.push(`<path d="${arcPath(cx,cy,R1,startDeg,span1)}" stroke="#0ce97f" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
-  if(iOwe>0)lines.push(`<path d="${arcPath(cx,cy,R2,startDeg,span2)}" stroke="#ff3d5a" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
-  if(depPend>0)lines.push(`<path d="${arcPath(cx,cy,R3,startDeg,span3)}" stroke="#4d9fff" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
+  const span1=(owesMe/maxVal)*totalDeg,span2=(iOwe/maxVal)*totalDeg,span3=(depPend/maxVal)*totalDeg;
+  if(owesMe>0)lines.push(`<path d="${arcP(R1,startDeg,span1)}" stroke="#0ce97f" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
+  if(iOwe>0)lines.push(`<path d="${arcP(R2,startDeg,span2)}" stroke="#ff3d5a" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
+  if(depPend>0)lines.push(`<path d="${arcP(R3,startDeg,span3)}" stroke="#4d9fff" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`);
+  // 3 needles — one per arc, each pointing to its own value end
+  if(owesMe>0)lines.push(needle(R1,owesMe,'#0ce97f'));
+  if(iOwe>0)lines.push(needle(R2,iOwe,'#ff3d5a'));
+  if(depPend>0)lines.push(needle(R3,depPend,'#4d9fff'));
+  // center dot
+  lines.push(`<circle cx="${cx}" cy="${cy}" r="5" fill="rgba(255,255,255,0.25)"/>`);
 
-  // Needle pointing to owesMe proportion (largest value) — Image 3 style
-  const dominantVal=Math.max(owesMe,iOwe,depPend);
-  const needleSpan=(dominantVal/maxVal)*totalDeg;
-  const needleAngleDeg=startDeg+needleSpan;
-  const needleAngleRad=needleAngleDeg*Math.PI/180;
-  const nl=R1*0.72;
-  const nx=cx+nl*Math.cos(needleAngleRad),ny=cy+nl*Math.sin(needleAngleRad);
-  const isDark=!document.body.classList.contains('theme-light');
-  const nc=isDark?'rgba(232,237,245,0.7)':'rgba(20,20,30,0.6)';
-  lines.push(`<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(2)}" y2="${ny.toFixed(2)}" stroke="${nc}" stroke-width="2" stroke-linecap="round"/>`);
-  lines.push(`<circle cx="${cx}" cy="${cy}" r="5" fill="${nc}"/>`);
-
-  const svgHTML=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-height:160px;display:block;margin:0 auto;">
-    ${lines.join('')}
-  </svg>`;
-  wrap.innerHTML=svgHTML;
+  wrap.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="max-height:165px;display:block;margin:0 auto;">${lines.join('')}</svg>`;
 
   if(lbl)lbl.innerHTML=`
-    <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:2px;">
-      ${owesMe>0?`<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#0ce97f;font-weight:700;"><span style="width:8px;height:3px;background:#0ce97f;display:inline-block;border-radius:1px;"></span>Owe Me</div><div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#0ce97f;">${fmt(owesMe)}</div></div>`:''}
-      ${iOwe>0?`<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#ff3d5a;font-weight:700;"><span style="width:8px;height:3px;background:#ff3d5a;display:inline-block;border-radius:1px;"></span>I Owe</div><div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#ff3d5a;">${fmt(iOwe)}</div></div>`:''}
-      ${depPend>0?`<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#4d9fff;font-weight:700;"><span style="width:8px;height:3px;background:#4d9fff;display:inline-block;border-radius:1px;"></span>Deposits</div><div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#4d9fff;">${fmt(depPend)}</div></div>`:''}
+    <div style="display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:6px;">
+      ${owesMe>0?`<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#0ce97f;font-weight:700;"><span style="width:10px;height:2px;background:#0ce97f;display:inline-block;"></span>Owe Me</div><div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#0ce97f;">${fmt(owesMe)}</div></div>`:''}
+      ${iOwe>0?`<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#ff3d5a;font-weight:700;"><span style="width:10px;height:2px;background:#ff3d5a;display:inline-block;"></span>I Owe</div><div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#ff3d5a;">${fmt(iOwe)}</div></div>`:''}
+      ${depPend>0?`<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#4d9fff;font-weight:700;"><span style="width:10px;height:2px;background:#4d9fff;display:inline-block;"></span>Deposits</div><div style="font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:#4d9fff;">${fmt(depPend)}</div></div>`:''}
     </div>`;
 }
 
