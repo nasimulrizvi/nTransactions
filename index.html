@@ -715,10 +715,11 @@ function load(){
     if(!S.incCatOrder)S.incCatOrder=[];
     if(!S.hiddenExpCats)S.hiddenExpCats=[];
     if(!S.hiddenIncCats)S.hiddenIncCats=[];
+    if(!S.savingsHistory)S.savingsHistory=[];
   }catch(e){}
 }
 function saveLocal(){
-  try{localStorage.setItem('ntx4',JSON.stringify({transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,customExpCats:S.customExpCats,customIncCats:S.customIncCats,expCatOrder:S.expCatOrder,incCatOrder:S.incCatOrder,hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],month:S.month,lastSync:S.lastSync}));}catch(e){}
+  try{localStorage.setItem('ntx4',JSON.stringify({transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,customExpCats:S.customExpCats,customIncCats:S.customIncCats,expCatOrder:S.expCatOrder,incCatOrder:S.incCatOrder,hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],savingsHistory:S.savingsHistory||[],month:S.month,lastSync:S.lastSync}));}catch(e){}
 }
 function normalizeLoan(l){
   if(!l.payments)l.payments=[];
@@ -735,7 +736,8 @@ async function pushSync(){
     const payload={transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,
       customExpCats:S.customExpCats||[],customIncCats:S.customIncCats||[],
       expCatOrder:S.expCatOrder||[],incCatOrder:S.incCatOrder||[],
-      hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],ts};
+      hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],
+      savingsHistory:S.savingsHistory||[],ts};
     S.lastSync=ts;
     await fbDb.ref('users/'+fbUser.uid+'/data').set(payload);
     saveLocal();setSyncDot('ok');
@@ -1005,16 +1007,16 @@ function rDash(){
   <div class="section dash-grid-full" style="padding-top:16px;">
     <div class="sec-hdr"><div class="sec-title">Spending by Category</div></div>
     <div class="donut-grid">
-      <div class="card" id="donut-card-m" style="padding:16px;">
+      <div class="card" id="donut-card-m" style="padding:16px;display:flex;flex-direction:column;justify-content:center;">
         <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">${fmtMY(S.month)} — Monthly</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:auto 0;">
           <div style="flex:0 0 120px;width:120px;"><canvas id="chart-donut" style="width:100%;display:block;"></canvas></div>
           <div style="flex:1;min-width:130px;" id="donut-legend"></div>
         </div>
       </div>
-      <div class="card" id="donut-card-y" style="padding:16px;">
+      <div class="card" id="donut-card-y" style="padding:16px;display:flex;flex-direction:column;justify-content:center;">
         <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">${yr} — Yearly</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:auto 0;">
           <div style="flex:0 0 120px;width:120px;"><canvas id="chart-donut-yr" style="width:100%;display:block;"></canvas></div>
           <div style="flex:1;min-width:130px;" id="donut-legend-yr"></div>
         </div>
@@ -1095,11 +1097,17 @@ function drawDashCharts(){
     const yrCats=Object.entries(yrMap).map(([id,amount])=>({...getCat('expense',id),id,amount})).sort((a,b)=>b.amount-a.amount);
     const yrTotal=yrCats.reduce((s,c)=>s+c.amount,0);
     drawDonut('chart-donut-yr','donut-legend-yr',yrCats,yrTotal);
-    // sync card heights
+    // sync card heights so monthly matches yearly
     setTimeout(()=>{
       const d1=document.getElementById('donut-card-m'),d2=document.getElementById('donut-card-y');
-      if(d1&&d2){const h=Math.max(d1.scrollHeight,d2.scrollHeight);d1.style.minHeight=h+'px';d2.style.minHeight=h+'px';}
-    },120);
+      if(d1&&d2){
+        d1.style.minHeight='';d2.style.minHeight=''; // reset first
+        requestAnimationFrame(()=>{
+          const h=Math.max(d1.offsetHeight,d2.offsetHeight);
+          if(h>0){d1.style.minHeight=h+'px';d2.style.minHeight=h+'px';}
+        });
+      }
+    },150);
   }
 
   // ---- CHART 3a: Savings Needle Gauge (pure SVG) ----
@@ -1766,14 +1774,15 @@ function txCatOpts(type){const cats=type==='expense'?getExpCats():getIncCats();r
 function txModalHTML(){
   // For expense, hide wallets with balance <= 0
   const availWallets=txType==='expense'?S.wallets.filter(w=>w.balance>0):S.wallets;
-  const wOpts=availWallets.map(w=>`<option value="${w.id}">${w.name} (${fmt(w.balance)})</option>`).join('');
+  function fmtWltBal(b){const n=Math.abs(b);return'৳'+(Number.isInteger(n)?n.toLocaleString('en-US'):n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}));}
+  const wOpts=availWallets.map(w=>`<option value="${w.id}">${w.name} • ${fmtWltBal(w.balance)}</option>`).join('');
   const wSelect=txType==='expense'&&availWallets.length===0
     ?`<div style="background:var(--red-d);border:1px solid rgba(255,61,90,.25);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--red);">No wallet has sufficient balance.</div>`
     :`<select class="fi" id="tx-w">${wOpts}</select>`;
-  const photoSection=`<div id="tx-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="tx-photo-img" style="width:100%;max-height:160px;object-fit:cover;border-radius:10px;border:1px solid var(--border);" /><button onclick="clearTxPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="tx-photo-input" accept="image/*" style="display:none;" onchange="handleTxPhoto(this)"><input type="file" id="tx-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleTxCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('tx-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('tx-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div>`;
+  const photoSection=`<div id="tx-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="tx-photo-img" style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)" title="Tap to view full size"/><button onclick="clearTxPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="tx-photo-input" accept="image/*" style="display:none;" onchange="handleTxPhoto(this)"><input type="file" id="tx-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleTxCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('tx-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('tx-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div>`;
   let body=txType!=='transfer'
-    ?`<div class="fg"><label class="fl">Wallet</label>${wSelect}</div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="tx-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label><select class="fi" id="tx-cat">${txCatOpts(txType)}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?"></div><div class="fg"><label class="fl">Photo (optional)</label>${photoSection}</div>`
-    :`<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="tx-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason"></div>`;
+    ?`<div class="fg"><label class="fl">Wallet</label>${wSelect}</div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="tx-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label><select class="fi" id="tx-cat">${txCatOpts(txType)}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg" style="position:relative;"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?" autocomplete="off" oninput="showNoteSugg(this,'${txType}')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div><div class="fg"><label class="fl">Photo (optional)</label>${photoSection}</div>`
+    :`<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="tx-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg" style="position:relative;"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason" autocomplete="off" oninput="showNoteSugg(this,'transfer')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div>`;
   return`<div class="modal-title">Add Transaction</div><div class="tab-grp"><button class="tab-btn te ${txType==='expense'?'active':''}" onclick="swTxT('expense')">Expense</button><button class="tab-btn ti ${txType==='income'?'active':''}" onclick="swTxT('income')">Cash In</button><button class="tab-btn tt ${txType==='transfer'?'active':''}" onclick="swTxT('transfer')">Transfer</button></div>${body}<button class="btn btn-p" onclick="submitTx()">Save Transaction</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`;
 }
 function swTxT(t){txType=t;document.getElementById('mc').innerHTML=txModalHTML();}
@@ -1796,7 +1805,7 @@ function showTxD(id){
   else if(t.type==='income'){const c=getCat('income',t.category);icon=catIco(t.category,32);label=c.label;ac='var(--green)';pfx='+';}
   else{icon=ico('wallet_type',32);label='Transfer';ac='var(--blue)';pfx='';}
   const w=getWlt(t.wallet);
-  const txPhotoHTML=t.photo?`<div style="margin-bottom:14px;"><img src="${t.photo}" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;border:1px solid var(--border);"></div>`:'';
+  const txPhotoHTML=t.photo?`<div style="margin-bottom:14px;cursor:pointer;" onclick="openPhotoPreview('${t.photo.replace(/'/g,"\\'")}')"><img src="${t.photo}" style="width:100%;max-height:200px;object-fit:contain;border-radius:12px;border:1px solid var(--border);display:block;"/><div style="text-align:center;font-size:11px;color:var(--text3);margin-top:4px;">Tap to view full size</div></div>`:'';
   openModal(`<div class="modal-title">Transaction Detail</div>${txPhotoHTML}<div style="text-align:center;padding:16px 0 20px;"><div style="display:flex;justify-content:center;margin-bottom:8px;opacity:.7;">${icon}</div><div style="font-size:13px;color:var(--text2);margin-bottom:6px;">${label}</div><div style="font-family:'Space Mono',monospace;font-size:34px;font-weight:700;color:${ac};">${pfx}${fmt(t.amount)}</div></div><div class="card" style="margin-bottom:18px;"><div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">Date</span><span style="font-weight:700;margin-left:auto;">${fmtD(t.date)}</span></div><div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">Type</span><span style="font-weight:700;margin-left:auto;text-transform:capitalize;">${t.type}</span></div><div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">Wallet</span><span style="font-weight:700;margin-left:auto;">${w.name}</span></div>${t.type==='transfer'?`<div class="tx-item" style="cursor:default;"><span style="color:var(--text3);">To Wallet</span><span style="font-weight:700;margin-left:auto;">${getWlt(t.toWallet).name}</span></div>`:''}<div class="tx-item" style="cursor:default;border-bottom:none;"><span style="color:var(--text3);">Note</span><span style="font-weight:700;margin-left:auto;">${t.note||'-'}</span></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;"><button class="btn btn-s" onclick="openEditTx('${t.id}')" style="margin:0;display:flex;align-items:center;justify-content:center;gap:7px;">${EDIT_SVG} Edit</button><button class="btn btn-d" onclick="delTx('${t.id}')" style="margin:0;display:flex;align-items:center;justify-content:center;gap:7px;">${TRASH_SVG} Delete</button></div><button class="btn btn-s" onclick="closeModal()" style="font-size:16px;font-weight:800;padding:15px;">Close</button>`);
 }
 function delTx(id){
@@ -1861,7 +1870,16 @@ function openEditBgt(bgtId){
   const b=S.budgets.find(x=>x.id===bgtId);if(!b)return;
   const lbl=b.period==='yearly'?`Year ${b.year}`:`${fmtMY(b.month)}`;const isSav=b.category==='savings';
   const calcHTML=`<div class="fg"><label class="fl">Quick Adjust</label><div class="calc-row"><select class="fi calc-op-sel" id="calc-op"><option value="+">+</option><option value="-">-</option><option value="*">x</option><option value="/">/</option></select><input type="number" class="fi" id="calc-val" placeholder="0" min="0" style="flex:1;"><button class="sm-btn" onclick="applyCalc()" style="white-space:nowrap;padding:9px 14px;">= Apply</button></div></div>`;
-  openModal(`<div class="modal-title">Edit ${isSav?'Savings Target':'Budget'}</div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--text2);">Period: <b style="color:var(--text);">${lbl}</b></div><div class="fg"><label class="fl">New Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-edit-amt" placeholder="0.00" min="0" value="${b.amount}"></div></div>${calcHTML}<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;"><button class="btn btn-p" onclick="submitEditBgt('${bgtId}')" style="margin:0;">Update</button><button class="btn btn-d" onclick="delBgt('${bgtId}')" style="margin:0;">Delete</button></div><button class="btn btn-s" onclick="closeModal()" style="margin-top:10px;font-size:16px;font-weight:800;padding:15px;">Close</button>`);
+  // History for savings targets
+  let histHTML='';
+  if(isSav){
+    const hist=(S.savingsHistory||[]).filter(h=>h.bgtId===bgtId).slice(-8).reverse();
+    if(hist.length){
+      const rows=hist.map(h=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--borderl);font-size:12px;"><div style="color:var(--text3);">${new Date(h.at).toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div><div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--text3);font-family:'Space Mono',monospace;">${fmt(h.from)}</span><span style="color:var(--text3);">→</span><span style="color:var(--green);font-weight:700;font-family:'Space Mono',monospace;">${fmt(h.to)}</span></div></div>`).join('');
+      histHTML=`<div style="margin-top:14px;"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px;">Adjustment History</div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 14px;">${rows}</div></div>`;
+    }
+  }
+  openModal(`<div class="modal-title">Edit ${isSav?'Savings Target':'Budget'}</div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--text2);">Period: <b style="color:var(--text);">${lbl}</b></div><div class="fg"><label class="fl">New Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-edit-amt" placeholder="0.00" min="0" value="${b.amount}"></div></div>${calcHTML}${histHTML}<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;"><button class="btn btn-p" onclick="submitEditBgt('${bgtId}')" style="margin:0;">Update</button><button class="btn btn-d" onclick="delBgt('${bgtId}')" style="margin:0;">Delete</button></div><button class="btn btn-s" onclick="closeModal()" style="margin-top:10px;font-size:16px;font-weight:800;padding:15px;">Close</button>`);
 }
 function applyCalc(){
   const mainEl=document.getElementById('b-edit-amt');const opEl=document.getElementById('calc-op');const valEl=document.getElementById('calc-val');if(!mainEl||!opEl||!valEl)return;
@@ -1871,7 +1889,23 @@ function applyCalc(){
 }
 function submitBudgetOnly(period){const amt=parseFloat(document.getElementById('b-amt').value);if(!amt||amt<=0)return alert('Enter a valid amount.');const yr=curYear();if(period==='monthly'){const idx=S.budgets.findIndex(b=>b.category==='overall'&&b.month===S.month&&b.period!=='yearly');if(idx>=0)S.budgets[idx].amount=amt;else S.budgets.push({id:uid(),category:'overall',amount:amt,month:S.month,period:'monthly'});}else{const idx=S.budgets.findIndex(b=>b.category==='overall'&&b.year===yr&&b.period==='yearly');if(idx>=0)S.budgets[idx].amount=amt;else S.budgets.push({id:uid(),category:'overall',amount:amt,year:yr,period:'yearly'});}save();closeModal();renderMain();}
 function submitSavingsOnly(period){const amt=parseFloat(document.getElementById('b-amt').value);if(!amt||amt<=0)return alert('Enter a valid amount.');const yr=curYear();if(period==='monthly'){const idx=S.budgets.findIndex(b=>b.category==='savings'&&b.month===S.month&&b.period==='monthly');if(idx>=0)S.budgets[idx].amount=amt;else S.budgets.push({id:uid(),category:'savings',amount:amt,month:S.month,period:'monthly'});}else{const idx=S.budgets.findIndex(b=>b.category==='savings'&&b.year===yr&&b.period==='yearly');if(idx>=0)S.budgets[idx].amount=amt;else S.budgets.push({id:uid(),category:'savings',amount:amt,year:yr,period:'yearly'});}save();closeModal();renderMain();}
-function submitEditBgt(bgtId){const amt=parseFloat(document.getElementById('b-edit-amt').value);if(!amt||amt<=0)return alert('Enter a valid amount.');const b=S.budgets.find(x=>x.id===bgtId);if(b)b.amount=amt;save();closeModal();renderMain();}
+function submitEditBgt(bgtId){
+  const amt=parseFloat(document.getElementById('b-edit-amt').value);
+  if(!amt||amt<=0)return alert('Enter a valid amount.');
+  const b=S.budgets.find(x=>x.id===bgtId);if(!b)return;
+  const oldAmt=b.amount;
+  b.amount=amt;
+  // Save history
+  if(!S.savingsHistory)S.savingsHistory=[];
+  const isSav=b.category==='savings';
+  if(isSav){
+    S.savingsHistory.push({
+      bgtId,period:b.period==='yearly'?`Year ${b.year}`:`${fmtMY(b.month)}`,
+      from:oldAmt,to:amt,at:new Date().toISOString()
+    });
+  }
+  save();closeModal();renderMain();
+}
 function delBgt(id){if(!confirm('Delete this budget?'))return;S.budgets=S.budgets.filter(x=>x.id!==id);save();closeModal();renderMain();}
 function bgtTypeChanged(){const t=document.getElementById('b-type').value;const cw=document.getElementById('b-cat-wrap');const h=document.getElementById('b-hint');if(cw)cw.style.display=t==='category'?'':'none';const hints={monthly_overall:`Applies to ${fmtMY(S.month)}`,yearly_overall:`Applies to full year ${curYear()}`,monthly_savings:`Monthly savings target for ${fmtMY(S.month)}`,yearly_savings:`Yearly savings target for ${curYear()}`,category:`Category budget for ${fmtMY(S.month)}`};if(h)h.textContent=hints[t]||'';}
 function submitBgt(){
@@ -2093,32 +2127,45 @@ function handleTxPhoto(input){
 }
 function handleTxCameraPhoto(input){
   const file=input.files[0];if(!file)return;
-  // Auto-compress to under 3MB using canvas
   const reader=new FileReader();
   reader.onload=function(e){
     const img=new Image();
     img.onload=function(){
-      const MAX=2.5*1024*1024; // target ~2.5MB
-      let quality=0.85;
-      const canvas=document.createElement('canvas');
-      // Limit max dimension to 1920px
+      const MAX=2.5*1024*1024;
+      // Preserve full aspect ratio — no cropping
       let w=img.width,h=img.height;
-      const maxDim=1920;
+      const maxDim=2560; // allow tall receipts
       if(w>maxDim||h>maxDim){const r=Math.min(maxDim/w,maxDim/h);w=Math.round(w*r);h=Math.round(h*r);}
+      const canvas=document.createElement('canvas');
       canvas.width=w;canvas.height=h;
       const ctx=canvas.getContext('2d');
       ctx.drawImage(img,0,0,w,h);
-      // Reduce quality until under MAX
+      let quality=0.88;
       let dataUrl=canvas.toDataURL('image/jpeg',quality);
-      while(dataUrl.length*0.75>MAX&&quality>0.3){quality-=0.1;dataUrl=canvas.toDataURL('image/jpeg',quality);}
+      while(dataUrl.length*0.75>MAX&&quality>0.25){quality-=0.08;dataUrl=canvas.toDataURL('image/jpeg',quality);}
       _txPhoto=dataUrl;
       const prev=document.getElementById('tx-photo-preview');
       const imgEl=document.getElementById('tx-photo-img');
-      if(prev&&imgEl){imgEl.src=_txPhoto;prev.style.display='block';}
+      if(prev&&imgEl){
+        imgEl.src=_txPhoto;
+        imgEl.style.objectFit='contain'; // show full receipt without crop
+        prev.style.display='block';
+      }
     };
     img.src=e.target.result;
   };
   reader.readAsDataURL(file);
+}
+function openPhotoPreview(src){
+  if(!src)return;
+  openModal(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div style="font-size:14px;font-weight:700;">Photo Preview</div>
+    <button onclick="closeModal()" style="background:rgba(255,255,255,.08);border:none;border-radius:8px;padding:5px 10px;color:var(--text2);cursor:pointer;font-size:18px;line-height:1;">&times;</button>
+  </div>
+  <div style="text-align:center;">
+    <img src="${src}" style="width:100%;max-height:72dvh;object-fit:contain;border-radius:10px;cursor:zoom-in;" onclick="this.style.maxHeight=this.style.maxHeight==='none'?'72dvh':'none';this.style.cursor=this.style.cursor==='zoom-out'?'zoom-in':'zoom-out';" title="Click to zoom"/>
+  </div>
+  <a href="${src}" download="receipt.jpg" style="display:flex;align-items:center;justify-content:center;gap:7px;margin-top:12px;padding:11px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);text-decoration:none;font-size:13px;font-weight:700;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Save Photo</a>`);
 }
 function clearTxPhoto(){
   _txPhoto='';
@@ -2231,6 +2278,35 @@ function openImportInfo(){
     <b style="color:var(--text2);">Tip:</b> Use Export to Excel from Settings to keep a local backup of your transaction history at any time.
   </div>
   <button class="btn btn-s" onclick="openSyncModal()" style="margin-top:14px;">Back</button>`);
+}
+
+// ============ NOTE AUTOCOMPLETE ============
+function showNoteSugg(input, txType){
+  const q=input.value.trim().toLowerCase();
+  const sugg=document.getElementById('note-sugg');
+  if(!sugg)return;
+  if(!q){sugg.style.display='none';return;}
+  // collect unique notes from same tx type
+  const notes=[...new Set(
+    S.transactions
+      .filter(t=>t.type===txType&&t.note&&t.note.toLowerCase().includes(q))
+      .sort((a,b)=>b.date.localeCompare(a.date))
+      .map(t=>t.note)
+  )].slice(0,6);
+  if(!notes.length){sugg.style.display='none';return;}
+  sugg.innerHTML=notes.map(n=>`<div onclick="pickNoteSugg('${n.replace(/'/g,"\\'")}','${txType}')" style="padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--borderl);color:var(--text);" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''">${n}</div>`).join('');
+  sugg.style.display='block';
+  // close on outside click
+  setTimeout(()=>{
+    const close=e=>{if(!sugg.contains(e.target)&&e.target!==input){sugg.style.display='none';document.removeEventListener('click',close);}};
+    document.addEventListener('click',close);
+  },10);
+}
+function pickNoteSugg(note,txType){
+  const inp=document.getElementById('tx-note');
+  const sugg=document.getElementById('note-sugg');
+  if(inp)inp.value=note;
+  if(sugg)sugg.style.display='none';
 }
 
 // ============ INIT ============
