@@ -202,11 +202,11 @@ body.theme-light .wlt-card.drag-over{border-color:rgba(42,125,225,.4);background
   .modal{border-radius:22px;max-width:520px;max-height:88dvh;transform:scale(.95);}
   .modal-overlay.open .modal{transform:scale(1);}
   .modal-handle{display:none;}
-  /* Mobile: donut and gauge grids stack vertically */
+}
+/* Grid layouts: mobile = 1 col, desktop = 2 col */
 .donut-grid,.gauge-grid{display:grid;grid-template-columns:1fr;gap:16px;}
 @media(min-width:1024px){
   .donut-grid,.gauge-grid{grid-template-columns:1fr 1fr;gap:16px;}
-}
 }
 @media(min-width:1366px){
   .main-inner{max-width:1280px;}
@@ -1007,15 +1007,15 @@ function rDash(){
     <div class="donut-grid">
       <div class="card" id="donut-card-m" style="padding:16px;">
         <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">${fmtMY(S.month)} — Monthly</div>
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <div style="flex:0 0 130px;max-width:130px;margin:0 auto;"><canvas id="chart-donut" style="width:100%;"></canvas></div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+          <div style="flex:0 0 130px;width:130px;"><canvas id="chart-donut" style="width:100%;"></canvas></div>
           <div style="flex:1;min-width:110px;" id="donut-legend"></div>
         </div>
       </div>
       <div class="card" id="donut-card-y" style="padding:16px;">
         <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">${yr} — Yearly</div>
-        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
-          <div style="flex:0 0 130px;max-width:130px;margin:0 auto;"><canvas id="chart-donut-yr" style="width:100%;"></canvas></div>
+        <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;">
+          <div style="flex:0 0 130px;width:130px;"><canvas id="chart-donut-yr" style="width:100%;"></canvas></div>
           <div style="flex:1;min-width:110px;" id="donut-legend-yr"></div>
         </div>
       </div>
@@ -1162,9 +1162,9 @@ function drawSavingsGauge(){
   //
   // Pivot (cx,cy) sits near the BOTTOM of the viewBox so the arc fills the upper portion.
 
-  const VW=240, VH=148;
-  const cx=120, cy=130;  // pivot near bottom
-  const R=98, sw=22;     // radius & stroke width
+  const VW=220, VH=126;
+  const cx=110, cy=114;  // pivot near bottom
+  const R=84, sw=18;     // radius & stroke width
 
   // Point on circle at given degree
   function pt(deg){
@@ -1211,7 +1211,7 @@ function drawSavingsGauge(){
   const leftLbl=pt(180);
   const rightLbl=pt(0);
 
-  wrap.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;margin:0 auto;overflow:hidden;">
+  wrap.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;margin:0 auto;max-height:130px;overflow:hidden;">
     <path d="${trackPath}" stroke="rgba(255,255,255,0.06)" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>
     ${segs.join('')}
     <line x1="${tx}" y1="${ty}" x2="${nx}" y2="${ny}" stroke="${nc}" stroke-width="3" stroke-linecap="round"/>
