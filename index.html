@@ -203,7 +203,7 @@ body.theme-light .wlt-card.drag-over{border-color:rgba(42,125,225,.4);background
   .modal-overlay.open .modal{transform:scale(1);}
   .modal-handle{display:none;}
   /* Mobile: donut and gauge grids stack vertically */
-.donut-grid,.gauge-grid{display:grid;grid-template-columns:1fr;gap:14px;}
+.donut-grid,.gauge-grid{display:grid;grid-template-columns:1fr;gap:16px;}
 @media(min-width:1024px){
   .donut-grid,.gauge-grid{grid-template-columns:1fr 1fr;gap:16px;}
 }
@@ -1002,7 +1002,7 @@ function rDash(){
 
   <!-- CHART 2: Donut monthly + yearly side by side on desktop, stacked on mobile -->
   ${chartVis.donut&&hasCatData?`
-  <div class="section dash-grid-full" style="padding-top:14px;">
+  <div class="section dash-grid-full" style="padding-top:16px;">
     <div class="sec-hdr"><div class="sec-title">Spending by Category</div></div>
     <div class="donut-grid">
       <div class="card" id="donut-card-m" style="padding:16px;">
@@ -1024,7 +1024,7 @@ function rDash(){
 
   <!-- CHART 3: Savings needle gauge + Loan arcs gauge — desktop side by side, mobile stacked -->
   ${chartVis.savings&&hasSavings?`
-  <div class="section dash-grid-full" style="padding-top:14px;">
+  <div class="section dash-grid-full" style="padding-top:16px;">
     <div class="gauge-grid">
       <!-- Savings Needle Gauge -->
       <div class="card" style="padding:16px;">
@@ -1131,7 +1131,7 @@ function drawDashCharts(){
   }
 }
 
-// ============ SAVINGS GAUGE (pure SVG, correct semicircle) ============
+// ============ SAVINGS GAUGE (pure SVG, correct upper semicircle) ============
 function drawSavingsGauge(){
   const wrap=document.getElementById('savings-gauge-wrap');
   if(!wrap)return;
@@ -1149,53 +1149,75 @@ function drawSavingsGauge(){
   const isDark=!document.body.classList.contains('theme-light');
   const nc=isDark?'#e8edf5':'#1a1a2e';
 
-  // Fixed SVG coordinate system:
-  // viewBox="0 0 240 140", cx=120, cy=120 (pivot near bottom)
-  // Semicircle: left endpoint (180°) to right endpoint (0°) going through top (270°)
-  // In SVG: x=cx+r*cos(deg), y=cy+r*sin(deg), deg in standard math (counter-clockwise from right)
-  // 180° = left, 270° = top, 0° = right
-  // Arc from 180° to 0° going counter-clockwise through 270° = sweep-flag=0, large-arc=1
-  const VW=240,VH=140,cx=120,cy=118,R=88,sw=20;
+  // SVG coordinate system (standard):
+  //   x = cx + R*cos(deg),  y = cy + R*sin(deg)
+  //   In SVG, y grows DOWNWARD, so:
+  //     0°  → right  (cx+R, cy)
+  //   180°  → left   (cx-R, cy)
+  //    90°  → DOWN   (cx, cy+R)   ← bottom
+  //   270°  → UP     (cx, cy-R)   ← top
+  //
+  // We want the arc to go from LEFT (180°) → UP (270°) → RIGHT (0°)
+  // That is CLOCKWISE in SVG (sweep-flag = 1), large-arc = 1
+  //
+  // Pivot (cx,cy) sits near the BOTTOM of the viewBox so the arc fills the upper portion.
 
+  const VW=240, VH=148;
+  const cx=120, cy=130;  // pivot near bottom
+  const R=98, sw=22;     // radius & stroke width
+
+  // Point on circle at given degree
   function pt(deg){
-    const rad=deg*Math.PI/180;
-    return{x:(cx+R*Math.cos(rad)).toFixed(2),y:(cy+R*Math.sin(rad)).toFixed(2)};
+    const r=deg*Math.PI/180;
+    return{x:(cx+R*Math.cos(r)).toFixed(2), y:(cy+R*Math.sin(r)).toFixed(2)};
   }
-  // Arc segment from angleDeg1 to angleDeg2, counter-clockwise (sweep=0)
-  // Going from 180° down to 0° counter-clockwise means decreasing degrees
+
+  // Arc segment d1→d2 CLOCKWISE (sweep=1), upper half goes left→top→right
   function seg(d1,d2){
     const p1=pt(d1),p2=pt(d2);
-    // Since d2 < d1, sweep=0, large-arc = abs(d1-d2)>180 ? 1:0
-    const large=Math.abs(d1-d2)>180?1:0;
-    return`M${p1.x},${p1.y} A${R},${R} 0 ${large},0 ${p2.x},${p2.y}`;
+    const span=((d2-d1+360)%360); // positive clockwise span
+    const large=span>180?1:0;
+    return`M${p1.x},${p1.y} A${R},${R} 0 ${large},1 ${p2.x},${p2.y}`;
   }
 
-  // 5 segments: 180→144→108→72→36→0, colors red→orange→amber→yellow-green→green
+  // Full upper semicircle track: 180° → clockwise → 0° (through 270° which is top)
+  // clockwise from 180° to 360°(=0°) = span 180°, large=1
+  const trackPath=`M${pt(180).x},${pt(180).y} A${R},${R} 0 1,1 ${pt(0).x},${pt(0).y}`;
+
+  // 5 colour segments clockwise: 180→144→108→72→36→0
+  // In clockwise direction: 180→216→252→288→324→360(=0)? No —
+  // Wait: clockwise from 180° means INCREASING degrees: 180→216→...360
+  // But we want the arc to go UPWARD (through 270°).
+  // In SVG y-down: 270° is the TOP. Clockwise from 180° goes to 270° (top) then to 0°(=360°).
+  // So segments clockwise: 180→216→252→288→324→360
+  // Color left-to-right = red(left,180°) → green(right,0°/360°)
   const segCols=['#ff3d5a','#ff8020','#ffb020','#7cd67f','#0ce97f'];
-  const breaks=[180,144,108,72,36,0];
+  const breaks=[180,216,252,288,324,360];
   const segs=segCols.map((c,i)=>
     `<path d="${seg(breaks[i],breaks[i+1])}" stroke="${c}" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>`
   );
 
-  // Track (full semicircle bg): 180→0 counter-clockwise
-  const trackPath=`M${pt(180).x},${pt(180).y} A${R},${R} 0 1,0 ${pt(0).x},${pt(0).y}`;
-
-  // Needle: 0%→180°(left), 100%→0°(right), angle = 180 - pct*1.8
-  const nDeg=180-pct*1.8;
+  // Needle angle: 0% → 180° (left), 100% → 360°=0° (right)
+  // Clockwise means angle INCREASES from 180 to 360
+  const nDeg=180+pct*1.8; // 0%→180°, 100%→360°
   const nRad=nDeg*Math.PI/180;
-  const nLen=R*0.76, tLen=13;
+  const nLen=R*0.74, tLen=14;
   const nx=(cx+nLen*Math.cos(nRad)).toFixed(2);
   const ny=(cy+nLen*Math.sin(nRad)).toFixed(2);
   const tx=(cx-tLen*Math.cos(nRad)).toFixed(2);
   const ty=(cy-tLen*Math.sin(nRad)).toFixed(2);
 
-  wrap.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="max-height:145px;display:block;margin:0 auto;overflow:visible;">
+  // Label positions: left end (180°) and right end (0°)
+  const leftLbl=pt(180);
+  const rightLbl=pt(0);
+
+  wrap.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;margin:0 auto;overflow:hidden;">
     <path d="${trackPath}" stroke="rgba(255,255,255,0.06)" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>
     ${segs.join('')}
-    <line x1="${tx}" y1="${ty}" x2="${nx}" y2="${ny}" stroke="${nc}" stroke-width="2.8" stroke-linecap="round"/>
+    <line x1="${tx}" y1="${ty}" x2="${nx}" y2="${ny}" stroke="${nc}" stroke-width="3" stroke-linecap="round"/>
     <circle cx="${cx}" cy="${cy}" r="6" fill="${nc}"/>
-    <text x="${(cx-R*0.96).toFixed(0)}" y="${(cy+15).toFixed(0)}" text-anchor="middle" font-size="10" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.3)">0</text>
-    <text x="${(cx+R*0.96).toFixed(0)}" y="${(cy+15).toFixed(0)}" text-anchor="middle" font-size="10" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.3)">100</text>
+    <text x="${leftLbl.x}" y="${(parseFloat(leftLbl.y)+16).toFixed(0)}" text-anchor="middle" font-size="10" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.35)">0</text>
+    <text x="${rightLbl.x}" y="${(parseFloat(rightLbl.y)+16).toFixed(0)}" text-anchor="middle" font-size="10" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.35)">100</text>
   </svg>`;
 
   const lbl=document.getElementById('gauge-label');
