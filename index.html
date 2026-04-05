@@ -434,6 +434,7 @@ body.theme-light .hdr-avatar{border-color:rgba(0,0,0,0.10);background:var(--blue
         </div>
         <div id="sms-badge" style="position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;"></div>
       </button>
+      <button class="hbtn" onclick="openSyncModal()" title="Account &amp; Sync" style="padding:3px;background:none;border:none;position:relative;">
         <div class="sync-dot" id="sync-dot" style="display:none;position:absolute;top:0;right:0;z-index:2;"></div>
         <div class="hdr-avatar" id="hdr-avatar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -2505,16 +2506,20 @@ let _smsPending=[];
 function startSmsPendingListener(){
   if(!fbUser)return;
   if(_smsPendingListener)return;
-  const ref=fbDb.ref('sms_pending/'+fbUser.uid);
+  // Path matches Android app: /users/{uid}/sms_pending/
+  const ref=fbDb.ref('users/'+fbUser.uid+'/sms_pending');
   _smsPendingListener=ref.on('value',snap=>{
     const data=snap.val();
-    _smsPending=data?Object.entries(data).map(([k,v])=>({_key:k,...v})):[];
+    _smsPending=data?Object.entries(data)
+      .map(([k,v])=>({_key:k,...v}))
+      .sort((a,b)=>(b.timestamp||0)-(a.timestamp||0))
+      :[];
     updateSmsBadge();
   });
 }
 function stopSmsPendingListener(){
   if(_smsPendingListener&&fbUser){
-    fbDb.ref('sms_pending/'+fbUser.uid).off('value',_smsPendingListener);
+    fbDb.ref('users/'+fbUser.uid+'/sms_pending').off('value',_smsPendingListener);
     _smsPendingListener=null;
   }
 }
@@ -2535,22 +2540,34 @@ function showSmsReview(idx){
   if(idx>=_smsPending.length){closeModal();return;}
   const p=_smsPending[idx];
   const remaining=_smsPending.length-idx;
-  const wOpts=S.wallets.map(w=>`<option value="${w.id}" ${w.name===p.wallet?'selected':''}>${w.name}</option>`).join('');
-  const typeOpts=['expense','income','transfer'].map(tp=>`<option value="${tp}" ${tp===p.type?'selected':''}>${tp==='expense'?'Expense':tp==='income'?'Cash In':'Transfer'}</option>`).join('');
-  const dtVal=p.datetime?p.datetime.slice(0,16):todayDT();
+  const wOpts=S.wallets.map(w=>`<option value="${w.id}" ${(w.name===p.wallet||w.id===p.wallet)?'selected':''}>${w.name}</option>`).join('');
+  const typeOpts=['expense','income','transfer'].map(tp=>{
+    const pType=(p.type||'').toLowerCase();
+    const match=tp==='expense'&&(pType==='expense')||tp==='income'&&(pType==='income'||pType==='cash in')||tp==='transfer'&&pType==='transfer';
+    return`<option value="${tp}" ${match?'selected':''}>${tp==='expense'?'Expense':tp==='income'?'Cash In':'Transfer'}</option>`;
+  }).join('');
+  // Android sends date + time as separate fields; fallback to datetime or today
+  let dtVal='';
+  if(p.date&&p.time) dtVal=p.date+'T'+p.time;
+  else if(p.datetime) dtVal=p.datetime.slice(0,16);
+  else dtVal=todayDT();
+  const balHtml=p.balance?`<span style="color:var(--text3);">Balance: <b style="color:var(--text);">${fmt(p.balance)}</b></span>`:'';
+  const txnHtml=p.txnId?`<span style="color:var(--text3);">TxnID: <b style="color:var(--text);">${p.txnId}</b></span>`:'';
   openModal(`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
     <div class="modal-title" style="margin:0;">Review SMS Transaction</div>
     <div style="font-size:11px;color:var(--amber);font-weight:700;background:var(--amber-d);padding:3px 9px;border-radius:7px;">${remaining} pending</div>
   </div>
-  <div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.25);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--amber);line-height:1.7;">
-    <b>SMS:</b> ${(p.rawSms||'').slice(0,120)}${(p.rawSms||'').length>120?'…':''}
+  <div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.25);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--amber);line-height:1.9;display:flex;flex-direction:column;gap:2px;">
+    <span style="font-weight:700;">Auto-detected from SMS</span>
+    <span style="color:var(--text3);">Sender: <b style="color:var(--text);">${p.wallet||'Unknown'}</b></span>
+    ${balHtml}${txnHtml?`<br>${txnHtml}`:''}
   </div>
   <div class="fg"><label class="fl">Type</label><select class="fi" id="sms-type">${typeOpts}</select></div>
   <div class="fg"><label class="fl">Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div>
   <div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sms-amt" value="${p.amount||''}" min="0" step="0.01"></div></div>
   <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="sms-dt" value="${dtVal}"></div>
   <div class="fg"><label class="fl">Description / Note</label><input type="text" class="fi" id="sms-note" value="${p.description||''}" placeholder="Auto-filled from SMS"></div>
-  <div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(optional — edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(p.type==='income'?'income':'expense').replace('<option value="">Select a category</option>','')}</select></div>
+  <div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(p.type==='income'||p.type==='Cash In'?'income':'expense').replace('<option value="">Select a category</option>','')}</select></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
     <button class="btn btn-p" onclick="confirmSmsTx(${idx})" style="margin:0;">Confirm & Save</button>
     <button class="btn btn-d" onclick="discardSmsTx(${idx})" style="margin:0;">Discard</button>
@@ -2560,7 +2577,11 @@ function showSmsReview(idx){
 }
 async function confirmSmsTx(idx){
   const p=_smsPending[idx];if(!p)return;
-  const type=document.getElementById('sms-type').value;
+  let type=document.getElementById('sms-type').value;
+  // normalize Android types to PWA types
+  if(type==='Cash In')type='income';
+  if(type==='Expense')type='expense';
+  if(type==='Transfer')type='transfer';
   const wId=document.getElementById('sms-wallet').value;
   const amt=parseFloat(document.getElementById('sms-amt').value);
   const dt=document.getElementById('sms-dt').value||todayDT();
@@ -2573,7 +2594,7 @@ async function confirmSmsTx(idx){
   if(w){if(type==='expense')w.balance-=amt;else if(type==='income')w.balance+=amt;}
   S.transactions.unshift(tx);save();
   // Remove from Firebase pending
-  try{await fbDb.ref('sms_pending/'+fbUser.uid+'/'+p._key).remove();}catch(e){}
+  try{await fbDb.ref('users/'+fbUser.uid+'/sms_pending/'+p._key).remove();}catch(e){}
   _smsPending.splice(idx,1);
   updateSmsBadge();
   if(_smsPending.length>idx)showSmsReview(idx);
@@ -2582,7 +2603,7 @@ async function confirmSmsTx(idx){
 async function discardSmsTx(idx){
   const p=_smsPending[idx];if(!p)return;
   if(!confirm('Discard this SMS transaction?'))return;
-  try{await fbDb.ref('sms_pending/'+fbUser.uid+'/'+p._key).remove();}catch(e){}
+  try{await fbDb.ref('users/'+fbUser.uid+'/sms_pending/'+p._key).remove();}catch(e){}
   _smsPending.splice(idx,1);
   updateSmsBadge();
   if(_smsPending.length>idx)showSmsReview(idx);
