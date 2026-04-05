@@ -428,7 +428,12 @@ body.theme-light .hdr-avatar{border-color:rgba(0,0,0,0.10);background:var(--blue
         <button class="hbtn" onclick="openMonthPicker()" id="month-btn">Mar 2026</button>
         <button class="hbtn" onclick="changeMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg></button>
       </div>
-      <button class="hbtn" onclick="openSyncModal()" title="Account &amp; Sync" style="padding:3px;background:none;border:none;position:relative;">
+      <button id="sms-pending-btn" onclick="openSmsPending()" title="Pending SMS Transactions" style="display:none;position:relative;padding:3px;background:none;border:none;cursor:pointer;">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--amber-d);border:1px solid rgba(255,176,32,.4);display:flex;align-items:center;justify-content:center;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div id="sms-badge" style="position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;display:flex;align-items:center;justify-content:center;font-family:'Outfit',sans-serif;"></div>
+      </button>
         <div class="sync-dot" id="sync-dot" style="display:none;position:absolute;top:0;right:0;z-index:2;"></div>
         <div class="hdr-avatar" id="hdr-avatar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -824,9 +829,12 @@ function initAuth(){
       await pullSync();
       renderMain();
       startRealtimeSync();
+      startSmsPendingListener();
     } else {
       fbUser=null;
       stopRealtimeSync();
+      stopSmsPendingListener();
+      _smsPending=[];updateSmsBadge();
       setSyncDot('');
       renderMain();
     }
@@ -1639,6 +1647,11 @@ function openSyncModal(){
     <!-- SECTION DIVIDER -->
     <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">Data & Export</div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
+      <div onclick="openSmsParser()" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;border-bottom:1px solid var(--borderl);transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
+        <div style="width:34px;height:34px;border-radius:10px;background:var(--purple-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">SMS Transaction Parser</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Paste bank/MFS SMS to auto-add transaction</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
       <div onclick="openExportModal()" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;border-bottom:1px solid var(--borderl);transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
         <div style="width:34px;height:34px;border-radius:10px;background:var(--green-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${EXPORT_SVG.replace('width="15" height="15"','width="16" height="16"').replace('stroke="currentColor"','stroke="var(--green)"')}</div>
         <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Export to Excel</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">Download transactions as .xlsx</div></div>
@@ -1846,9 +1859,17 @@ function delTx(id){
 function openEditTx(id){
   const t=S.transactions.find(x=>x.id===id);if(!t)return;
   const wOpts=S.wallets.map(w=>`<option value="${w.id}" ${w.id===t.wallet?'selected':''}>${w.name}</option>`).join('');
-  if(t.type==='transfer'){openModal(`<div class="modal-title">Edit Transfer</div><div style="background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:12px;color:var(--blue);">Only date and note can be edited for transfers.</div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="et-dt" value="${t.date}"></div><div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="et-note" value="${t.note||''}"></div><button class="btn btn-p" onclick="submitEditTx('${id}')">Update</button><button class="btn btn-s" onclick="showTxD('${id}')" style="margin-top:8px;">Back</button>`);return;}
-  const catOpts=(t.type==='expense'?getExpCats():getIncCats()).map(c=>`<option value="${c.id}" ${c.id===t.category?'selected':''}>${c.icon} ${c.label}</option>`).join('');
-  openModal(`<div class="modal-title">Edit ${t.type==='expense'?'Expense':'Income'}</div><div class="fg"><label class="fl">Wallet</label><select class="fi" id="et-w">${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="et-dt" value="${t.date}"></div><div class="fg"><label class="fl">Category</label><select class="fi" id="et-cat">${catOpts}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="et-amt" value="${t.amount}" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="et-note" value="${t.note||''}" placeholder="What was this for?"></div><button class="btn btn-p" onclick="submitEditTx('${id}')">Update</button><button class="btn btn-s" onclick="showTxD('${id}')" style="margin-top:8px;">Back</button>`);
+  if(t.type==='transfer'){const dtV=t.date&&t.date.length===10?t.date+'T00:00':t.date||'';openModal(`<div class="modal-title">Edit Transfer</div><div style="background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:12px;color:var(--blue);">Only date and note can be edited for transfers.</div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="et-dt" value="${dtV}"></div><div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="et-note" value="${t.note||''}"></div><button class="btn btn-p" onclick="submitEditTx('${id}')">Update</button><button class="btn btn-s" onclick="showTxD('${id}')" style="margin-top:8px;">Back</button>`);return;}
+  const catOpts=(t.type==='expense'?getExpCats():getIncCats()).map(c=>`<option value="${c.id}" ${c.id===t.category?'selected':''}>${c.label}</option>`).join('');
+  // Normalize date for datetime-local: must be "YYYY-MM-DDTHH:MM"
+  let dtVal='';
+  if(t.date){
+    if(t.date.length===16&&t.date.includes('T'))dtVal=t.date; // already correct
+    else if(t.date.length===10)dtVal=t.date+'T00:00'; // date-only "YYYY-MM-DD"
+    else if(t.date.length>16)dtVal=t.date.slice(0,16); // trim seconds
+    else dtVal=todayDT();
+  } else dtVal=todayDT();
+  openModal(`<div class="modal-title">Edit ${t.type==='expense'?'Expense':'Income'}</div><div class="fg"><label class="fl">Wallet</label><select class="fi" id="et-w">${wOpts}</select></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="et-dt" value="${dtVal}"></div><div class="fg"><label class="fl">Category</label><select class="fi" id="et-cat">${catOpts}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="et-amt" value="${t.amount}" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="et-note" value="${t.note||''}" placeholder="What was this for?"></div><button class="btn btn-p" onclick="submitEditTx('${id}')">Update</button><button class="btn btn-s" onclick="showTxD('${id}')" style="margin-top:8px;">Back</button>`);
 }
 function submitEditTx(id){
   const t=S.transactions.find(x=>x.id===id);if(!t)return;
@@ -1869,7 +1890,7 @@ function openManageCats(type){
     const rightBtn=isDef
       ?`<button onclick="toggleHideCat('${type}','${c.id}')" style="font-size:10px;padding:4px 9px;border-radius:7px;border:1px solid ${isHidden?'rgba(12,233,127,.3)':'var(--border)'};background:${isHidden?'var(--green-d)':'var(--bg3)'};color:${isHidden?'var(--green)':'var(--text3)'};cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;white-space:nowrap;">${isHidden?'Show':'Hide'}</button>`
       :`<button class="del-btn" style="width:24px;height:24px;font-size:12px;" onclick="delCustomCat('${type}',${custIdx})">x</button>`;
-    return`<div class="cat-list-item" style="${isHidden?'opacity:.45;':''}"><div style="display:flex;align-items:center;gap:8px;"><div class="cat-order-btns"><button class="cat-order-btn" onclick="moveCat('${type}','${c.id}',-1)" ${i===0?'disabled':''}>up</button><button class="cat-order-btn" onclick="moveCat('${type}','${c.id}',1)" ${i===n-1?'disabled':''}>dn</button></div><span>${c.icon} ${c.label}${isHidden?' <span style="font-size:9px;color:var(--text3);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px;">hidden</span>':''}</span></div><div style="display:flex;align-items:center;gap:6px;">${rightBtn}</div></div>`;
+    return`<div class="cat-list-item" style="${isHidden?'opacity:.45;':''}"><div style="display:flex;align-items:center;gap:8px;"><div class="cat-order-btns"><button class="cat-order-btn" onclick="moveCat('${type}','${c.id}',-1)" ${i===0?'disabled':''}>up</button><button class="cat-order-btn" onclick="moveCat('${type}','${c.id}',1)" ${i===n-1?'disabled':''}>dn</button></div><span>${c.label}${isHidden?' <span style="font-size:9px;color:var(--text3);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px;">hidden</span>':''}</span></div><div style="display:flex;align-items:center;gap:6px;">${rightBtn}</div></div>`;
   }).join('');
   openModal(`<div class="modal-title">Manage ${isExp?'Expense':'Income'} Categories</div><div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Use up/dn to reorder. Default categories cannot be deleted.</div><div class="card" style="margin-bottom:16px;">${catListHTML}</div><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">Add Custom Category</div><div style="display:flex;gap:8px;margin-bottom:10px;"><input type="text" class="fi" id="nc-icon" placeholder="Emoji" style="width:60px;text-align:center;padding:11px 8px;"><input type="text" class="fi" id="nc-name" placeholder="Category name" style="flex:1;"></div><button class="btn btn-p" onclick="addCustomCat('${type}')">Add Category</button><button class="btn btn-s" onclick="openAddTx()" style="margin-top:8px;">Back</button>`);
 }
@@ -1954,11 +1975,11 @@ function delWlt(id){const w=S.wallets.find(x=>x.id===id);if(!w)return;if(!confir
 
 // ============ BUDGET MODALS ============
 function openAddBgt(){
-  openModal(`<div class="modal-title">Set Budget / Savings</div><div class="fg"><label class="fl">Type</label><select class="fi" id="b-type" onchange="bgtTypeChanged()"><option value="monthly_overall">Monthly Overall Budget</option><option value="yearly_overall">Yearly Overall Budget</option><option value="monthly_savings">Monthly Savings Target</option><option value="yearly_savings">Yearly Savings Target</option><option value="category" selected>Category Budget (Monthly)</option></select></div><div class="fg" id="b-cat-wrap"><label class="fl">Category</label><select class="fi" id="b-cat">${getExpCats().map(c=>`<option value="${c.id}">${c.icon} ${c.label}</option>`).join('')}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><div id="b-hint" style="font-size:12px;color:var(--text3);margin-bottom:14px;">Applies to ${fmtMY(S.month)}</div><button class="btn btn-p" onclick="submitBgt()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+  openModal(`<div class="modal-title">Set Budget / Savings</div><div class="fg"><label class="fl">Type</label><select class="fi" id="b-type" onchange="bgtTypeChanged()"><option value="monthly_overall">Monthly Overall Budget</option><option value="yearly_overall">Yearly Overall Budget</option><option value="monthly_savings">Monthly Savings Target</option><option value="yearly_savings">Yearly Savings Target</option><option value="category" selected>Category Budget (Monthly)</option></select></div><div class="fg" id="b-cat-wrap"><label class="fl">Category</label><select class="fi" id="b-cat">${getExpCats().map(c=>`<option value="${c.id}">${c.label}</option>`).join('')}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><div id="b-hint" style="font-size:12px;color:var(--text3);margin-bottom:14px;">Applies to ${fmtMY(S.month)}</div><button class="btn btn-p" onclick="submitBgt()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 function openAddBudgetModal(period){openModal(`<div class="modal-title">Set ${period==='monthly'?'Monthly':'Yearly'} Budget</div><div class="fg"><label class="fl">Amount - ${period==='monthly'?fmtMY(S.month):curYear()}</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitBudgetOnly('${period}')">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);}
 function openAddSavingsModal(period){openModal(`<div class="modal-title">Set ${period==='monthly'?'Monthly':'Yearly'} Savings Target</div><div class="fg"><label class="fl">Target Amount - ${period==='monthly'?fmtMY(S.month):curYear()}</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitSavingsOnly('${period}')">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);}
-function openAddBgtCat(catId){openModal(`<div class="modal-title">Set Category Budget</div><div class="fg"><label class="fl">Category</label><select class="fi" id="b-cat">${getExpCats().map(c=>`<option value="${c.id}" ${c.id===catId?'selected':''}>${c.icon} ${c.label}</option>`).join('')}</select></div><div class="fg"><label class="fl">Amount - ${fmtMY(S.month)}</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitBgtCat()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);}
+function openAddBgtCat(catId){openModal(`<div class="modal-title">Set Category Budget</div><div class="fg"><label class="fl">Category</label><select class="fi" id="b-cat">${getExpCats().map(c=>`<option value="${c.id}" ${c.id===catId?'selected':''}>${c.label}</option>`).join('')}</select></div><div class="fg"><label class="fl">Amount - ${fmtMY(S.month)}</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitBgtCat()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);}
 function openEditBgt(bgtId){
   const b=S.budgets.find(x=>x.id===bgtId);if(!b)return;
   const lbl=b.period==='yearly'?`Year ${b.year}`:`${fmtMY(b.month)}`;const isSav=b.category==='savings';
@@ -2373,6 +2394,97 @@ function toggleChart(key){
     btn.style.background=chartVis[key]?'var(--green-d)':'var(--bg)';
   }
 }
+function openSmsParser(){
+  openModal(`<div class="modal-title">SMS Transaction Parser</div>
+  <div style="font-size:12px;color:var(--text2);margin-bottom:14px;line-height:1.7;">Paste a bank or MFS transaction SMS below. The app will automatically detect the amount, type, wallet, and time.</div>
+  <div class="fg"><label class="fl">Paste SMS Text</label><textarea class="fi" id="sms-input" rows="5" placeholder="e.g. You have received BDT 500.00 to your bKash account..." style="resize:vertical;min-height:100px;font-size:13px;line-height:1.6;"></textarea></div>
+  <button class="btn btn-p" onclick="parseSmsAndPreview()">Parse SMS</button>
+  <div id="sms-result" style="margin-top:12px;"></div>
+  <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Close</button>`);
+}
+function parseSmsText(sms){
+  if(!sms)return null;
+  const t={type:null,amount:null,wallet:null,note:sms.slice(0,80),date:todayDT()};
+
+  // ---- Amount detection ----
+  const amtMatch=sms.match(/(?:BDT|Tk\.?|TK\.?|৳|BDT\.?)\s*([\d,]+\.?\d*)/i)
+    ||sms.match(/([\d,]+\.?\d*)\s*(?:BDT|Tk\.?|TK\.?|taka)/i)
+    ||sms.match(/(?:amount|amt|paid|received|sent|transferred|deducted)[^\d]*([\d,]+\.?\d*)/i);
+  if(amtMatch)t.amount=parseFloat(amtMatch[1].replace(/,/g,''));
+
+  // ---- Type detection ----
+  const lc=sms.toLowerCase();
+  const cashInKw=['received','credited','cash in','deposit','incoming','added','paid to you','you got'];
+  const expKw=['debited','payment','paid','purchase','withdrawal','cash out','sent','deducted','spent','charged','bill','recharge'];
+  const trfKw=['transferred to','send money to','transfer to','sent to'];
+  if(trfKw.some(k=>lc.includes(k)))t.type='transfer';
+  else if(cashInKw.some(k=>lc.includes(k)))t.type='income';
+  else if(expKw.some(k=>lc.includes(k)))t.type='expense';
+  else t.type='expense'; // default
+
+  // ---- Wallet detection (match against existing wallets by name) ----
+  for(const w of S.wallets){
+    if(lc.includes(w.name.toLowerCase())){t.wallet=w.id;break;}
+  }
+  // common MFS/bank keywords if wallet not found by name
+  if(!t.wallet){
+    const kwMap={'bkash':'bKash','nagad':'Nagad','rocket':'Rocket','upay':'Upay','dbbl':'DBBL','dutch':'DBBL','islami':'Islami Bank','city':'City Bank','dutch-bangla':'DBBL'};
+    for(const [kw,name] of Object.entries(kwMap)){
+      if(lc.includes(kw)){const wMatch=S.wallets.find(w=>w.name.toLowerCase().includes(name.toLowerCase()));if(wMatch){t.wallet=wMatch.id;break;}}
+    }
+  }
+
+  // ---- Date/time from SMS ----
+  const dtMatch=sms.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})[,\s]+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM|am|pm)?/);
+  if(dtMatch){
+    const[,d,m,y,h,min,,ampm]=dtMatch;
+    const yr=y.length===2?'20'+y:y;
+    let hr=parseInt(h);
+    if(ampm&&ampm.toLowerCase()==='pm'&&hr<12)hr+=12;
+    if(ampm&&ampm.toLowerCase()==='am'&&hr===12)hr=0;
+    t.date=`${yr}-${m.padStart(2,'0')}-${d.padStart(2,'0')}T${String(hr).padStart(2,'0')}:${min}`;
+  }
+  return t;
+}
+function parseSmsAndPreview(){
+  const sms=document.getElementById('sms-input').value.trim();
+  if(!sms){alert('Please paste an SMS first.');return;}
+  const parsed=parseSmsText(sms);
+  if(!parsed||!parsed.amount){
+    document.getElementById('sms-result').innerHTML=`<div style="background:var(--red-d);border:1px solid rgba(255,61,90,.25);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--red);">Could not detect amount from SMS. Please add the transaction manually.</div>`;
+    return;
+  }
+  const wName=parsed.wallet?getWlt(parsed.wallet).name:'(select wallet)';
+  const typeLabel=parsed.type==='income'?'Cash In':parsed.type==='transfer'?'Transfer':'Expense';
+  const typeCol=parsed.type==='income'?'var(--green)':parsed.type==='transfer'?'var(--blue)':'var(--red)';
+  const wOpts=S.wallets.map(w=>`<option value="${w.id}" ${w.id===parsed.wallet?'selected':''}>${w.name}</option>`).join('');
+  document.getElementById('sms-result').innerHTML=`
+    <div style="background:var(--bg3);border:1px solid var(--green);border-radius:12px;padding:14px;margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Parsed Result — Review & Confirm</div>
+      <div class="fg"><label class="fl">Type</label>
+        <select class="fi" id="sp-type"><option value="expense" ${parsed.type==='expense'?'selected':''}>Expense</option><option value="income" ${parsed.type==='income'?'selected':''}>Cash In</option><option value="transfer" ${parsed.type==='transfer'?'selected':''}>Transfer</option></select></div>
+      <div class="fg"><label class="fl">Amount (৳)</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sp-amt" value="${parsed.amount}" min="0" step="0.01"></div></div>
+      <div class="fg"><label class="fl">Wallet</label><select class="fi" id="sp-wlt">${wOpts}</select></div>
+      <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="sp-dt" value="${parsed.date}"></div>
+      <div class="fg"><label class="fl">Note (from SMS)</label><input type="text" class="fi" id="sp-note" value="${parsed.note}"></div>
+      <button class="btn btn-p" onclick="submitSmsTransaction()" style="margin-top:4px;">Add Transaction</button>
+    </div>`;
+}
+function submitSmsTransaction(){
+  const type=document.getElementById('sp-type').value;
+  const amt=parseFloat(document.getElementById('sp-amt').value);
+  const wid=document.getElementById('sp-wlt').value;
+  const dt=document.getElementById('sp-dt').value;
+  const note=document.getElementById('sp-note').value.trim();
+  if(!amt||amt<=0)return alert('Enter a valid amount.');
+  if(!wid)return alert('Select a wallet.');
+  const tx={id:uid(),type,category:'',amount:amt,wallet:wid,date:dt||todayDT(),note,photo:'',at:new Date().toISOString()};
+  const fw=S.wallets.find(x=>x.id===wid);
+  if(type==='expense'&&fw)fw.balance-=amt;
+  else if(type==='income'&&fw)fw.balance+=amt;
+  S.transactions.unshift(tx);save();closeModal();renderMain();
+  setTimeout(()=>alert('Transaction added! Please set the Category manually.'),100);
+}
 function openImportInfo(){
   openModal(`<div class="modal-title">Backup & Sync</div>
   <div style="background:var(--green-d);border:1px solid rgba(12,233,127,.25);border-radius:12px;padding:14px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
@@ -2384,6 +2496,97 @@ function openImportInfo(){
     <b style="color:var(--text2);">Tip:</b> Use Export to Excel from Settings to keep a local backup of your transaction history at any time.
   </div>
   <button class="btn btn-s" onclick="openSyncModal()" style="margin-top:14px;">Back</button>`);
+}
+
+// ============ SMS PENDING (Firebase listener) ============
+let _smsPendingListener=null;
+let _smsPending=[];
+
+function startSmsPendingListener(){
+  if(!fbUser)return;
+  if(_smsPendingListener)return;
+  const ref=fbDb.ref('sms_pending/'+fbUser.uid);
+  _smsPendingListener=ref.on('value',snap=>{
+    const data=snap.val();
+    _smsPending=data?Object.entries(data).map(([k,v])=>({_key:k,...v})):[];
+    updateSmsBadge();
+  });
+}
+function stopSmsPendingListener(){
+  if(_smsPendingListener&&fbUser){
+    fbDb.ref('sms_pending/'+fbUser.uid).off('value',_smsPendingListener);
+    _smsPendingListener=null;
+  }
+}
+function updateSmsBadge(){
+  const btn=document.getElementById('sms-pending-btn');
+  const badge=document.getElementById('sms-badge');
+  if(!btn||!badge)return;
+  const n=_smsPending.length;
+  btn.style.display=n>0?'':'none';
+  badge.textContent=n>9?'9+':n;
+}
+function openSmsPending(){
+  if(!_smsPending.length){updateSmsBadge();return;}
+  const idx=0; // show first pending
+  showSmsReview(idx);
+}
+function showSmsReview(idx){
+  if(idx>=_smsPending.length){closeModal();return;}
+  const p=_smsPending[idx];
+  const remaining=_smsPending.length-idx;
+  const wOpts=S.wallets.map(w=>`<option value="${w.id}" ${w.name===p.wallet?'selected':''}>${w.name}</option>`).join('');
+  const typeOpts=['expense','income','transfer'].map(tp=>`<option value="${tp}" ${tp===p.type?'selected':''}>${tp==='expense'?'Expense':tp==='income'?'Cash In':'Transfer'}</option>`).join('');
+  const dtVal=p.datetime?p.datetime.slice(0,16):todayDT();
+  openModal(`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div class="modal-title" style="margin:0;">Review SMS Transaction</div>
+    <div style="font-size:11px;color:var(--amber);font-weight:700;background:var(--amber-d);padding:3px 9px;border-radius:7px;">${remaining} pending</div>
+  </div>
+  <div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.25);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--amber);line-height:1.7;">
+    <b>SMS:</b> ${(p.rawSms||'').slice(0,120)}${(p.rawSms||'').length>120?'…':''}
+  </div>
+  <div class="fg"><label class="fl">Type</label><select class="fi" id="sms-type">${typeOpts}</select></div>
+  <div class="fg"><label class="fl">Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div>
+  <div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sms-amt" value="${p.amount||''}" min="0" step="0.01"></div></div>
+  <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="sms-dt" value="${dtVal}"></div>
+  <div class="fg"><label class="fl">Description / Note</label><input type="text" class="fi" id="sms-note" value="${p.description||''}" placeholder="Auto-filled from SMS"></div>
+  <div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(optional — edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(p.type==='income'?'income':'expense').replace('<option value="">Select a category</option>','')}</select></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+    <button class="btn btn-p" onclick="confirmSmsTx(${idx})" style="margin:0;">Confirm & Save</button>
+    <button class="btn btn-d" onclick="discardSmsTx(${idx})" style="margin:0;">Discard</button>
+  </div>
+  ${remaining>1?`<button class="btn btn-s" onclick="showSmsReview(${idx+1})" style="margin-top:8px;">Skip → Next (${remaining-1} more)</button>`:''}
+  <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;font-size:14px;padding:12px;">Close</button>`);
+}
+async function confirmSmsTx(idx){
+  const p=_smsPending[idx];if(!p)return;
+  const type=document.getElementById('sms-type').value;
+  const wId=document.getElementById('sms-wallet').value;
+  const amt=parseFloat(document.getElementById('sms-amt').value);
+  const dt=document.getElementById('sms-dt').value||todayDT();
+  const note=document.getElementById('sms-note').value.trim();
+  const cat=document.getElementById('sms-cat').value;
+  if(!amt||amt<=0)return alert('Enter a valid amount.');
+  if(!wId)return alert('Select a wallet.');
+  const tx={id:uid(),type,category:cat||'',amount:amt,wallet:wId,date:dt,note,at:new Date().toISOString(),fromSms:true};
+  const w=S.wallets.find(x=>x.id===wId);
+  if(w){if(type==='expense')w.balance-=amt;else if(type==='income')w.balance+=amt;}
+  S.transactions.unshift(tx);save();
+  // Remove from Firebase pending
+  try{await fbDb.ref('sms_pending/'+fbUser.uid+'/'+p._key).remove();}catch(e){}
+  _smsPending.splice(idx,1);
+  updateSmsBadge();
+  if(_smsPending.length>idx)showSmsReview(idx);
+  else{closeModal();renderMain();}
+}
+async function discardSmsTx(idx){
+  const p=_smsPending[idx];if(!p)return;
+  if(!confirm('Discard this SMS transaction?'))return;
+  try{await fbDb.ref('sms_pending/'+fbUser.uid+'/'+p._key).remove();}catch(e){}
+  _smsPending.splice(idx,1);
+  updateSmsBadge();
+  if(_smsPending.length>idx)showSmsReview(idx);
+  else closeModal();
 }
 
 // ============ NOTE AUTOCOMPLETE ============
