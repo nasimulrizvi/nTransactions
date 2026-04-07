@@ -1108,7 +1108,7 @@ function drawDashCharts(){
     const usedCols=catsData.map((_,i)=>COLS[i%COLS.length]);
     _charts[canvasId]=new Chart(c,{type:'doughnut',data:{labels:catsData.map(x=>x.label),datasets:[{data:catsData.map(x=>x.amount),backgroundColor:usedCols,borderWidth:2,borderColor:bgBorder,hoverOffset:6}]},options:{responsive:true,cutout:'68%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',callbacks:{label:ctx=>`${ctx.label}: ৳${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw/total*100).toFixed(1)}%)`}}}}});
     const leg=document.getElementById(legendId);
-    if(leg)leg.innerHTML=catsData.map((x,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${usedCols[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);flex-shrink:0;">${fmt(x.amount)}</span></div>`).join('');
+    if(leg)leg.innerHTML=catsData.map((x,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${usedCols[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);flex-shrink:0;">৳${Math.round(x.amount).toLocaleString('en-US')}</span></div>`).join('');
   }
   if(chartVis.donut){
     // monthly — all cats
@@ -2455,21 +2455,45 @@ function parseSmsAndPreview(){
     document.getElementById('sms-result').innerHTML=`<div style="background:var(--red-d);border:1px solid rgba(255,61,90,.25);border-radius:10px;padding:12px 14px;font-size:13px;color:var(--red);">Could not detect amount from SMS. Please add the transaction manually.</div>`;
     return;
   }
-  const wName=parsed.wallet?getWlt(parsed.wallet).name:'(select wallet)';
-  const typeLabel=parsed.type==='income'?'Cash In':parsed.type==='transfer'?'Transfer':'Expense';
-  const typeCol=parsed.type==='income'?'var(--green)':parsed.type==='transfer'?'var(--blue)':'var(--red)';
   const wOpts=S.wallets.map(w=>`<option value="${w.id}" ${w.id===parsed.wallet?'selected':''}>${w.name}</option>`).join('');
+  const allWOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
+  const isTransfer=parsed.type==='transfer';
+  const isIncome=parsed.type==='income';
+  const catType=isIncome?'income':'expense';
+  const catField=!isTransfer?`<div class="fg"><label class="fl">Category</label><select class="fi" id="sp-cat"><option value="">-- Select category --</option>${txCatOpts(catType).replace('<option value="">Select a category</option>','')}</select></div>`:'';
+  const walletField=isTransfer
+    ?`<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="sp-wlt">${wOpts}</select></div>
+       <div class="fg"><label class="fl">To Wallet</label><select class="fi" id="sp-wlt2">${allWOpts}</select></div>`
+    :`<div class="fg"><label class="fl">Wallet</label><select class="fi" id="sp-wlt">${wOpts}</select></div>`;
   document.getElementById('sms-result').innerHTML=`
     <div style="background:var(--bg3);border:1px solid var(--green);border-radius:12px;padding:14px;margin-bottom:12px;">
       <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Parsed Result — Review & Confirm</div>
       <div class="fg"><label class="fl">Type</label>
-        <select class="fi" id="sp-type"><option value="expense" ${parsed.type==='expense'?'selected':''}>Expense</option><option value="income" ${parsed.type==='income'?'selected':''}>Cash In</option><option value="transfer" ${parsed.type==='transfer'?'selected':''}>Transfer</option></select></div>
+        <select class="fi" id="sp-type" onchange="refreshSmsParserFields()"><option value="expense" ${parsed.type==='expense'?'selected':''}>Expense</option><option value="income" ${parsed.type==='income'?'selected':''}>Cash In</option><option value="transfer" ${parsed.type==='transfer'?'selected':''}>Transfer</option></select></div>
       <div class="fg"><label class="fl">Amount (৳)</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sp-amt" value="${parsed.amount}" min="0" step="0.01"></div></div>
-      <div class="fg"><label class="fl">Wallet</label><select class="fi" id="sp-wlt">${wOpts}</select></div>
+      <div id="sp-wallet-fields">${walletField}</div>
       <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="sp-dt" value="${parsed.date}"></div>
+      <div id="sp-cat-field">${catField}</div>
       <div class="fg"><label class="fl">Note (from SMS)</label><input type="text" class="fi" id="sp-note" value="${parsed.note}"></div>
       <button class="btn btn-p" onclick="submitSmsTransaction()" style="margin-top:4px;">Add Transaction</button>
     </div>`;
+}
+function refreshSmsParserFields(){
+  const type=document.getElementById('sp-type').value;
+  const allWOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
+  const catType=type==='income'?'income':'expense';
+  const wf=document.getElementById('sp-wallet-fields');
+  const cf=document.getElementById('sp-cat-field');
+  if(wf){
+    if(type==='transfer')
+      wf.innerHTML=`<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="sp-wlt">${allWOpts}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="sp-wlt2">${allWOpts}</select></div>`;
+    else
+      wf.innerHTML=`<div class="fg"><label class="fl">Wallet</label><select class="fi" id="sp-wlt">${allWOpts}</select></div>`;
+  }
+  if(cf){
+    if(type==='transfer') cf.innerHTML='';
+    else cf.innerHTML=`<div class="fg"><label class="fl">Category</label><select class="fi" id="sp-cat"><option value="">-- Select category --</option>${txCatOpts(catType).replace('<option value="">Select a category</option>','')}</select></div>`;
+  }
 }
 function submitSmsTransaction(){
   const type=document.getElementById('sp-type').value;
@@ -2477,14 +2501,27 @@ function submitSmsTransaction(){
   const wid=document.getElementById('sp-wlt').value;
   const dt=document.getElementById('sp-dt').value;
   const note=document.getElementById('sp-note').value.trim();
+  const catEl=document.getElementById('sp-cat');
+  const cat=catEl?catEl.value:'';
   if(!amt||amt<=0)return alert('Enter a valid amount.');
   if(!wid)return alert('Select a wallet.');
-  const tx={id:uid(),type,category:'',amount:amt,wallet:wid,date:dt||todayDT(),note,photo:'',at:new Date().toISOString()};
-  const fw=S.wallets.find(x=>x.id===wid);
-  if(type==='expense'&&fw)fw.balance-=amt;
-  else if(type==='income'&&fw)fw.balance+=amt;
+  const tx={id:uid(),type,category:cat||'',amount:amt,wallet:wid,date:dt||todayDT(),note,photo:'',at:new Date().toISOString()};
+  if(type==='transfer'){
+    const wid2El=document.getElementById('sp-wlt2');
+    const wid2=wid2El?wid2El.value:'';
+    if(!wid2)return alert('Select To Wallet.');
+    if(wid===wid2)return alert('From and To wallet cannot be the same.');
+    tx.toWallet=wid2;
+    const fw=S.wallets.find(x=>x.id===wid);
+    const tw=S.wallets.find(x=>x.id===wid2);
+    if(fw)fw.balance-=amt;
+    if(tw)tw.balance+=amt;
+  } else {
+    const fw=S.wallets.find(x=>x.id===wid);
+    if(type==='expense'&&fw)fw.balance-=amt;
+    else if(type==='income'&&fw)fw.balance+=amt;
+  }
   S.transactions.unshift(tx);save();closeModal();renderMain();
-  setTimeout(()=>alert('Transaction added! Please set the Category manually.'),100);
 }
 function openImportInfo(){
   openModal(`<div class="modal-title">Backup & Sync</div>
@@ -2540,19 +2577,37 @@ function showSmsReview(idx){
   if(idx>=_smsPending.length){closeModal();return;}
   const p=_smsPending[idx];
   const remaining=_smsPending.length-idx;
+  const pType=(p.type||'').toLowerCase();
+  const isTransfer=pType==='transfer';
+  const isIncome=pType==='income'||pType==='cash in';
+
   const wOpts=S.wallets.map(w=>`<option value="${w.id}" ${(w.name===p.wallet||w.id===p.wallet)?'selected':''}>${w.name}</option>`).join('');
+  const allWOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
+
   const typeOpts=['expense','income','transfer'].map(tp=>{
-    const pType=(p.type||'').toLowerCase();
-    const match=tp==='expense'&&(pType==='expense')||tp==='income'&&(pType==='income'||pType==='cash in')||tp==='transfer'&&pType==='transfer';
+    const match=tp==='expense'&&pType==='expense'||tp==='income'&&(pType==='income'||pType==='cash in')||tp==='transfer'&&pType==='transfer';
     return`<option value="${tp}" ${match?'selected':''}>${tp==='expense'?'Expense':tp==='income'?'Cash In':'Transfer'}</option>`;
   }).join('');
-  // Android sends date + time as separate fields; fallback to datetime or today
+
   let dtVal='';
-  if(p.date&&p.time) dtVal=p.date+'T'+p.time;
-  else if(p.datetime) dtVal=p.datetime.slice(0,16);
+  if(p.date&&p.time)dtVal=p.date+'T'+p.time;
+  else if(p.datetime)dtVal=p.datetime.slice(0,16);
   else dtVal=todayDT();
+
   const balHtml=p.balance?`<span style="color:var(--text3);">Balance: <b style="color:var(--text);">${fmt(p.balance)}</b></span>`:'';
   const txnHtml=p.txnId?`<span style="color:var(--text3);">TxnID: <b style="color:var(--text);">${p.txnId}</b></span>`:'';
+
+  // Wallet fields: transfer → From + To; others → single Wallet
+  const walletFields=isTransfer
+    ?`<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div>
+      <div class="fg"><label class="fl">To Wallet</label><select class="fi" id="sms-wallet2">${allWOpts}</select></div>`
+    :`<div class="fg"><label class="fl">Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div>`;
+
+  // Category: only for expense/income, positioned before note
+  const catField=!isTransfer
+    ?`<div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(isIncome?'income':'expense').replace('<option value="">Select a category</option>','')}</select></div>`
+    :'';
+
   openModal(`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
     <div class="modal-title" style="margin:0;">Review SMS Transaction</div>
     <div style="font-size:11px;color:var(--amber);font-weight:700;background:var(--amber-d);padding:3px 9px;border-radius:7px;">${remaining} pending</div>
@@ -2560,14 +2615,14 @@ function showSmsReview(idx){
   <div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.25);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--amber);line-height:1.9;display:flex;flex-direction:column;gap:2px;">
     <span style="font-weight:700;">Auto-detected from SMS</span>
     <span style="color:var(--text3);">Sender: <b style="color:var(--text);">${p.wallet||'Unknown'}</b></span>
-    ${balHtml}${txnHtml?`<br>${txnHtml}`:''}
+    ${balHtml}${txnHtml?`${txnHtml}`:''}
   </div>
   <div class="fg"><label class="fl">Type</label><select class="fi" id="sms-type">${typeOpts}</select></div>
-  <div class="fg"><label class="fl">Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div>
+  ${walletFields}
   <div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sms-amt" value="${p.amount||''}" min="0" step="0.01"></div></div>
   <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="sms-dt" value="${dtVal}"></div>
+  ${catField}
   <div class="fg"><label class="fl">Description / Note</label><input type="text" class="fi" id="sms-note" value="${p.description||''}" placeholder="Auto-filled from SMS"></div>
-  <div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(p.type==='income'||p.type==='Cash In'?'income':'expense').replace('<option value="">Select a category</option>','')}</select></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
     <button class="btn btn-p" onclick="confirmSmsTx(${idx})" style="margin:0;">Confirm & Save</button>
     <button class="btn btn-d" onclick="discardSmsTx(${idx})" style="margin:0;">Discard</button>
@@ -2578,7 +2633,6 @@ function showSmsReview(idx){
 async function confirmSmsTx(idx){
   const p=_smsPending[idx];if(!p)return;
   let type=document.getElementById('sms-type').value;
-  // normalize Android types to PWA types
   if(type==='Cash In')type='income';
   if(type==='Expense')type='expense';
   if(type==='Transfer')type='transfer';
@@ -2586,14 +2640,26 @@ async function confirmSmsTx(idx){
   const amt=parseFloat(document.getElementById('sms-amt').value);
   const dt=document.getElementById('sms-dt').value||todayDT();
   const note=document.getElementById('sms-note').value.trim();
-  const cat=document.getElementById('sms-cat').value;
+  const catEl=document.getElementById('sms-cat');
+  const cat=catEl?catEl.value:'';
   if(!amt||amt<=0)return alert('Enter a valid amount.');
   if(!wId)return alert('Select a wallet.');
   const tx={id:uid(),type,category:cat||'',amount:amt,wallet:wId,date:dt,note,at:new Date().toISOString(),fromSms:true};
-  const w=S.wallets.find(x=>x.id===wId);
-  if(w){if(type==='expense')w.balance-=amt;else if(type==='income')w.balance+=amt;}
+  if(type==='transfer'){
+    const wId2El=document.getElementById('sms-wallet2');
+    const wId2=wId2El?wId2El.value:'';
+    if(!wId2)return alert('Select To Wallet.');
+    if(wId===wId2)return alert('From and To wallet cannot be the same.');
+    tx.toWallet=wId2;
+    const fw=S.wallets.find(x=>x.id===wId);
+    const tw=S.wallets.find(x=>x.id===wId2);
+    if(fw)fw.balance-=amt;
+    if(tw)tw.balance+=amt;
+  } else {
+    const w=S.wallets.find(x=>x.id===wId);
+    if(w){if(type==='expense')w.balance-=amt;else if(type==='income')w.balance+=amt;}
+  }
   S.transactions.unshift(tx);save();
-  // Remove from Firebase pending
   try{await fbDb.ref('users/'+fbUser.uid+'/sms_pending/'+p._key).remove();}catch(e){}
   _smsPending.splice(idx,1);
   updateSmsBadge();
