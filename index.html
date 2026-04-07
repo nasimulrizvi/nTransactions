@@ -1108,7 +1108,7 @@ function drawDashCharts(){
     const usedCols=catsData.map((_,i)=>COLS[i%COLS.length]);
     _charts[canvasId]=new Chart(c,{type:'doughnut',data:{labels:catsData.map(x=>x.label),datasets:[{data:catsData.map(x=>x.amount),backgroundColor:usedCols,borderWidth:2,borderColor:bgBorder,hoverOffset:6}]},options:{responsive:true,cutout:'68%',plugins:{legend:{display:false},tooltip:{backgroundColor:'rgba(13,16,24,0.92)',titleColor:'#e8edf5',bodyColor:'#8892a4',callbacks:{label:ctx=>`${ctx.label}: ৳${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw/total*100).toFixed(1)}%)`}}}}});
     const leg=document.getElementById(legendId);
-    if(leg)leg.innerHTML=catsData.map((x,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${usedCols[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);flex-shrink:0;">${(x.amount/total*100).toFixed(0)}%</span></div>`).join('');
+    if(leg)leg.innerHTML=catsData.map((x,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${usedCols[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);flex-shrink:0;">${fmt(x.amount)}</span></div>`).join('');
   }
   if(chartVis.donut){
     // monthly — all cats
