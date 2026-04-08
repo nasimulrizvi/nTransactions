@@ -1187,9 +1187,9 @@ function drawSavingsGauge(){
   //
   // Pivot (cx,cy) sits near the BOTTOM of the viewBox so the arc fills the upper portion.
 
-  const VW=200, VH=112;
-  const cx=100, cy=102;  // pivot near bottom
-  const R=78, sw=16;     // radius & stroke width
+  const VW=220, VH=116;
+  const cx=110, cy=106;  // pivot near bottom, centered in wider VW
+  const R=84, sw=17;     // radius & stroke width
 
   // Point on circle at given degree
   function pt(deg){
@@ -1236,13 +1236,13 @@ function drawSavingsGauge(){
   const leftLbl=pt(180);
   const rightLbl=pt(0);
 
-  wrap.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;margin:0 auto;max-height:115px;overflow:hidden;">
+  wrap.innerHTML=`<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;margin:0 auto;max-height:118px;overflow:hidden;">
     <path d="${trackPath}" stroke="rgba(255,255,255,0.06)" stroke-width="${sw}" fill="none" stroke-linecap="butt"/>
     ${segs.join('')}
     <line x1="${tx}" y1="${ty}" x2="${nx}" y2="${ny}" stroke="${nc}" stroke-width="3" stroke-linecap="round"/>
     <circle cx="${cx}" cy="${cy}" r="6" fill="${nc}"/>
-    <text x="${leftLbl.x}" y="${(parseFloat(leftLbl.y)+16).toFixed(0)}" text-anchor="middle" font-size="10" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.35)">0</text>
-    <text x="${rightLbl.x}" y="${(parseFloat(rightLbl.y)+16).toFixed(0)}" text-anchor="middle" font-size="10" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.35)">100</text>
+    <text x="${(cx-R+sw).toFixed(0)}" y="${(cy+14).toFixed(0)}" text-anchor="middle" font-size="10" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.4)">0</text>
+    <text x="${(cx+R-sw).toFixed(0)}" y="${(cy+14).toFixed(0)}" text-anchor="middle" font-size="10" font-family="Outfit,sans-serif" fill="rgba(255,255,255,0.4)">100</text>
   </svg>`;
 
   const lbl=document.getElementById('gauge-label');
@@ -1451,7 +1451,7 @@ function rLoans(){
       const smG="font-family:'Space Mono',monospace;font-weight:700;color:var(--green)";
       const pRows=l.payments.map((p,i)=>{
         const df="delLoanPayment('"+l.id+"',"+i+")";
-        return'<div class="loan-pay-item"><span style="display:flex;align-items:center;gap:4px;">'+CAL_SVG+' '+fmtD(p.date)+(p.note?' - '+p.note:'')+(p.wallet?' '+WAL_SVG+' '+getWlt(p.wallet).name:'')+'</span><div style="display:flex;align-items:center;gap:8px;"><span style="'+smG+';">'+fmt(p.amount)+'</span><button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="'+df+'">x</button></div></div>';
+        return'<div class="loan-pay-item"><span style="display:flex;align-items:center;gap:4px;">'+CAL_SVG+' '+fmtD(p.date)+(p.note?' - '+p.note:'')+(p.wallet?' '+WAL_SVG+' '+getWlt(p.wallet).name:'')+'</span><div style="display:flex;align-items:center;gap:8px;">'+(p.photo?'<img src="'+p.photo+'" onclick="openPhotoPreview(\''+p.photo.replace(/'/g,"\\'")+'\')" style="width:28px;height:28px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:pointer;" title="View photo"/>':'')+'<span style="'+smG+';">'+fmt(p.amount)+'</span><button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="'+df+'">x</button></div></div>';
       }).join('');
       return'<div class="loan-payments"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:7px;">Payment History</div>'+pRows+'</div>';
     })():''
@@ -1469,6 +1469,7 @@ function rLoans(){
     </div></div>
     ${extraHTML(l,sc)}
     <div class="loan-prog-wrap"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;"><span>Paid ${fmt(paid)} of ${fmt(total)}</span><span style="color:${pcol};font-weight:700;">${pct.toFixed(0)}%</span></div><div class="prog" style="height:8px;"><div class="prog-fill" style="width:${pct}%;background:${pcol};"></div></div></div>
+    ${l.photo?`<div style="margin:10px 0 4px;cursor:pointer;" onclick="openPhotoPreview('${l.photo.replace(/'/g,"\\'")}')"><img src="${l.photo}" style="width:100%;max-height:140px;object-fit:contain;border-radius:10px;border:1px solid var(--border);display:block;"/><div style="text-align:center;font-size:10px;color:var(--text3);margin-top:3px;">Tap to view photo</div></div>`:''}
     ${payH}
     <div class="loan-actions">
       <button class="sm-btn-g" onclick="openAddLoanPayment('${l.id}')">+ ${cfg.childLabel}</button>
@@ -1588,77 +1589,36 @@ function showLoanReceipt(loanId){
 }
 function downloadReceiptPreviewImg(loanId){
   const l=S.loans.find(x=>x.id===loanId);if(!l)return;
+  const wrap=document.getElementById('receipt-preview-wrap');
+  if(!wrap){alert('Preview not found.');return;}
   const btn=document.getElementById('dl-preview-btn');
   if(btn){btn.textContent='Generating…';btn.disabled=true;}
-
-  // Build a clean off-screen receipt in POS narrow format (384px wide = ~57mm at 170dpi)
-  const total=loanTotal(l),paid=loanPaid(l),remain=loanRemain(l);
-  const receiptLabel=getLoanStatusLabel(l);
-  const issuedBy=fbUser?(fbUser.displayName||fbUser.email.split('@')[0]||'nTransactions'):'nTransactions';
-  const extras=l.extraEntries||[];const payments=l.payments||[];
-  const tc=l.type==='deposit'?'#2563eb':l.type==='loan_recv'?'#d97706':'#7c3aed';
-
-  const rowStyle='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:12px;';
-  const labelStyle='color:#6b7280;';
-  const valStyle='font-weight:700;color:#1a1a2e;';
-  const extraRows=extras.map((e,i)=>`<div style="${rowStyle}"><span style="${labelStyle}">Extra ${i+1}${e.note?' - '+e.note:''}</span><span style="${valStyle}">${fmt(e.amount)}</span></div>`).join('');
-  const payRows=payments.map((p,i)=>`<div style="${rowStyle}"><span style="${labelStyle}">${i+1}. ${fmtD(p.date)}${p.note?' - '+p.note:''}</span><span style="color:#059669;font-weight:700;">${fmt(p.amount)}</span></div>`).join('');
-
-  const posHTML=`<div style="width:380px;background:#fff;padding:18px 16px;font-family:'Outfit',sans-serif;color:#1a1a2e;box-sizing:border-box;">
-    <div style="text-align:center;border-bottom:2px solid #0ce97f;padding-bottom:10px;margin-bottom:12px;">
-      <div style="font-size:18px;font-weight:900;color:#0a0f1e;">n<span style="color:#0ce97f;">Transactions</span></div>
-      <div style="font-size:9px;color:#9ca3af;letter-spacing:1.2px;margin-top:2px;">FINANCIAL RECEIPT</div>
-      <div style="display:inline-block;margin-top:6px;padding:3px 10px;background:#f0f9ff;border-radius:6px;font-size:10px;font-weight:700;color:${tc};">${receiptLabel}</div>
-    </div>
-    <div style="${rowStyle}"><span style="${labelStyle}">Person</span><span style="${valStyle}">${l.person}</span></div>
-    <div style="${rowStyle}"><span style="${labelStyle}">Date</span><span style="${valStyle}">${fmtD(l.date)}</span></div>
-    ${l.dueDate?`<div style="${rowStyle}"><span style="${labelStyle}">Due Date</span><span style="${valStyle}">${fmtD(l.dueDate)}</span></div>`:''}
-    ${l.wallet?`<div style="${rowStyle}"><span style="${labelStyle}">Wallet</span><span style="${valStyle}">${getWlt(l.wallet).name}</span></div>`:''}
-    ${l.note?`<div style="${rowStyle}"><span style="${labelStyle}">Note</span><span style="${valStyle}">${l.note}</span></div>`:''}
-    <div style="margin:10px 0 5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;">AMOUNT SUMMARY</div>
-    <div style="${rowStyle}"><span style="${labelStyle}">Initial Amount</span><span style="${valStyle}">${fmt(l.amount)}</span></div>
-    ${extraRows}
-    ${extras.length?`<div style="${rowStyle}"><span style="font-weight:700;color:#1a1a2e;">Total</span><span style="font-weight:800;">${fmt(total)}</span></div>`:''}
-    <div style="${rowStyle}"><span style="${labelStyle}">Total Paid</span><span style="color:#059669;font-weight:700;">${fmt(paid)}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:13px;font-weight:800;border-top:2px solid #e5e7eb;margin-top:2px;"><span>Remaining</span><span style="color:${remain<=0?'#059669':'#dc2626'};">${fmt(remain)}</span></div>
-    ${remain<=0?`<div style="text-align:center;background:#d1fae5;border-radius:6px;padding:5px;font-size:11px;font-weight:700;color:#059669;margin-bottom:8px;">Fully Settled</div>`:''}
-    ${payments.length?`<div style="margin:8px 0 5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;">PAYMENTS (${payments.length})</div>${payRows}`:''}
-    <div style="border-top:1px solid #e5e7eb;margin-top:10px;padding-top:8px;text-align:center;font-size:9px;color:#9ca3af;">Issued by: ${issuedBy}<br>nTransactions • ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
-  </div>`;
-
-  // Render off-screen then capture
-  const offDiv=document.createElement('div');
-  offDiv.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;background:#fff;';
-  offDiv.innerHTML=posHTML;
-  document.body.appendChild(offDiv);
-
   function doCapture(){
-    window.html2canvas(offDiv.firstElementChild,{
+    window.html2canvas(wrap.firstElementChild||wrap,{
       backgroundColor:'#ffffff',
-      scale:3,          // 3x for sharp print quality
+      scale:2,
       useCORS:true,
       logging:false,
-      scrollX:0,scrollY:0
+      scrollX:0,scrollY:0,
+      windowWidth:wrap.scrollWidth,
+      windowHeight:wrap.scrollHeight
     }).then(canvas=>{
-      document.body.removeChild(offDiv);
       const link=document.createElement('a');
       link.download='receipt-'+l.person.replace(/\s+/g,'-')+'-'+l.id.slice(-6)+'.png';
       link.href=canvas.toDataURL('image/png');
       link.click();
       if(btn){btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Save as Image';btn.disabled=false;}
-    }).catch(e=>{
-      document.body.removeChild(offDiv);
+    }).catch(()=>{
       alert('Image generation failed. Try again.');
       if(btn){btn.textContent='Save as Image';btn.disabled=false;}
     });
   }
-
   if(window.html2canvas){doCapture();}
   else{
     const s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
     s.onload=doCapture;
-    s.onerror=()=>{document.body.removeChild(offDiv);alert('Could not load library.');if(btn){btn.textContent='Save as Image';btn.disabled=false;}};
+    s.onerror=()=>{alert('Could not load library.');if(btn){btn.textContent='Save as Image';btn.disabled=false;}};
     document.head.appendChild(s);
   }
 }
@@ -2155,13 +2115,17 @@ function openAddLoan(){
 function openAddSubEntry(loanId){
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const cfg=LOAN_TYPES[loan.type];
   const wOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
-  openModal(`<div class="modal-title">Add More - ${loan.person}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Type: <b style="color:var(--text);">${cfg.label}</b></div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Remaining: <b style="color:var(--red);">${fmt(loanRemain(loan))}</b></div></div><div class="fg"><label class="fl">Additional Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="se-amt" placeholder="0" min="0"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="se-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="se-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="se-nt" placeholder="e.g. second installment"></div><button class="btn btn-p" onclick="submitSubEntry('${loanId}')">Add to Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+  const photoSectionSE=`<div class="fg"><label class="fl">Photo (optional)</label><div id="lp-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="lp-photo-img" style="width:100%;max-height:120px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)"/><button onclick="document.getElementById('lp-photo-preview').style.display='none';_lpPhoto='';" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:22px;height:22px;color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="lp-photo-input" accept="image/*" style="display:none;" onchange="handleLpPhoto(this)"><input type="file" id="lp-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleLpCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('lp-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('lp-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div></div>`;
+  openModal(`<div class="modal-title">Add More - ${loan.person}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Type: <b style="color:var(--text);">${cfg.label}</b></div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Remaining: <b style="color:var(--red);">${fmt(loanRemain(loan))}</b></div></div><div class="fg"><label class="fl">Additional Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="se-amt" placeholder="0" min="0"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="se-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="se-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="se-nt" placeholder="e.g. second installment"></div>${photoSectionSE}<button class="btn btn-p" onclick="submitSubEntry('${loanId}')">Add to Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 function submitSubEntry(loanId){
   if(window._submitting)return; window._submitting=true; setTimeout(()=>window._submitting=false,2000);
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const amt=parseFloat(document.getElementById('se-amt').value);const w=document.getElementById('se-w').value;const dt=document.getElementById('se-dt').value;const nt=document.getElementById('se-nt').value.trim();if(!amt||amt<=0)return alert('Enter a valid amount.');if(!dt)return alert('Select a date.');
   if(w){const cfg=LOAN_TYPES[loan.type];const wObj=S.wallets.find(x=>x.id===w);if(wObj){if(cfg.walletDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}}
-  if(!loan.extraEntries)loan.extraEntries=[];loan.extraEntries.push({id:uid(),amount:amt,wallet:w||'',date:dt,note:nt});save();closeModal();renderMain();
+  if(!loan.extraEntries)loan.extraEntries=[];
+  loan.extraEntries.push({id:uid(),amount:amt,wallet:w||'',date:dt,note:nt,photo:_lpPhoto||''});
+  _lpPhoto='';
+  save();closeModal();renderMain();
 }
 function delLoanSubEntry(loanId,idx){
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const e=(loan.extraEntries||[])[idx];if(!e)return;if(!confirm('Remove this entry?'))return;
@@ -2174,7 +2138,9 @@ function submitLoan(){
   const tp=document.getElementById('ln-tp').value;const pr=document.getElementById('ln-pr').value.trim();const amt=parseFloat(document.getElementById('ln-amt').value);const w=document.getElementById('ln-w').value;const dt=document.getElementById('ln-dt').value;const dd=document.getElementById('ln-dd').value;const nt=document.getElementById('ln-nt').value.trim();
   if(!pr)return alert('Enter a person name.');if(!amt||amt<=0)return alert('Enter a valid amount.');if(!dt)return alert('Select a date.');
   if(w){const cfg=LOAN_TYPES[tp];const wObj=S.wallets.find(x=>x.id===w);if(wObj){if(cfg.walletDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}}
-  S.loans.push({id:uid(),type:tp,person:pr,amount:amt,wallet:w||'',date:dt,dueDate:dd,note:nt,payments:[],at:new Date().toISOString()});save();closeModal();renderMain();
+  S.loans.push({id:uid(),type:tp,person:pr,amount:amt,wallet:w||'',date:dt,dueDate:dd,note:nt,photo:_lnPhoto||'',payments:[],at:new Date().toISOString()});
+  _lnPhoto='';
+  save();closeModal();renderMain();
 }
 function openAddLoanPayment(loanId){
   window._submitting=false;
@@ -2183,7 +2149,8 @@ function openAddLoanPayment(loanId){
   const remColor=remain<=0?'var(--green)':'var(--red)';
   const remLabel=remain<=0?'Fully Settled':'Remaining';
   const defaultAmt=remain>0?remain.toFixed(2):'';
-  openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">${loan.person}</div><div style="font-size:12px;color:var(--text3);">${remLabel}: <b style="color:${remColor};">${fmt(remain)}</b></div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="0" min="0" step="0.01" value="${defaultAmt}"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="lp-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="lp-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div><button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+  const photoSectionLP=`<div class="fg"><label class="fl">Photo (optional)</label><div id="lp-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="lp-photo-img" style="width:100%;max-height:120px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)"/><button onclick="document.getElementById('lp-photo-preview').style.display='none';_lpPhoto='';" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:22px;height:22px;color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="lp-photo-input" accept="image/*" style="display:none;" onchange="handleLpPhoto(this)"><input type="file" id="lp-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleLpCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('lp-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('lp-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div></div>`;
+  openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">${loan.person}</div><div style="font-size:12px;color:var(--text3);">${remLabel}: <b style="color:${remColor};">${fmt(remain)}</b></div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="0" min="0" step="0.01" value="${defaultAmt}"></div></div><div class="fg"><label class="fl">Wallet (optional)</label><select class="fi" id="lp-w"><option value="">Select a wallet</option>${wOpts}</select></div><div class="fg"><label class="fl">Date</label><input type="date" class="fi" id="lp-dt" value="${todayD()}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div>${photoSectionLP}<button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
 }
 function submitLoanPayment(loanId){
   if(window._submitting)return; window._submitting=true; setTimeout(()=>window._submitting=false,2000);
@@ -2196,7 +2163,9 @@ function submitLoanPayment(loanId){
   if(remain>0){const maxAllowed=remain+Math.min(remain*0.05,100);if(amt>maxAllowed+0.01)return alert(`Amount too large. You can pay up to ${fmt(maxAllowed)} (allows small rounding).`);}
   if(!dt)return alert('Select a date.');
   if(w){const cfg=LOAN_TYPES[loan.type];const wObj=S.wallets.find(x=>x.id===w);if(wObj){if(cfg.childDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}}
-  loan.payments.push({id:uid(),amount:amt,wallet:w||'',date:dt,note:nt});save();closeModal();renderMain();
+  loan.payments.push({id:uid(),amount:amt,wallet:w||'',date:dt,note:nt,photo:_lpPhoto||''});
+  _lpPhoto='';
+  save();closeModal();renderMain();
 }
 function delLoanPayment(loanId,idx){
   const loan=S.loans.find(l=>l.id===loanId);if(!loan)return;const p=loan.payments[idx];if(!p)return;if(!confirm('Remove this payment?'))return;
@@ -2321,6 +2290,46 @@ function removeProfilePhoto(){
 
 // ============ TX / LOAN PHOTO ============
 let _txPhoto='';
+let _lnPhoto='';
+let _lpPhoto='';
+
+function handleLpPhoto(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>3*1024*1024){alert('Photo must be under 3MB.');return;}
+  const reader=new FileReader();
+  reader.onload=function(e){
+    _lpPhoto=e.target.result;
+    const prev=document.getElementById('lp-photo-preview');
+    const img=document.getElementById('lp-photo-img');
+    if(prev&&img){img.src=_lpPhoto;prev.style.display='block';}
+  };
+  reader.readAsDataURL(file);
+}
+function handleLpCameraPhoto(input){
+  const file=input.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const imgEl=new Image();
+    imgEl.onload=function(){
+      const MAX=2.5*1024*1024;
+      let w=imgEl.width,h=imgEl.height;
+      const maxDim=2560;
+      if(w>maxDim||h>maxDim){const r=Math.min(maxDim/w,maxDim/h);w=Math.round(w*r);h=Math.round(h*r);}
+      const canvas=document.createElement('canvas');
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(imgEl,0,0,w,h);
+      let quality=0.88;
+      let dataUrl=canvas.toDataURL('image/jpeg',quality);
+      while(dataUrl.length*0.75>MAX&&quality>0.25){quality-=0.08;dataUrl=canvas.toDataURL('image/jpeg',quality);}
+      _lpPhoto=dataUrl;
+      const prev=document.getElementById('lp-photo-preview');
+      const img=document.getElementById('lp-photo-img');
+      if(prev&&img){img.src=_lpPhoto;img.style.objectFit='contain';prev.style.display='block';}
+    };
+    imgEl.src=e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
 function handleTxPhoto(input){
   const file=input.files[0];if(!file)return;
   if(file.size>3*1024*1024){alert('Photo must be under 3MB.');return;}
@@ -2387,9 +2396,10 @@ function handleLnPhoto(input){
   if(file.size>3*1024*1024){alert('Photo must be under 3MB.');return;}
   const reader=new FileReader();
   reader.onload=function(e){
+    _lnPhoto=e.target.result;
     const prev=document.getElementById('ln-photo-preview');
     const img=document.getElementById('ln-photo-img');
-    if(prev&&img){img.src=e.target.result;prev.style.display='block';}
+    if(prev&&img){img.src=_lnPhoto;prev.style.display='block';}
   };
   reader.readAsDataURL(file);
 }
@@ -2409,9 +2419,10 @@ function handleLnCameraPhoto(input){
       let quality=0.88;
       let dataUrl=canvas.toDataURL('image/jpeg',quality);
       while(dataUrl.length*0.75>MAX&&quality>0.25){quality-=0.08;dataUrl=canvas.toDataURL('image/jpeg',quality);}
+      _lnPhoto=dataUrl;
       const prev=document.getElementById('ln-photo-preview');
       const img=document.getElementById('ln-photo-img');
-      if(prev&&img){img.src=dataUrl;img.style.objectFit='contain';prev.style.display='block';}
+      if(prev&&img){img.src=_lnPhoto;img.style.objectFit='contain';prev.style.display='block';}
     };
     imgEl.src=e.target.result;
   };
