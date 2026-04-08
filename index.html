@@ -371,7 +371,7 @@ select.fi{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='
 .pwa-close{background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;padding:2px 4px;flex-shrink:0;}
 .calc-row{display:flex;gap:6px;align-items:center;}
 .calc-op-sel{width:64px;flex-shrink:0;padding:9px 6px;text-align:center;font-size:18px;font-weight:700;font-family:'Space Mono',monospace;}
-.receipt-preview{background:#fff;border-radius:14px;padding:18px;color:#1a1a2e;font-family:'Outfit',sans-serif;max-height:320px;overflow-y:auto;}
+.receipt-preview{background:#fff;border-radius:14px;padding:18px;color:#1a1a2e;font-family:'Outfit',sans-serif;}
 .receipt-preview::-webkit-scrollbar{width:3px;}
 .receipt-preview::-webkit-scrollbar-thumb{background:#ddd;border-radius:2px;}
 /* Auth styles */
@@ -1588,34 +1588,77 @@ function showLoanReceipt(loanId){
 }
 function downloadReceiptPreviewImg(loanId){
   const l=S.loans.find(x=>x.id===loanId);if(!l)return;
-  const wrap=document.getElementById('receipt-preview-wrap');
-  if(!wrap){alert('Preview not found.');return;}
   const btn=document.getElementById('dl-preview-btn');
   if(btn){btn.textContent='Generating…';btn.disabled=true;}
-  // Load html2canvas dynamically if not already loaded
+
+  // Build a clean off-screen receipt in POS narrow format (384px wide = ~57mm at 170dpi)
+  const total=loanTotal(l),paid=loanPaid(l),remain=loanRemain(l);
+  const receiptLabel=getLoanStatusLabel(l);
+  const issuedBy=fbUser?(fbUser.displayName||fbUser.email.split('@')[0]||'nTransactions'):'nTransactions';
+  const extras=l.extraEntries||[];const payments=l.payments||[];
+  const tc=l.type==='deposit'?'#2563eb':l.type==='loan_recv'?'#d97706':'#7c3aed';
+
+  const rowStyle='display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f0f0f0;font-size:12px;';
+  const labelStyle='color:#6b7280;';
+  const valStyle='font-weight:700;color:#1a1a2e;';
+  const extraRows=extras.map((e,i)=>`<div style="${rowStyle}"><span style="${labelStyle}">Extra ${i+1}${e.note?' - '+e.note:''}</span><span style="${valStyle}">${fmt(e.amount)}</span></div>`).join('');
+  const payRows=payments.map((p,i)=>`<div style="${rowStyle}"><span style="${labelStyle}">${i+1}. ${fmtD(p.date)}${p.note?' - '+p.note:''}</span><span style="color:#059669;font-weight:700;">${fmt(p.amount)}</span></div>`).join('');
+
+  const posHTML=`<div style="width:380px;background:#fff;padding:18px 16px;font-family:'Outfit',sans-serif;color:#1a1a2e;box-sizing:border-box;">
+    <div style="text-align:center;border-bottom:2px solid #0ce97f;padding-bottom:10px;margin-bottom:12px;">
+      <div style="font-size:18px;font-weight:900;color:#0a0f1e;">n<span style="color:#0ce97f;">Transactions</span></div>
+      <div style="font-size:9px;color:#9ca3af;letter-spacing:1.2px;margin-top:2px;">FINANCIAL RECEIPT</div>
+      <div style="display:inline-block;margin-top:6px;padding:3px 10px;background:#f0f9ff;border-radius:6px;font-size:10px;font-weight:700;color:${tc};">${receiptLabel}</div>
+    </div>
+    <div style="${rowStyle}"><span style="${labelStyle}">Person</span><span style="${valStyle}">${l.person}</span></div>
+    <div style="${rowStyle}"><span style="${labelStyle}">Date</span><span style="${valStyle}">${fmtD(l.date)}</span></div>
+    ${l.dueDate?`<div style="${rowStyle}"><span style="${labelStyle}">Due Date</span><span style="${valStyle}">${fmtD(l.dueDate)}</span></div>`:''}
+    ${l.wallet?`<div style="${rowStyle}"><span style="${labelStyle}">Wallet</span><span style="${valStyle}">${getWlt(l.wallet).name}</span></div>`:''}
+    ${l.note?`<div style="${rowStyle}"><span style="${labelStyle}">Note</span><span style="${valStyle}">${l.note}</span></div>`:''}
+    <div style="margin:10px 0 5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;">AMOUNT SUMMARY</div>
+    <div style="${rowStyle}"><span style="${labelStyle}">Initial Amount</span><span style="${valStyle}">${fmt(l.amount)}</span></div>
+    ${extraRows}
+    ${extras.length?`<div style="${rowStyle}"><span style="font-weight:700;color:#1a1a2e;">Total</span><span style="font-weight:800;">${fmt(total)}</span></div>`:''}
+    <div style="${rowStyle}"><span style="${labelStyle}">Total Paid</span><span style="color:#059669;font-weight:700;">${fmt(paid)}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:7px 0;font-size:13px;font-weight:800;border-top:2px solid #e5e7eb;margin-top:2px;"><span>Remaining</span><span style="color:${remain<=0?'#059669':'#dc2626'};">${fmt(remain)}</span></div>
+    ${remain<=0?`<div style="text-align:center;background:#d1fae5;border-radius:6px;padding:5px;font-size:11px;font-weight:700;color:#059669;margin-bottom:8px;">Fully Settled</div>`:''}
+    ${payments.length?`<div style="margin:8px 0 5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#9ca3af;">PAYMENTS (${payments.length})</div>${payRows}`:''}
+    <div style="border-top:1px solid #e5e7eb;margin-top:10px;padding-top:8px;text-align:center;font-size:9px;color:#9ca3af;">Issued by: ${issuedBy}<br>nTransactions • ${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+  </div>`;
+
+  // Render off-screen then capture
+  const offDiv=document.createElement('div');
+  offDiv.style.cssText='position:fixed;left:-9999px;top:0;z-index:-1;background:#fff;';
+  offDiv.innerHTML=posHTML;
+  document.body.appendChild(offDiv);
+
   function doCapture(){
-    window.html2canvas(wrap,{
+    window.html2canvas(offDiv.firstElementChild,{
       backgroundColor:'#ffffff',
-      scale:2,
+      scale:3,          // 3x for sharp print quality
       useCORS:true,
-      logging:false
+      logging:false,
+      scrollX:0,scrollY:0
     }).then(canvas=>{
+      document.body.removeChild(offDiv);
       const link=document.createElement('a');
       link.download='receipt-'+l.person.replace(/\s+/g,'-')+'-'+l.id.slice(-6)+'.png';
       link.href=canvas.toDataURL('image/png');
       link.click();
       if(btn){btn.innerHTML='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Save as Image';btn.disabled=false;}
-    }).catch(()=>{
-      alert('Could not generate image. Try Open Full Receipt → Print → Save as Image.');
+    }).catch(e=>{
+      document.body.removeChild(offDiv);
+      alert('Image generation failed. Try again.');
       if(btn){btn.textContent='Save as Image';btn.disabled=false;}
     });
   }
+
   if(window.html2canvas){doCapture();}
   else{
     const s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
     s.onload=doCapture;
-    s.onerror=()=>{alert('Could not load image library. Check internet connection.');if(btn){btn.textContent='Save as Image';btn.disabled=false;}};
+    s.onerror=()=>{document.body.removeChild(offDiv);alert('Could not load library.');if(btn){btn.textContent='Save as Image';btn.disabled=false;}};
     document.head.appendChild(s);
   }
 }
@@ -2529,11 +2572,10 @@ function parseSmsAndPreview(){
   document.getElementById('sms-result').innerHTML=`
     <div style="background:var(--bg3);border:1px solid var(--green);border-radius:12px;padding:14px;margin-bottom:12px;">
       <div style="font-size:11px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">Parsed Result — Review & Confirm</div>
-      <div class="fg"><label class="fl">Type</label>
-        <select class="fi" id="sp-type" onchange="refreshSmsParserFields()"><option value="expense" ${parsed.type==='expense'?'selected':''}>Expense</option><option value="income" ${parsed.type==='income'?'selected':''}>Cash In</option><option value="transfer" ${parsed.type==='transfer'?'selected':''}>Transfer</option></select></div>
-      <div class="fg"><label class="fl">Amount (৳)</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sp-amt" value="${parsed.amount}" min="0" step="0.01"></div></div>
+      <div class="fg"><label class="fl">Type</label><select class="fi" id="sp-type" onchange="refreshSmsParserFields()"><option value="expense" ${parsed.type==='expense'?'selected':''}>Expense</option><option value="income" ${parsed.type==='income'?'selected':''}>Cash In</option><option value="transfer" ${parsed.type==='transfer'?'selected':''}>Transfer</option></select></div>
       <div id="sp-wallet-fields">${walletField}</div>
       <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="sp-dt" value="${parsed.date}"></div>
+      <div class="fg"><label class="fl">Amount (৳)</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sp-amt" value="${parsed.amount}" min="0" step="0.01"></div></div>
       <div id="sp-cat-field">${catField}</div>
       <div class="fg"><label class="fl">Note (from SMS)</label><input type="text" class="fi" id="sp-note" value="${parsed.note}"></div>
       <button class="btn btn-p" onclick="submitSmsTransaction()" style="margin-top:4px;">Add Transaction</button>
@@ -2646,7 +2688,7 @@ function showSmsReview(idx){
   const allWOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
 
   const typeOpts=['expense','income','transfer'].map(tp=>{
-    const match=tp==='expense'&&pType==='expense'||tp==='income'&&(pType==='income'||pType==='cash in')||tp==='transfer'&&pType==='transfer';
+    const match=(tp==='expense'&&pType==='expense')||(tp==='income'&&(pType==='income'||pType==='cash in'))||(tp==='transfer'&&pType==='transfer');
     return`<option value="${tp}" ${match?'selected':''}>${tp==='expense'?'Expense':tp==='income'?'Cash In':'Transfer'}</option>`;
   }).join('');
 
@@ -2658,15 +2700,16 @@ function showSmsReview(idx){
   const balHtml=p.balance?`<span style="color:var(--text3);">Balance: <b style="color:var(--text);">${fmt(p.balance)}</b></span>`:'';
   const txnHtml=p.txnId?`<span style="color:var(--text3);">TxnID: <b style="color:var(--text);">${p.txnId}</b></span>`:'';
 
-  // Wallet fields: transfer → From + To; others → single Wallet
-  const walletFields=isTransfer
-    ?`<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="sms-wallet2">${allWOpts}</select></div>`
-    :`<div class="fg"><label class="fl">Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div>`;
-
-  // Category: only for expense/income, positioned before note
-  const catField=!isTransfer
-    ?`<div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(isIncome?'income':'expense').replace('<option value="">Select a category</option>','')}</select></div>`
-    :'';
+  // Wallet fields rendered based on current type
+  function buildWalletFields(isTrf){
+    return isTrf
+      ?`<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="sms-wallet2">${allWOpts}</select></div>`
+      :`<div class="fg"><label class="fl">Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div>`;
+  }
+  function buildCatField(isTrf,isInc){
+    if(isTrf)return'';
+    return`<div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(isInc?'income':'expense').replace('<option value="">Select a category</option>','')}</select></div>`;
+  }
 
   openModal(`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
     <div class="modal-title" style="margin:0;">Review SMS Transaction</div>
@@ -2675,13 +2718,13 @@ function showSmsReview(idx){
   <div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.25);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:11px;color:var(--amber);line-height:1.9;display:flex;flex-direction:column;gap:2px;">
     <span style="font-weight:700;">Auto-detected from SMS</span>
     <span style="color:var(--text3);">Sender: <b style="color:var(--text);">${p.wallet||'Unknown'}</b></span>
-    ${balHtml}${txnHtml?`${txnHtml}`:''}
+    ${balHtml}${txnHtml?txnHtml:''}
   </div>
-  <div class="fg"><label class="fl">Type</label><select class="fi" id="sms-type">${typeOpts}</select></div>
-  ${walletFields}
-  <div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sms-amt" value="${p.amount||''}" min="0" step="0.01"></div></div>
+  <div class="fg"><label class="fl">Type</label><select class="fi" id="sms-type" onchange="smsTypeChanged(${idx})">${typeOpts}</select></div>
+  <div id="sms-wallet-fields">${buildWalletFields(isTransfer)}</div>
   <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="sms-dt" value="${dtVal}"></div>
-  ${catField}
+  <div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sms-amt" value="${p.amount||''}" min="0" step="0.01"></div></div>
+  <div id="sms-cat-field">${buildCatField(isTransfer,isIncome)}</div>
   <div class="fg"><label class="fl">Description / Note</label><input type="text" class="fi" id="sms-note" value="${p.description||''}" placeholder="Auto-filled from SMS"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
     <button class="btn btn-p" onclick="confirmSmsTx(${idx})" style="margin:0;">Confirm & Save</button>
@@ -2689,6 +2732,20 @@ function showSmsReview(idx){
   </div>
   ${remaining>1?`<button class="btn btn-s" onclick="showSmsReview(${idx+1})" style="margin-top:8px;">Skip → Next (${remaining-1} more)</button>`:''}
   <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;font-size:14px;padding:12px;">Close</button>`);
+}
+function smsTypeChanged(idx){
+  const type=document.getElementById('sms-type').value;
+  const isTrf=type==='transfer';
+  const isInc=type==='income';
+  const p=_smsPending[idx]||{};
+  const wOpts=S.wallets.map(w=>`<option value="${w.id}" ${(w.name===p.wallet||w.id===p.wallet)?'selected':''}>${w.name}</option>`).join('');
+  const allWOpts=S.wallets.map(w=>`<option value="${w.id}">${w.name}</option>`).join('');
+  const wf=document.getElementById('sms-wallet-fields');
+  const cf=document.getElementById('sms-cat-field');
+  if(wf)wf.innerHTML=isTrf
+    ?`<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="sms-wallet2">${allWOpts}</select></div>`
+    :`<div class="fg"><label class="fl">Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div>`;
+  if(cf)cf.innerHTML=isTrf?'':`<div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(isInc?'income':'expense').replace('<option value="">Select a category</option>','')}</select></div>`;
 }
 async function confirmSmsTx(idx){
   const p=_smsPending[idx];if(!p)return;
