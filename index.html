@@ -1948,6 +1948,7 @@ function showLoanTxDetail(loanId,entryType,entryIdx){
     <button class="btn btn-s" onclick="go('loans')" style="margin-bottom:8px;">View in Loans</button>
     <button class="btn btn-s" onclick="closeModal()" style="font-size:16px;font-weight:800;padding:15px;">Close</button>`);
 }
+function delTx(id){
   const t=S.transactions.find(x=>x.id===id);if(!t)return;if(!confirm('Delete this transaction? Wallet balance will be reversed.'))return;
   if(t.type==='expense'){const w=S.wallets.find(x=>x.id===t.wallet);if(w)w.balance+=t.amount;}
   else if(t.type==='income'){const w=S.wallets.find(x=>x.id===t.wallet);if(w)w.balance-=t.amount;}
