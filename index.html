@@ -521,6 +521,7 @@ if(_bc) _bc.onmessage = (e) => {
     S.incCatOrder=d.incCatOrder||S.incCatOrder||[];
     S.hiddenExpCats=d.hiddenExpCats||S.hiddenExpCats||[];
     S.hiddenIncCats=d.hiddenIncCats||S.hiddenIncCats||[];
+    S.username=d.username||S.username||'';
     S.lastSync=d.ts;
     saveLocal();setSyncDot('ok');renderMain();
   }
@@ -551,6 +552,7 @@ const DEFAULT_INC_CATS=[
 ];
 const LOAN_TYPES={
   deposit:{label:'Taking a Deposit',col:'blue',walletDir:'in',childLabel:'Deposit Return',childDir:'out'},
+  deposit_given:{label:'Making a Deposit',col:'blue',walletDir:'out',childLabel:'Deposit Withdrawn',childDir:'in'},
   loan_recv:{label:'Loan Received',col:'amber',walletDir:'in',childLabel:'Loan Repayment',childDir:'out'},
   loan_given:{label:'Loan Given',col:'purple',walletDir:'out',childLabel:'Loan Collected',childDir:'in'},
 };
@@ -640,11 +642,12 @@ function themeCardBg(type='default'){
   };
   return styles[type]||styles.default;
 }
-function loanIco(tid,size=18){const m={deposit:'deposit',loan_recv:'loan_recv',loan_given:'loan_given'};return ico(m[tid]||'loan_recv',size);}
+function loanIco(tid,size=18){const m={deposit:'deposit',deposit_given:'deposit',loan_recv:'loan_recv',loan_given:'loan_given'};return ico(m[tid]||'loan_recv',size);}
 
 // ============ STATE ============
-let S={transactions:[],wallets:[],budgets:[],loans:[],customExpCats:[],customIncCats:[],expCatOrder:[],incCatOrder:[],hiddenExpCats:[],hiddenIncCats:[],view:'dashboard',month:todayYM(),lastSync:null};
+let S={transactions:[],wallets:[],budgets:[],loans:[],customExpCats:[],customIncCats:[],expCatOrder:[],incCatOrder:[],hiddenExpCats:[],hiddenIncCats:[],username:'',view:'dashboard',month:todayYM(),lastSync:null};
 let txF='all',txQ='',txDuration='all',loanF='all',txType='expense',editWltId='',selColor=COLORS[0];
+
 let syncTimeout=null,balHidden=false,netHidden=true;
 
 // Chart visibility (persisted in localStorage)
@@ -737,10 +740,11 @@ function load(){
     if(!S.hiddenIncCats)S.hiddenIncCats=[];
     if(!S.savingsHistory)S.savingsHistory=[];
     if(!S.wltHistory)S.wltHistory=[];
+    if(!S.username)S.username='';
   }catch(e){}
 }
 function saveLocal(){
-  try{localStorage.setItem('ntx4',JSON.stringify({transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,customExpCats:S.customExpCats,customIncCats:S.customIncCats,expCatOrder:S.expCatOrder,incCatOrder:S.incCatOrder,hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],savingsHistory:S.savingsHistory||[],wltHistory:S.wltHistory||[],month:S.month,lastSync:S.lastSync}));}catch(e){}
+  try{localStorage.setItem('ntx4',JSON.stringify({transactions:S.transactions,wallets:S.wallets,budgets:S.budgets,loans:S.loans,customExpCats:S.customExpCats,customIncCats:S.customIncCats,expCatOrder:S.expCatOrder,incCatOrder:S.incCatOrder,hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],savingsHistory:S.savingsHistory||[],wltHistory:S.wltHistory||[],username:S.username||'',month:S.month,lastSync:S.lastSync}));}catch(e){}
 }
 function normalizeLoan(l){
   if(!l.payments)l.payments=[];
@@ -758,9 +762,11 @@ async function pushSync(){
       customExpCats:S.customExpCats||[],customIncCats:S.customIncCats||[],
       expCatOrder:S.expCatOrder||[],incCatOrder:S.incCatOrder||[],
       hiddenExpCats:S.hiddenExpCats||[],hiddenIncCats:S.hiddenIncCats||[],
-      savingsHistory:S.savingsHistory||[],ts};
+      savingsHistory:S.savingsHistory||[],username:S.username||'',ts};
     S.lastSync=ts;
     await fbDb.ref('users/'+fbUser.uid+'/data').set(payload);
+    // write shared loans if any
+    (S.loans||[]).forEach(l=>{if(l.shareId)fbDb.ref('shared_loans/'+l.shareId).set(l);});
     saveLocal();setSyncDot('ok');
     if(_bc)_bc.postMessage({type:'sync',...payload});
   }catch(e){setSyncDot('err');clearTimeout(syncTimeout);syncTimeout=setTimeout(pushSync,4000);}
@@ -776,13 +782,15 @@ function setSyncDot(state){
 }
 function startRealtimeSync(){
   if(_dbListener||!fbUser)return;
-  const ref=fbDb.ref('users/'+fbUser.uid+'/data');
-  _dbListener=ref.on('value',(snap)=>{
-    const d=snap.val();
-    if(!d)return;
-    const serverTs=d.ts||0;
+  const ref=fbDb.ref('users/'+fbUser.uid+'/data/ts');
+  _dbListener=ref.on('value',async (snap)=>{
+    const serverTs=snap.val()||0;
     const localTs=S.lastSync||0;
-    if(serverTs<=localTs)return; // our own write or older - skip
+    if(serverTs<=localTs)return; // our own write or older
+    setSyncDot('busy');
+    const dSnap = await fbDb.ref('users/'+fbUser.uid+'/data').get();
+    const d = dSnap.val();
+    if(!d)return;
     S.transactions=d.transactions||S.transactions;
     S.wallets=d.wallets||S.wallets;
     S.budgets=d.budgets||S.budgets;
@@ -791,21 +799,24 @@ function startRealtimeSync(){
     S.customIncCats=d.customIncCats||S.customIncCats||[];
     S.expCatOrder=d.expCatOrder||S.expCatOrder||[];
     S.incCatOrder=d.incCatOrder||S.incCatOrder||[];
+    S.username=d.username||S.username||'';
     S.lastSync=serverTs;
     saveLocal();setSyncDot('ok');renderMain();
   },(err)=>{setSyncDot('err');});
 }
 function stopRealtimeSync(){
-  if(_dbListener&&fbUser){fbDb.ref('users/'+fbUser.uid+'/data').off('value',_dbListener);_dbListener=null;}
+  if(_dbListener&&fbUser){fbDb.ref('users/'+fbUser.uid+'/data/ts').off('value',_dbListener);_dbListener=null;}
 }
 async function pullSync(){
   if(!fbUser)return;setSyncDot('busy');
   try{
-    const snap=await fbDb.ref('users/'+fbUser.uid+'/data').get();
-    const d=snap.val();
-    if(d){
-      const serverTs=d.ts||0;const localTs=S.lastSync||0;
-      if(serverTs>localTs){
+    const tsSnap=await fbDb.ref('users/'+fbUser.uid+'/data/ts').get();
+    const serverTs=tsSnap.val()||0;
+    const localTs=S.lastSync||0;
+    if(serverTs>localTs){
+      const snap=await fbDb.ref('users/'+fbUser.uid+'/data').get();
+      const d=snap.val();
+      if(d){
         S.transactions=d.transactions||S.transactions;
         S.wallets=d.wallets||S.wallets;
         S.budgets=d.budgets||S.budgets;
@@ -814,6 +825,7 @@ async function pullSync(){
         S.customIncCats=d.customIncCats||S.customIncCats||[];
         S.expCatOrder=d.expCatOrder||S.expCatOrder||[];
         S.incCatOrder=d.incCatOrder||S.incCatOrder||[];
+        S.username=d.username||S.username||'';
         S.lastSync=serverTs;saveLocal();
       }
     }
@@ -828,13 +840,23 @@ function initAuth(){
       fbUser=user;
       setSyncDot('busy');
       await pullSync();
+      // On fresh load, if user has set a username during previous session
+      if(!S.username) {
+        const uSnap = await fbDb.ref('users/'+fbUser.uid+'/username').get();
+        if(uSnap.exists()) {
+           S.username = uSnap.val();
+           saveLocal();
+        }
+      }
       renderMain();
       startRealtimeSync();
       startSmsPendingListener();
+      startPendingLoansListener();
     } else {
       fbUser=null;
       stopRealtimeSync();
       stopSmsPendingListener();
+      stopPendingLoansListener();
       _smsPending=[];updateSmsBadge();
       setSyncDot('');
       renderMain();
@@ -1506,6 +1528,7 @@ function rLoans(){
       <button class="sm-btn-g" onclick="openAddLoanPayment('${l.id}')">+ ${cfg.childLabel}</button>
       <button class="sm-btn-b" onclick="openAddSubEntry('${l.id}')">+ Add More</button>
       <button class="sm-btn" onclick="showLoanReceipt('${l.id}')" style="display:flex;align-items:center;gap:5px;background:var(--amber-d);border-color:rgba(255,176,32,.35);color:var(--amber);">${RECEIPT_SVG} Receipt</button>
+      <button class="sm-btn" onclick="generateShareLink('${l.id}')" style="border:1px solid var(--border);color:var(--text2);display:flex;align-items:center;gap:4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg> Link</button>
       <button class="del-btn" style="margin-left:auto;" onclick="delLoan('${l.id}')">${TRASH_SVG}</button>
     </div></div>`;
   }
@@ -1608,7 +1631,7 @@ function showLoanReceipt(loanId){
   const issuedBy=fbUser?(fbUser.displayName||fbUser.email.split('@')[0]||'nTransactions'):'nTransactions';
   const infoRows=[['Person / Organization',l.person],['Type',receiptLabel],['Date',fmtD(l.date)],['Due Date',l.dueDate?fmtD(l.dueDate):'Not specified'],['Issued By',issuedBy],...(l.note?[['Note',l.note]]:[])];
   const previewHTML='<div class="receipt-preview"><div style="text-align:center;border-bottom:2px solid #0ce97f;padding-bottom:12px;margin-bottom:14px;"><div style="font-size:20px;font-weight:900;color:#0a0f1e;">n<span style="color:#0ce97f;">Transactions</span></div><div style="font-size:9px;color:#888;margin-top:3px;text-transform:uppercase;letter-spacing:1.2px;">Financial Receipt</div><div style="display:inline-block;margin-top:7px;padding:4px 12px;background:'+tb+';border-radius:8px;font-size:11px;font-weight:700;color:'+tc+';">'+receiptLabel+'</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">'+infoRows.map(([lb,v])=>'<div><div style="font-size:9px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.8px;">'+lb+'</div><div style="font-size:12px;font-weight:700;color:#1a1a2e;margin-top:2px;">'+v+'</div></div>').join('')+'</div><div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:11px;"><div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;">Amount Summary</div><div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">Initial Amount</span><span style="font-weight:700;color:#374151;">'+fmt(l.amount)+'</span></div>'+extras.map((e,i)=>'<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">Extra '+(i+1)+(e.note?' - '+e.note:'')+'</span><span style="font-weight:700;color:#374151;">'+fmt(e.amount)+'</span></div>').join('')+(extras.length?'<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid #e5e7eb;"><span style="font-weight:700;color:#374151;">Total</span><span style="font-weight:800;color:#374151;">'+fmt(total)+'</span></div>':'')+'<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">Total Paid</span><span style="font-weight:700;color:#059669;">'+fmt(paid)+'</span></div><div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;"><span style="font-weight:700;color:#374151;">Remaining</span><span style="font-weight:800;color:'+(remain<=0?'#059669':'#dc2626')+';">'+fmt(remain)+'</span></div>'+(remain<=0?'<div style="text-align:center;margin-top:6px;background:#d1fae5;border-radius:6px;padding:5px;font-size:12px;font-weight:700;color:#059669;">Fully Settled</div>':'')+'</div>'+(payments.length?'<div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:10px 0 5px;">Payments ('+payments.length+')</div>'+payments.map((p,i)=>'<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">'+(i+1)+'. '+fmtD(p.date)+(p.note?' - '+p.note:'')+'</span><span style="font-weight:700;color:#059669;">'+fmt(p.amount)+'</span></div>').join(''):'')+'</div>';
-  const receiptTitle=l.type==='deposit'?'Deposit Receipt':l.type==='loan_recv'?'Loan Received Receipt':'Loan Given Receipt';
+  const receiptTitle=l.type==='deposit'||l.type==='deposit_given'?'Deposit Receipt':l.type==='loan_recv'?'Loan Received Receipt':'Loan Given Receipt';
   openModal(`<div class="modal-title">${receiptTitle}</div>
   <div id="receipt-preview-wrap">${previewHTML}</div>
   <div style="margin-top:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--blue);">Opens in a new tab. Use <b>Print</b> (Ctrl+P) to save as PDF.</div>
@@ -1617,6 +1640,17 @@ function showLoanReceipt(loanId){
     <button class="btn btn-s" onclick="downloadReceiptPreviewImg('${loanId}')" id="dl-preview-btn" style="margin:0;display:flex;align-items:center;justify-content:center;gap:7px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Save as Image</button>
   </div>
   <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Close</button>`);
+}
+function generateShareLink(loanId){
+  const l=S.loans.find(x=>x.id===loanId);if(!l)return;
+  const shareId=l.shareId||('ntx_' + loanId.slice(0,6) + '_' + uid());
+  if(!l.shareId){l.shareId=shareId; save();} // will trigger pushSync and write to shared_loans
+  // write now just in case
+  fbDb.ref('shared_loans/'+shareId).set(l).then(()=>{
+    const url=window.location.origin + window.location.pathname + '?share=' + shareId;
+    if(navigator.share){ navigator.share({title:'Loan Receipt',url}); }
+    else{ prompt('Copy this link to share the live loan receipt:', url); }
+  }).catch(()=>alert('Could not generate link. Please ensure you are online and logged in.'));
 }
 function downloadReceiptPreviewImg(loanId){
   const l=S.loans.find(x=>x.id===loanId);if(!l)return;
@@ -1669,9 +1703,9 @@ function buildReceiptHTML(l){
   const rid='#'+l.id.toUpperCase().slice(-8);
   const receiptLabel=getLoanStatusLabel(l);
   const isSettled=loanRemain(l)<=0;
-  const tc=l.type==='deposit'?'#2563eb':l.type==='loan_recv'?'#d97706':isSettled?'#059669':'#7c3aed';
-  const tb=l.type==='deposit'?'#eff6ff':l.type==='loan_recv'?'#fffbeb':isSettled?'#d1fae5':'#f5f3ff';
-  const tbd=l.type==='deposit'?'#bfdbfe':l.type==='loan_recv'?'#fde68a':isSettled?'#6ee7b7':'#ddd6fe';
+  const tc=l.type==='deposit'||l.type==='deposit_given'?'#2563eb':l.type==='loan_recv'?'#d97706':isSettled?'#059669':'#7c3aed';
+  const tb=l.type==='deposit'||l.type==='deposit_given'?'#eff6ff':l.type==='loan_recv'?'#fffbeb':isSettled?'#d1fae5':'#f5f3ff';
+  const tbd=l.type==='deposit'||l.type==='deposit_given'?'#bfdbfe':l.type==='loan_recv'?'#fde68a':isSettled?'#6ee7b7':'#ddd6fe';
   const issuedByFull=fbUser?(fbUser.displayName||fbUser.email.split('@')[0]||'nTransactions'):'nTransactions';
   const dr=[['Person / Organization',l.person],['Transaction Type',receiptLabel],['Date of Transaction',fmtD(l.date)],['Due Date',l.dueDate?fmtD(l.dueDate):'Not specified'],['Issued By',issuedByFull],...(l.note?[['Note / Remarks',l.note]]:[])];
   const amtRows=[{lb:'Initial Amount',v:fmt(l.amount),col:'#374151',bold:false},...extras.map((e,i)=>({lb:'Additional Entry '+(i+1)+(e.note?' - '+e.note:''),v:fmt(e.amount),col:'#374151',bold:false})),...(extras.length?[{lb:'Total Amount',v:fmt(total),col:'#1a1a2e',bold:true}]:[]),{lb:'Total Paid / Settled',v:fmt(paid),col:'#059669',bold:false},{lb:'Remaining Balance',v:fmt(remain),col:remain<=0?'#059669':'#dc2626',bold:true}];
@@ -1703,13 +1737,15 @@ function openSyncModal(){
     <div class="modal-title" style="margin-bottom:14px;">Settings</div>
 
     <!-- ACCOUNT CARD -->
-    <div class="auth-user-card" style="margin-bottom:12px;">
+    <div class="auth-user-card" style="margin-bottom:12px;position:relative;">
       ${avatarHTML}
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px;">${displayName}<svg width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;"><defs><radialGradient id="vbg" cx="50%" cy="35%" r="65%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#d0d0d0"/></radialGradient><filter id="vshadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="0.5" stdDeviation="0.6" flood-color="rgba(0,0,0,0.35)"/></filter></defs><circle cx="12" cy="12" r="11" fill="url(#vbg)" filter="url(#vshadow)"/><circle cx="12" cy="12" r="11" fill="none" stroke="#888" stroke-width="0.5"/><polyline points="7.5,12.2 10.8,15.5 16.5,9.0" fill="none" stroke="#1a1a1a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px;">${displayName}</div>
+        <div style="font-size:11px;color:var(--blue);margin-top:1px;font-weight:700;">${S.username?'@'+S.username:''}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:2px;">${email}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:1px;display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;"></span>Last synced: ${lastSync}</div>
       </div>
+      <button onclick="promptUsername()" style="position:absolute;top:14px;right:14px;background:var(--blue-d);color:var(--blue);border:1px solid rgba(77,159,255,0.3);padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;">${S.username?'Edit @':'Set @username'}</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px;">
       <button class="btn btn-p" onclick="doManualSync()" style="margin:0;padding:11px;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>Sync Now</button>
@@ -1817,6 +1853,29 @@ function openSyncModal(){
     </button>
     <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
   }
+}
+async function promptUsername(){
+  const uname = prompt("Enter an available username (alphanumeric only):", S.username||'');
+  if(uname === null) return;
+  const cleaned = uname.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+  if(!cleaned) {alert('Username must contain only letters and numbers.'); return;}
+  setSyncDot('busy');
+  try{
+    const snap = await fbDb.ref('usernames/'+cleaned).get();
+    if(snap.exists() && snap.val() !== fbUser.uid) {
+      alert('@'+cleaned+' is already taken by someone else.');
+      setSyncDot('ok');
+    } else {
+      // old username cleanup
+      if(S.username && S.username !== cleaned) await fbDb.ref('usernames/'+S.username).remove();
+      await fbDb.ref('usernames/'+cleaned).set(fbUser.uid);
+      await fbDb.ref('users/'+fbUser.uid+'/username').set(cleaned);
+      S.username = cleaned;
+      saveLocal(); // don't full sync right away, just local save
+      setSyncDot('ok');
+      openSyncModal();
+    }
+  }catch(e){setSyncDot('err');alert('Error checking username: '+e.message);}
 }
 function switchAuthTab(tab){
   const inT=document.getElementById('atab-in'),upT=document.getElementById('atab-up');
@@ -2190,15 +2249,43 @@ function delLoanSubEntry(loanId,idx){
   if(e.wallet){const cfg=LOAN_TYPES[loan.type];const wObj=S.wallets.find(x=>x.id===e.wallet);if(wObj){if(cfg.walletDir==='in')wObj.balance-=e.amount;else wObj.balance+=e.amount;}}
   loan.extraEntries.splice(idx,1);save();renderMain();
 }
-function lnTypeChanged(){const tp=document.getElementById('ln-tp').value;const info=document.getElementById('ln-wallet-info');const msgs={deposit:'Taking a Deposit: money will be added to wallet',loan_recv:'Loan Received: money will be added to wallet',loan_given:'Loan Given: money will be deducted from wallet'};if(info)info.innerHTML=msgs[tp]||'';}
-function submitLoan(){
+function lnTypeChanged(){const tp=document.getElementById('ln-tp').value;const info=document.getElementById('ln-wallet-info');const msgs={deposit:'Taking a Deposit: money will be added to wallet',deposit_given:'Making a Deposit: money will be deducted from wallet',loan_recv:'Loan Received: money will be added to wallet',loan_given:'Loan Given: money will be deducted from wallet'};if(info)info.innerHTML=msgs[tp]||'';}
+async function submitLoan(){
   if(window._submitting)return; window._submitting=true; setTimeout(()=>window._submitting=false,2000);
   const tp=document.getElementById('ln-tp').value;const pr=document.getElementById('ln-pr').value.trim();const amt=parseFloat(document.getElementById('ln-amt').value);const w=document.getElementById('ln-w').value;const dt=document.getElementById('ln-dt').value;const dd=document.getElementById('ln-dd').value;const nt=document.getElementById('ln-nt').value.trim();
   if(!pr)return alert('Enter a person name.');if(!amt||amt<=0)return alert('Enter a valid amount.');if(!dt)return alert('Select a date.');
   if(w){const cfg=LOAN_TYPES[tp];const wObj=S.wallets.find(x=>x.id===w);if(wObj){if(cfg.walletDir==='in')wObj.balance+=amt;else wObj.balance-=amt;}}
-  S.loans.push({id:uid(),type:tp,person:pr,amount:amt,wallet:w||'',date:dt,dueDate:dd,note:nt,photo:_lnPhoto||'',payments:[],at:new Date().toISOString()});
+  
+  const loanId = uid();
+  const lnObj = {id:loanId,type:tp,person:pr,amount:amt,wallet:w||'',date:dt,dueDate:dd,note:nt,photo:_lnPhoto||'',payments:[],at:new Date().toISOString()};
+  S.loans.unshift(lnObj);
   _lnPhoto='';
-  save();closeModal();renderMain();
+  save();
+  closeModal();renderMain();
+
+  // Cross-user sync check
+  if(pr.startsWith('@') && S.username && fbUser && navigator.onLine) {
+    const targetUname = pr.slice(1).toLowerCase().replace(/[^a-z0-9]/g, '');
+    if(targetUname && targetUname !== S.username) {
+      try {
+        const snap = await fbDb.ref('usernames/'+targetUname).get();
+        const targetUid = snap.val();
+        if(targetUid) {
+           const inv = {...lnObj};
+           inv.id = uid(); // new id for the target
+           inv.person = '@' + S.username; // Note: Sender must have username!
+           if(tp === 'deposit') inv.type = 'deposit_given';
+           else if(tp === 'deposit_given') inv.type = 'deposit';
+           else if(tp === 'loan_recv') inv.type = 'loan_given';
+           else if(tp === 'loan_given') inv.type = 'loan_recv';
+           inv.senderUid = fbUser.uid;
+           inv.wallet = '';
+           inv.photo = ''; // skip large photos for inbox push
+           await fbDb.ref('users/'+targetUid+'/pending_loans').push(inv);
+        }
+      } catch(e) { console.error('Failed to sync cross-user loan', e); }
+    }
+  }
 }
 function openAddLoanPayment(loanId){
   window._submitting=false;
@@ -2891,13 +2978,126 @@ function pickNoteSugg(note,txType){
   if(sugg)sugg.style.display='none';
 }
 
+// ============ CROSS-USER PENDING LOANS ============
+let _pendingLoansListener = null;
+let _pendingLoans = [];
+function startPendingLoansListener() {
+  if(!fbUser) return;
+  if(_pendingLoansListener) return;
+  const ref = fbDb.ref('users/'+fbUser.uid+'/pending_loans');
+  _pendingLoansListener = ref.on('value', snap => {
+    const data = snap.val();
+    _pendingLoans = data ? Object.entries(data).map(([k,v])=>({_key:k,...v})).sort((a,b)=>a.at.localeCompare(b.at)) : [];
+    updatePendingLoansBadge();
+  });
+}
+function stopPendingLoansListener() {
+  if(_pendingLoansListener&&fbUser){
+    fbDb.ref('users/'+fbUser.uid+'/pending_loans').off('value',_pendingLoansListener);
+    _pendingLoansListener = null;
+  }
+}
+function updatePendingLoansBadge() {
+  if(_pendingLoans.length > 0) {
+     // If not currently interacting, prompt standard modal. Here we forcefully open or add a badge to a top-level button.
+     const btn = document.getElementById('pending-loans-btn');
+     if(btn) { btn.style.display = 'block'; btn.innerHTML = `<span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ${_pendingLoans.length} incoming loan${_pendingLoans.length>1?'s':''}</span>`; }
+     else {
+       // Append floating button if not exists
+       const fl = document.createElement('button');
+       fl.id = 'pending-loans-btn';
+       fl.style.cssText = 'position:fixed;top:65px;left:50%;transform:translateX(-50%);background:var(--blue);color:#fff;border:none;border-radius:20px;padding:6px 14px;font-size:12px;font-weight:700;z-index:90;display:flex;align-items:center;gap:6px;box-shadow:0 8px 16px rgba(42,125,225,0.4);cursor:pointer;animation:fadeUp .3s ease;';
+       fl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> ${_pendingLoans.length} incoming loan${_pendingLoans.length>1?'s':''}`;
+       fl.onclick = openPendingLoans;
+       document.body.appendChild(fl);
+     }
+  } else {
+     const btn = document.getElementById('pending-loans-btn');
+     if(btn) btn.style.display = 'none';
+  }
+}
+function openPendingLoans() {
+   if(!_pendingLoans.length) return;
+   const idx = 0;
+   showPendingLoanReview(idx);
+}
+function showPendingLoanReview(idx) {
+   if(idx >= _pendingLoans.length) { closeModal(); return; }
+   const p = _pendingLoans[idx];
+   const remaining = _pendingLoans.length - idx;
+   const cfg = LOAN_TYPES[p.type];
+   
+   openModal(`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+    <div class="modal-title" style="margin:0;">Incoming Record</div>
+    <div style="font-size:11px;color:var(--blue);font-weight:700;background:var(--blue-d);padding:3px 9px;border-radius:7px;">${remaining} pending</div>
+  </div>
+  <div style="background:var(--blue-d);border:1px solid rgba(77,159,255,.25);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:12px;color:var(--blue);line-height:1.7;">
+    User <b style="color:var(--text);">${p.person}</b> pushed a record to you.
+  </div>
+  <div class="card" style="margin-bottom:14px;font-size:13px;pointer-events:none;">
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--text3);">Record Type</span><span style="font-weight:700;">${cfg.label}</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--text3);">Amount</span><span style="font-weight:700;font-family:'Space Mono',monospace;">${fmt(p.amount)}</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--text3);">Date added</span><span style="font-weight:700;">${fmtD(p.date)}</span></div>
+    ${p.note?`<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--text3);">Note</span><span style="font-weight:700;">${p.note}</span></div>`:''}
+  </div>
+  <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-align:center;">Accepting this will add it to your Loans. You can attach a wallet later by editing.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+    <button class="btn btn-p" onclick="confirmPendingLoan(${idx})" style="margin:0;">Accept</button>
+    <button class="btn btn-d" onclick="discardPendingLoan(${idx})" style="margin:0;">Discard</button>
+  </div>
+  ${remaining>1?`<button class="btn btn-s" onclick="showPendingLoanReview(${idx+1})" style="margin-top:8px;">Skip → Next (${remaining-1} more)</button>`:''}
+  <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;font-size:14px;padding:12px;">Close</button>`);
+}
+async function confirmPendingLoan(idx) {
+  const p = _pendingLoans[idx]; if(!p) return;
+  // convert to proper S.loans item
+  S.loans.unshift({id:uid(), type:p.type, person:p.person, amount:p.amount, wallet:'', date:p.date, dueDate:'', note:p.note||'', photo:'', payments:[], at:new Date().toISOString()});
+  save();
+  try{await fbDb.ref('users/'+fbUser.uid+'/pending_loans/'+p._key).remove();}catch(e){}
+  _pendingLoans.splice(idx,1); updatePendingLoansBadge();
+  if(_pendingLoans.length>idx) showPendingLoanReview(idx);
+  else {closeModal(); renderMain();}
+}
+async function discardPendingLoan(idx) {
+  const p = _pendingLoans[idx]; if(!p) return;
+  if(!confirm('Discard this incoming record?')) return;
+  try{await fbDb.ref('users/'+fbUser.uid+'/pending_loans/'+p._key).remove();}catch(e){}
+  _pendingLoans.splice(idx,1); updatePendingLoansBadge();
+  if(_pendingLoans.length>idx) showPendingLoanReview(idx);
+  else closeModal();
+}
+
+
 // ============ INIT ============
-load();
-loadSavedTheme();
-go('dashboard');
-initAuth();
-updateHeaderAvatar();
-_initSwipe();
+function handleSharedAppInit() {
+   const urlParams = new URLSearchParams(window.location.search);
+   const shareId = urlParams.get('share');
+   if(shareId) {
+      document.body.innerHTML = `<div style="text-align:center;padding:50px 20px;font-family:'Outfit',sans-serif;color:#a0aec0;font-size:14px;"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><div style="margin-top:12px;">Loading securely shared receipt...</div></div>`;
+      document.body.style.background = "#fff";
+      fbDb.ref('shared_loans/' + shareId).get().then(snap => {
+         const data = snap.val();
+         if(data && typeof buildReceiptHTML === 'function') {
+            document.body.outerHTML = buildReceiptHTML(data); 
+         } else {
+            document.body.innerHTML = `<div style="text-align:center;padding:50px 20px;font-family:'Outfit',sans-serif;color:#dc2626;"><h2>Oops!</h2><p>This shared receipt was not found or has been withdrawn by the owner.</p><a href="?" style="display:inline-block;margin-top:20px;padding:10px 20px;background:#2563eb;color:#fff;text-decoration:none;border-radius:10px;">Return to Home</a></div>`;
+         }
+      }).catch(e => {
+         document.body.innerHTML = `<div style="text-align:center;padding:50px 20px;font-family:'Outfit',sans-serif;color:#dc2626;">Error loading receipt.</div>`;
+      });
+      return true; // halted
+   }
+   return false;
+}
+
+if(!handleSharedAppInit()) {
+  load();
+  loadSavedTheme();
+  go('dashboard');
+  initAuth();
+  updateHeaderAvatar();
+  _initSwipe();
+}
 </script>
 </body>
 </html>
