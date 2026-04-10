@@ -315,9 +315,9 @@ select.fi{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='
 .sm-btn-b{font-size:11px;padding:6px 12px;border-radius:8px;background:var(--blue-d);border:1px solid rgba(77,159,255,.3);color:var(--blue);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;white-space:nowrap;}
 .sm-btn-r{font-size:11px;padding:6px 12px;border-radius:8px;background:var(--red-d);border:1px solid rgba(255,61,90,.3);color:var(--red);cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;white-space:nowrap;}
 .del-btn{width:30px;height:30px;border-radius:8px;background:var(--red-d);border:none;color:var(--red);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:14px;}
-.filter-bar{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;}
+.filter-bar{display:flex;gap:5px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;}
 .filter-bar::-webkit-scrollbar{display:none;}
-.fc{padding:7px 14px;border-radius:9px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15px;font-family:'Outfit',sans-serif;}
+.fc{padding:6px 11px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text2);font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .15px;font-family:'Outfit',sans-serif;}
 .fc.active{background:var(--green-d);border-color:var(--green);color:var(--green);}
 .srch-wrap{position:relative;margin-bottom:13px;}
 .srch-wrap input{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:11px 13px 11px 38px;font-size:14px;color:var(--text);font-family:'Outfit',sans-serif;outline:none;transition:border-color .2s;}
@@ -953,7 +953,7 @@ function _initSwipe(){
   main.addEventListener('touchend',e=>{
     if(!_swipeMoved)return;
     const dx=e.changedTouches[0].clientX-_swipeX;
-    if(Math.abs(dx)<50)return;
+    if(Math.abs(dx)<90)return;
     const cur=VIEWS.indexOf(S.view);
     if(dx<0&&cur<VIEWS.length-1)go(VIEWS[cur+1]);
     else if(dx>0&&cur>0)go(VIEWS[cur-1]);
