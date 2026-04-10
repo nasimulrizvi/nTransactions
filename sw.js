@@ -1,4 +1,4 @@
-const CACHE = 'ntx-v3';
+const CACHE = 'ntx-v4';
 const ASSETS = ['./'];
 self.addEventListener('install', e => {
   e.waitUntil(
@@ -23,7 +23,7 @@ self.addEventListener('fetch', e => {
           caches.open(CACHE).then(c => c.put(e.request, clone));
           return res;
         })
-        .catch(() => caches.match(e.request))
+        .catch(() => caches.match(e.request, { ignoreSearch: true }).then(res => res || caches.match('./')))
     );
     return;
   }
