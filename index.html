@@ -3059,7 +3059,7 @@
     <!-- Beautiful Animated Needle -->
     <g transform="rotate(0, ${cx}, ${cy})">
       <animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="${pct * 1.8} ${cx} ${cy}" dur="${dur}s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
-      <path d="M${cx - R * 0.9},${cy} L${cx},${cy - 6} L${cx + 10},${cy} L${cx},${cy + 6} Z" fill="#fff" filter="url(#needleShdw)"/>
+      <path d="M${cx - R * 0.9},${cy} L${cx},${cy - 6} L${cx + 10},${cy} L${cx},${cy + 6} Z" fill="#fff"/>
     </g>
     <!-- Inner Base Point -->
     <circle cx="${cx}" cy="${cy}" r="12" fill="url(#savGrad)" filter="drop-shadow(0 0 8px ${stop1}88)"/>
@@ -3143,10 +3143,10 @@
       wrap.innerHTML = `<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;margin:0 auto;max-height:165px;overflow:visible;">${lines.join('')}</svg>`;
 
       if (lbl) lbl.innerHTML = `
-    <div style="display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:2px;">
-      ${owesMe > 0 ? `<div style="text-align:center;background:rgba(12,233,127,0.05);padding:6px 12px;border-radius:12px;border:1px solid rgba(12,233,127,0.15);"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#0ce97f;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:#0ce97f;display:inline-block;box-shadow:0 0 6px rgba(12,233,127,0.6);"></span>Owe Me</div><div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#0ce97f;margin-top:2px;">${fmt(owesMe)}</div></div>` : ''}
-      ${iOwe > 0 ? `<div style="text-align:center;background:rgba(255,61,90,0.05);padding:6px 12px;border-radius:12px;border:1px solid rgba(255,61,90,0.15);"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#ff3d5a;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:#ff3d5a;display:inline-block;box-shadow:0 0 6px rgba(255,61,90,0.6);"></span>I Owe</div><div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#ff3d5a;margin-top:2px;">${fmt(iOwe)}</div></div>` : ''}
-      ${depPend > 0 ? `<div style="text-align:center;background:rgba(77,159,255,0.05);padding:6px 12px;border-radius:12px;border:1px solid rgba(77,159,255,0.15);"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#4d9fff;font-weight:700;"><span style="width:8px;height:8px;border-radius:50%;background:#4d9fff;display:inline-block;box-shadow:0 0 6px rgba(77,159,255,0.6);"></span>Deposits</div><div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#4d9fff;margin-top:2px;">${fmt(depPend)}</div></div>` : ''}
+    <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:2px;">
+      ${owesMe > 0 ? `<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#0ce97f;font-weight:700;"><span style="width:6px;height:6px;border-radius:50%;background:#0ce97f;display:inline-block;"></span>Owe Me</div><div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#0ce97f;margin-top:2px;">${fmt(owesMe)}</div></div>` : ''}
+      ${iOwe > 0 ? `<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#ff3d5a;font-weight:700;"><span style="width:6px;height:6px;border-radius:50%;background:#ff3d5a;display:inline-block;"></span>I Owe</div><div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#ff3d5a;margin-top:2px;">${fmt(iOwe)}</div></div>` : ''}
+      ${depPend > 0 ? `<div style="text-align:center;"><div style="display:flex;align-items:center;gap:4px;justify-content:center;font-size:10px;color:#4d9fff;font-weight:700;"><span style="width:6px;height:6px;border-radius:50%;background:#4d9fff;display:inline-block;"></span>Deposits</div><div style="font-family:'Space Mono',monospace;font-size:13px;font-weight:700;color:#4d9fff;margin-top:2px;">${fmt(depPend)}</div></div>` : ''}
     </div>`;
     }
 
