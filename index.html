@@ -3053,7 +3053,7 @@
     <!-- Background Track -->
     <path d="${trackPath}" stroke="${trackCol}" stroke-width="${sw}" fill="none" stroke-linecap="round"/>
     <!-- Animated Foreground Arc -->
-    <path d="${trackPath}" stroke="url(#savGrad)" stroke-width="${sw}" fill="none" stroke-linecap="round" filter="url(#glowSav)" stroke-dasharray="100" stroke-dashoffset="100" pathLength="100">
+    <path d="${trackPath}" stroke="url(#savGrad)" stroke-width="${sw}" fill="none" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="100" pathLength="100">
       <animate attributeName="stroke-dashoffset" from="100" to="${100 - pct}" dur="${dur}s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
     </path>
     <!-- Beautiful Animated Needle -->
@@ -3104,7 +3104,6 @@
 
       // Definitions
       lines.push(`<defs>
-        <filter id="glowLg" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="blur" /><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         <filter id="dotShdw"><feDropShadow dx="0" dy="2" stdDeviation="2" flood-opacity="0.5"/></filter>
       </defs>`);
 
@@ -3117,29 +3116,26 @@
       function drawAnimArc(r, val, col) {
         const pct = (val / maxVal) * 100;
         if (pct < 0.5) return;
-        lines.push(`<path d="${arcP(r)}" stroke="${col}" stroke-width="${sw}" fill="none" stroke-linecap="round" filter="url(#glowLg)" stroke-dasharray="100" stroke-dashoffset="100" pathLength="100"><animate attributeName="stroke-dashoffset" from="100" to="${100 - pct}" dur="${dur}s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/></path>`);
+        lines.push(`<path d="${arcP(r)}" stroke="${col}" stroke-width="${sw}" fill="none" stroke-linecap="round" stroke-dasharray="100" stroke-dashoffset="100" pathLength="100"><animate attributeName="stroke-dashoffset" from="100" to="${100 - pct}" dur="${dur}s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/></path>`);
       }
 
       drawAnimArc(R1, owesMe, '#0ce97f');
       drawAnimArc(R2, iOwe, '#ff3d5a');
       drawAnimArc(R3, depPend, '#4d9fff');
 
-      // Animated Glowing End Dots (replaces needles)
-      function drawAnimDot(r, val, col) {
+      // Animated Needles
+      function drawAnimNeedle(r, val, col) {
         if (val <= 0) return;
         const targetDeg = (val / maxVal) * totalDeg;
-        const radCenter = startDeg * Math.PI / 180;
-        const stX = cx + r * Math.cos(radCenter);
-        const stY = cy + r * Math.sin(radCenter);
-        lines.push(`<g transform="rotate(0, ${cx}, ${cy})">
-          <animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="${targetDeg} ${cx} ${cy}" dur="${dur}s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
-          <circle cx="${stX}" cy="${stY}" r="${sw/2 - 2}" fill="#fff" filter="url(#dotShdw)"/>
+        lines.push(`<g transform="rotate(${startDeg}, ${cx}, ${cy})">
+          <animateTransform attributeName="transform" type="rotate" from="${startDeg} ${cx} ${cy}" to="${startDeg + targetDeg} ${cx} ${cy}" dur="${dur}s" fill="freeze" calcMode="spline" keySplines="0.25 0.1 0.25 1"/>
+          <path d="M${cx},${cy - 2} L${cx + r * 0.95},${cy} L${cx},${cy + 2} Z" fill="${col}" filter="url(#dotShdw)"/>
         </g>`);
       }
 
-      drawAnimDot(R1, owesMe, '#0ce97f');
-      drawAnimDot(R2, iOwe, '#ff3d5a');
-      drawAnimDot(R3, depPend, '#4d9fff');
+      drawAnimNeedle(R1, owesMe, '#0ce97f');
+      drawAnimNeedle(R2, iOwe, '#ff3d5a');
+      drawAnimNeedle(R3, depPend, '#4d9fff');
 
       // Center Base
       lines.push(`<circle cx="${cx}" cy="${cy}" r="12" fill="rgba(255,255,255,0.08)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/>`);
@@ -3435,7 +3431,8 @@
       const extras = l.extraEntries || []; const payments = l.payments || [];
       const tc = l.type === 'deposit' ? '#2563eb' : l.type === 'loan_recv' ? '#d97706' : '#7c3aed';
       const tb = l.type === 'deposit' ? '#eff6ff' : l.type === 'loan_recv' ? '#fffbeb' : '#f5f3ff';
-      const infoRows = [['Person / Organization', l.person], ['Type', receiptLabel], ['Date', fmtD(l.date)], ['Due Date', l.dueDate ? fmtD(l.dueDate) : 'Not specified'], ...(l.note ? [['Note', l.note]] : [])];
+      const issuedByFull = fbUser ? (fbUser.displayName || fbUser.email.split('@')[0] || 'nTransactions') : 'nTransactions';
+      const infoRows = [['Issued By', issuedByFull], ['Person / Organization', l.person], ['Type', receiptLabel], ['Date', fmtD(l.date)], ['Due Date', l.dueDate ? fmtD(l.dueDate) : 'Not specified'], ...(l.note ? [['Note', l.note]] : [])];
       const previewHTML = '<div class="receipt-preview"><div style="text-align:center;border-bottom:2px solid #0ce97f;padding-bottom:12px;margin-bottom:14px;"><div style="font-size:20px;font-weight:900;color:#0a0f1e;">n<span style="color:#0ce97f;">Transactions</span></div><div style="font-size:9px;color:#888;margin-top:3px;text-transform:uppercase;letter-spacing:1.2px;">Financial Receipt</div><div style="display:inline-block;margin-top:7px;padding:4px 12px;background:' + tb + ';border-radius:8px;font-size:11px;font-weight:700;color:' + tc + ';">' + receiptLabel + '</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">' + infoRows.map(([lb, v]) => '<div><div style="font-size:9px;color:#9ca3af;font-weight:700;text-transform:uppercase;letter-spacing:.8px;">' + lb + '</div><div style="font-size:12px;font-weight:700;color:#1a1a2e;margin-top:2px;">' + v + '</div></div>').join('') + '</div><div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:11px;"><div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;">Amount Summary</div><div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">Initial Amount</span><span style="font-weight:700;color:#374151;">' + fmt(l.amount) + '</span></div>' + extras.map((e, i) => '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">Extra ' + (i + 1) + (e.note ? ' - ' + e.note : '') + '</span><span style="font-weight:700;color:#374151;">' + fmt(e.amount) + '</span></div>').join('') + (extras.length ? '<div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;border-bottom:1px solid #e5e7eb;"><span style="font-weight:700;color:#374151;">Total</span><span style="font-weight:800;color:#374151;">' + fmt(total) + '</span></div>' : '') + '<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">Total Paid</span><span style="font-weight:700;color:#059669;">' + fmt(paid) + '</span></div><div style="display:flex;justify-content:space-between;font-size:13px;padding:6px 0;"><span style="font-weight:700;color:#374151;">Remaining</span><span style="font-weight:800;color:' + (remain <= 0 ? '#059669' : '#dc2626') + ';">' + fmt(remain) + '</span></div>' + (remain <= 0 ? '<div style="text-align:center;margin-top:6px;background:#d1fae5;border-radius:6px;padding:5px;font-size:12px;font-weight:700;color:#059669;">Fully Settled</div>' : '') + '</div>' + (payments.length ? '<div style="font-size:9px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:10px 0 5px;">Payments (' + payments.length + ')</div>' + payments.map((p, i) => '<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid #f1f5f9;"><span style="color:#6b7280;">' + (i + 1) + '. ' + fmtD(p.date) + (p.note ? ' - ' + p.note : '') + '</span><span style="font-weight:700;color:#059669;">' + fmt(p.amount) + '</span></div>').join('') : '') + '</div>';
       const receiptTitle = l.type === 'deposit' || l.type === 'deposit_given' ? 'Deposit Receipt' : l.type === 'loan_recv' ? 'Loan Received Receipt' : 'Loan Given Receipt';
       openModal(`<div class="modal-title">${receiptTitle}</div>
@@ -4834,7 +4831,7 @@
     <div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--text3);">Date added</span><span style="font-weight:700;">${fmtD(p.date)}</span></div>
     ${p.note ? `<div style="display:flex;justify-content:space-between;margin-bottom:8px;"><span style="color:var(--text3);">Note</span><span style="font-weight:700;">${p.note}</span></div>` : ''}
   </div>
-  <div style="font-size:11px;color:var(--text3);margin-bottom:6px;text-align:center;">Accepting this will add it to your Loans. You can attach a wallet later by editing.</div>
+  <div class="fg" style="pointer-events:auto;margin-top:14px;"><label class="fl">Wallet (optional)</label><select class="fi" id="pend-w"><option value="">Select a wallet</option>${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
     <button class="btn btn-p" onclick="confirmPendingLoan(${idx})" style="margin:0;">Accept</button>
     <button class="btn btn-d" onclick="discardPendingLoan(${idx})" style="margin:0;">Discard</button>
@@ -4844,8 +4841,10 @@
     }
     async function confirmPendingLoan(idx) {
       const p = _pendingLoans[idx]; if (!p) return;
+      const w = document.getElementById('pend-w').value;
+      if (w) { const cfg = LOAN_TYPES[p.type]; const wObj = S.wallets.find(x => x.id === w); if (wObj) { if (cfg.walletDir === 'in') wObj.balance += parseFloat(p.amount); else wObj.balance -= parseFloat(p.amount); } }
       // convert to proper S.loans item
-      S.loans.unshift({ id: uid(), type: p.type, person: p.person, amount: p.amount, wallet: '', date: p.date, dueDate: '', note: p.note || '', photo: '', payments: [], at: new Date().toISOString() });
+      S.loans.unshift({ id: uid(), type: p.type, person: p.person, amount: p.amount, wallet: w || '', date: p.date, dueDate: '', note: p.note || '', photo: '', payments: [], at: new Date().toISOString() });
       save();
       try { await fbDb.ref('users/' + fbUser.uid + '/pending_loans/' + p._key).remove(); } catch (e) { }
       _pendingLoans.splice(idx, 1); updatePendingLoansBadge();
