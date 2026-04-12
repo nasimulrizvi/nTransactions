@@ -3060,7 +3060,6 @@
     <g transform="rotate(0, ${cx}, ${cy})">
       <animateTransform attributeName="transform" type="rotate" from="0 ${cx} ${cy}" to="${pct * 1.8} ${cx} ${cy}" dur="${dur}s" fill="freeze" calcMode="spline" keySplines="0.4 0 0.2 1"/>
       <path d="M${cx - R * 0.9},${cy} L${cx},${cy - 6} L${cx + 10},${cy} L${cx},${cy + 6} Z" fill="#fff" filter="url(#needleShdw)"/>
-      <circle cx="${cx - R * 0.9}" cy="${cy}" r="4" fill="#1a1a2e"/>
     </g>
     <!-- Inner Base Point -->
     <circle cx="${cx}" cy="${cy}" r="12" fill="url(#savGrad)" filter="drop-shadow(0 0 8px ${stop1}88)"/>
@@ -3625,9 +3624,17 @@
           <div style="width:28px;height:28px;border-radius:8px;background:var(--green-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
           <span style="font-size:12px;font-weight:600;color:var(--green);">nasimul@techie.com</span>
         </a>
-        <a href="https://github.com/nasimulrizvi/nTransactions" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
-          <div style="width:28px;height:28px;border-radius:8px;background:var(--blue-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg></div>
-          <span style="font-size:12px;font-weight:600;color:var(--blue);">github.com/nasimulrizvi/nTransactions</span>
+        <a href="https://www.linkedin.com/in/NasimulOfficial/" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;margin-bottom:6px;">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--blue-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg></div>
+          <span style="font-size:12px;font-weight:600;color:var(--blue);">LinkedIn</span>
+        </a>
+        <a href="https://www.facebook.com/NasimulRizvi" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;margin-bottom:6px;">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--blue-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></div>
+          <span style="font-size:12px;font-weight:600;color:var(--blue);">Facebook</span>
+        </a>
+        <a href="https://nasimulrizvi.blogspot.com/" target="_blank" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+          <div style="width:28px;height:28px;border-radius:8px;background:var(--amber-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><rect x="8" y="10" width="8" height="4"></rect></svg></div>
+          <span style="font-size:12px;font-weight:600;color:var(--amber);">nasimulrizvi.blogspot.com</span>
         </a>
       </div>
     </div>
@@ -3658,20 +3665,21 @@
     async function promptUsername() {
       const uname = prompt("Enter an available username (alphanumeric only):", S.username || '');
       if (uname === null) return;
-      const cleaned = uname.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
-      if (!cleaned) { alert('Username must contain only letters and numbers.'); return; }
+      const displayUname = uname.trim().replace(/[^a-zA-Z0-9]/g, '');
+      const lookupUname = displayUname.toLowerCase();
+      if (!lookupUname) { alert('Username must contain only letters and numbers.'); return; }
       setSyncDot('busy');
       try {
-        const snap = await fbDb.ref('usernames/' + cleaned).get();
+        const snap = await fbDb.ref('usernames/' + lookupUname).get();
         if (snap.exists() && snap.val() !== fbUser.uid) {
-          alert('@' + cleaned + ' is already taken by someone else.');
+          alert('@' + displayUname + ' is already taken by someone else.');
           setSyncDot('ok');
         } else {
           // old username cleanup
-          if (S.username && S.username !== cleaned) await fbDb.ref('usernames/' + S.username).remove();
-          await fbDb.ref('usernames/' + cleaned).set(fbUser.uid);
-          await fbDb.ref('users/' + fbUser.uid + '/username').set(cleaned);
-          S.username = cleaned;
+          if (S.username && S.username.toLowerCase() !== lookupUname) await fbDb.ref('usernames/' + S.username.toLowerCase()).remove();
+          await fbDb.ref('usernames/' + lookupUname).set(fbUser.uid);
+          await fbDb.ref('users/' + fbUser.uid + '/username').set(displayUname);
+          S.username = displayUname;
           saveLocal(); // don't full sync right away, just local save
           setSyncDot('ok');
           openSyncModal();
