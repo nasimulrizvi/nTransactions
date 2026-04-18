@@ -2618,6 +2618,9 @@
         S.customIncCats = d.customIncCats || S.customIncCats || [];
         S.expCatOrder = d.expCatOrder || S.expCatOrder || [];
         S.incCatOrder = d.incCatOrder || S.incCatOrder || [];
+        S.hiddenExpCats = d.hiddenExpCats || S.hiddenExpCats || [];
+        S.hiddenIncCats = d.hiddenIncCats || S.hiddenIncCats || [];
+        S.savingsHistory = d.savingsHistory || S.savingsHistory || [];
         S.username = d.username || S.username || '';
         S.lastSync = serverTs;
         saveLocal(); setSyncDot('ok'); renderMain();
@@ -2644,6 +2647,9 @@
             S.customIncCats = d.customIncCats || S.customIncCats || [];
             S.expCatOrder = d.expCatOrder || S.expCatOrder || [];
             S.incCatOrder = d.incCatOrder || S.incCatOrder || [];
+            S.hiddenExpCats = d.hiddenExpCats || S.hiddenExpCats || [];
+            S.hiddenIncCats = d.hiddenIncCats || S.hiddenIncCats || [];
+            S.savingsHistory = d.savingsHistory || S.savingsHistory || [];
             S.username = d.username || S.username || '';
             S.lastSync = serverTs; saveLocal();
           }
@@ -3038,16 +3044,6 @@
         <stop offset="0%" stop-color="${stop1}" />
         <stop offset="100%" stop-color="${stop2}" />
       </linearGradient>
-      <filter id="glowSav" x="-30%" y="-30%" width="160%" height="160%">
-        <feGaussianBlur stdDeviation="5" result="blur" />
-        <feMerge>
-          <feMergeNode in="blur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-      <filter id="needleShdw" x="-20%" y="-20%" width="140%" height="140%">
-        <feDropShadow dx="0" dy="4" stdDeviation="4" flood-opacity="0.6"/>
-      </filter>
     </defs>
     <!-- Background Track (Inner Segments) -->
     <path d="${trackPath}" stroke="var(--bg2)" stroke-width="${sw - 6}" fill="none" stroke-linecap="round" stroke-dasharray="4 8"/>
@@ -3063,7 +3059,7 @@
       <path d="M${cx - R * 0.9},${cy} L${cx},${cy - 6} L${cx + 10},${cy} L${cx},${cy + 6} Z" fill="#fff"/>
     </g>
     <!-- Inner Base Point -->
-    <circle cx="${cx}" cy="${cy}" r="12" fill="url(#savGrad)" filter="drop-shadow(0 0 8px ${stop1}88)"/>
+    <circle cx="${cx}" cy="${cy}" r="12" fill="url(#savGrad)"/>
     <circle cx="${cx}" cy="${cy}" r="5" fill="#fff"/>
     <!-- Labels -->
     <text x="${(cx - R + 5).toFixed(0)}" y="${lbY}" text-anchor="start" font-size="11" font-weight="800" font-family="Outfit,sans-serif" fill="var(--text3)">0</text>
@@ -3071,7 +3067,7 @@
   </svg>`;
 
       const lbl = document.getElementById('gauge-label');
-      if (lbl) lbl.innerHTML = `<span style="font-family:'Space Mono',monospace;font-size:26px;font-weight:800;color:${stop2};text-shadow:0 2px 14px ${stop2}66;letter-spacing:-1px;">${rawPct.toFixed(0)}%</span><br><span style="font-size:11px;color:var(--text3);margin-top:4px;display:inline-block;text-transform:uppercase;letter-spacing:1px;font-weight:700;">of goal (${fmt(bgt.amount)})</span>`;
+      if (lbl) lbl.innerHTML = `<span style="font-family:'Space Mono',monospace;font-size:26px;font-weight:800;color:${stop2};letter-spacing:-1px;">${rawPct.toFixed(0)}%</span><br><span style="font-size:11px;color:var(--text3);margin-top:4px;display:inline-block;text-transform:uppercase;letter-spacing:1px;font-weight:700;">of goal (${fmt(bgt.amount)})</span>`;
     }
 
     // ============ LOAN GAUGE (Smart, Animated, Realistic) ============
