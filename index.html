@@ -2159,10 +2159,10 @@
     }
 
     .dtpicker-panel {
-      background: #0a0f1c;
-      border: 1px solid rgba(77, 159, 255, .22);
+      background: var(--bg2);
+      border: 1px solid var(--border);
       border-radius: 24px;
-      box-shadow: 0 28px 72px rgba(0, 0, 0, .65), 0 0 0 1px rgba(77, 159, 255, .08);
+      box-shadow: 0 28px 72px rgba(0, 0, 0, .8), 0 0 0 1px rgba(77, 159, 255, .08);
       overflow: hidden;
       width: min(680px, calc(100vw - 24px));
       max-height: calc(100dvh - 40px);
@@ -2184,9 +2184,9 @@
     }
 
     .dtpicker-hdr {
-      background: linear-gradient(135deg, #071228, #09152a);
+      background: linear-gradient(135deg, var(--bg), var(--bg2));
       padding: 18px 22px 14px;
-      border-bottom: 1px solid rgba(77, 159, 255, .1);
+      border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
@@ -2236,8 +2236,8 @@
     }
 
     .dtp-clock-pnl {
-      width: 240px;
-      border-left: 1px solid rgba(255, 255, 255, .06);
+      width: 260px;
+      border-left: 1px solid var(--borderl);
       padding: 16px;
       display: flex;
       flex-direction: column;
@@ -2359,8 +2359,8 @@
 
     .dtp-cwrap {
       position: relative;
-      width: 180px;
-      height: 180px;
+      width: 210px;
+      height: 210px;
       flex-shrink: 0;
       cursor: pointer;
     }
@@ -2374,36 +2374,37 @@
     .dtp-ti {
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 4px;
-      margin-top: 10px;
+      margin-top: 12px;
       width: 100%;
     }
 
     .dtp-tinp {
-      flex: 1;
-      background: rgba(255, 255, 255, .06);
-      border: 1px solid rgba(255, 255, 255, .1);
+      width: 48px;
+      flex: none;
+      background: var(--bg3);
+      border: 1px solid var(--border);
       border-radius: 8px;
-      padding: 7px 4px;
+      padding: 6px;
       text-align: center;
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 800;
-      color: #e8edf5;
+      color: var(--text);
       font-family: 'Outfit', sans-serif;
       outline: none;
       transition: border-color .15s;
-      width: 0;
     }
 
     .dtp-tinp:focus {
-      border-color: #4d9fff;
-      background: rgba(77, 159, 255, .08);
+      border-color: var(--blue);
+      background: var(--blue-d);
     }
 
     .dtp-tcol {
       font-size: 20px;
       font-weight: 800;
-      color: #3a4558;
+      color: var(--text3);
       padding: 0 2px;
     }
 
@@ -2436,7 +2437,7 @@
 
     .dtpicker-ftr {
       padding: 10px 18px;
-      border-top: 1px solid rgba(255, 255, 255, .06);
+      border-top: 1px solid var(--borderl);
       display: flex;
       align-items: center;
       gap: 8px;
@@ -2676,7 +2677,7 @@
         <button class="hbtn" onclick="openSyncModal()" title="Account &amp; Sync"
           style="padding:3px;background:none;border:none;position:relative;">
           <div class="sync-dot" id="sync-dot"
-            style="display:none;position:absolute;top:-2px;right:-2px;z-index:2;border:2px solid var(--bg);box-sizing:content-box;">
+            style="display:none;position:absolute;top:2px;right:2px;z-index:2;border:2px solid var(--bg);box-sizing:content-box;">
           </div>
           <div class="hdr-avatar" id="hdr-avatar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
@@ -3242,13 +3243,16 @@
     });
 
     // ============ NAV ============
-    function go(view) {
+    function go(v) {
       destroyAllCharts();
-      S.view = view;
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      const el = document.getElementById('nav-' + view); if (el) el.classList.add('active');
-      closeSidebar();
+      S.view = v;
+      saveLocal();
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      const el = document.getElementById('nav-' + v); if (el) el.classList.add('active');
       renderMain();
+      window.scrollTo(0, 0);
+      if (typeof ensureBackTrap === 'function') ensureBackTrap();
+      closeSidebar();
     }
     function renderMain() {
       destroyAllCharts();
@@ -5442,6 +5446,53 @@
     }
 
 
+    // ============ BACK BUTTON BEHAVIOR ============
+    let _backTrapActive = false;
+    let _lastBackPress = 0;
+    function ensureBackTrap() {
+      if (!_backTrapActive) {
+        history.pushState({ trap: true }, '');
+        _backTrapActive = true;
+      }
+    }
+    window.addEventListener('popstate', (e) => {
+      _backTrapActive = false;
+      let handled = false;
+      const dtp = document.getElementById('dtpicker-overlay');
+      const mod = document.getElementById('modal-overlay');
+      const pp = document.getElementById('pp-overlay');
+      if (dtp && dtp.classList.contains('open')) { closeDTP(); handled = true; }
+      else if (mod && mod.classList.contains('open')) { closeModal(); handled = true; }
+      else if (pp && pp.classList.contains('open')) { document.getElementById('pp-overlay').classList.remove('open'); handled = true; }
+      else if (S.view !== 'dashboard') { go('dashboard'); handled = true; }
+      
+      if (handled) {
+        ensureBackTrap();
+      } else {
+        const now = Date.now();
+        if (now - _lastBackPress < 2000) {
+          // Double press -> exits app naturally
+        } else {
+          _lastBackPress = now;
+          ensureBackTrap();
+          showToast("Press back again to exit");
+        }
+      }
+    });
+    function showToast(msg) {
+      let t = document.getElementById('toast-msg');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast-msg';
+        t.style.cssText = 'position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:var(--card);color:var(--text);border:1px solid var(--border);padding:10px 20px;border-radius:20px;font-size:12px;font-weight:700;font-family:"Outfit",sans-serif;z-index:9999;pointer-events:none;opacity:0;transition:opacity 0.3s;box-shadow:0 10px 30px rgba(0,0,0,0.5);';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      clearTimeout(window._toastTimeout);
+      window._toastTimeout = setTimeout(() => { t.style.opacity = '0'; }, 2000);
+    }
+
     // ============ INIT ============
     function handleSharedAppInit() {
       const urlParams = new URLSearchParams(window.location.search);
@@ -5480,6 +5531,7 @@
       _dtpRender(); _dtpRenderClock();
       document.getElementById('dtpicker-overlay').classList.add('open');
       if (window.innerWidth <= 600) dtpMobileView('date');
+      if (typeof ensureBackTrap === 'function') ensureBackTrap();
     }
     function closeDTP() { document.getElementById('dtpicker-overlay').classList.remove('open'); }
     function dtpOverlayClick(e) { if (e.target === document.getElementById('dtpicker-overlay')) closeDTP(); }
@@ -5513,10 +5565,10 @@
     }
     function _dtpRenderClock() {
       const svg = document.getElementById('dtp-csvg'); if (!svg) return;
-      const cx = 90, cy = 90, R = 76, r = 54, ri = 12;
+      const cx = 105, cy = 105, R = 95, r = 72, ri = 12;
       const isHrMode = _DTP.mode === 'hr';
       // Build SVG content
-      let s = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#0d1624" stroke="rgba(77,159,255,.12)" stroke-width="1"/>`;
+      let s = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/>`;
       if (isHrMode) {
         // Hour numbers 1-12 at radius r
         for (let h = 1; h <= 12; h++) {
@@ -5572,7 +5624,7 @@
       _dtpRender();
     }
     function dtpHrClick(h) { _DTP.hr = h; _DTP.mode = 'mn'; _dtpRender(); _dtpRenderClock(); }
-    function dtpMnClick(m) { _DTP.mn = m; _DTP.mode = 'hr'; _dtpRender(); _dtpRenderClock(); }
+    function dtpMnClick(m) { _DTP.mn = m; _dtpRender(); _dtpRenderClock(); }
     function dtpSetAP(ap) { _DTP.ap = ap; _dtpRender(); _dtpRenderClock(); }
     function dtpHrInp(el) { let v = parseInt(el.value); if (isNaN(v) || v < 1) v = 1; if (v > 12) v = 12; _DTP.hr = v; _dtpRender(); _dtpRenderClock(); }
     function dtpMnInp(el) { let v = parseInt(el.value); if (isNaN(v) || v < 0) v = 0; if (v > 59) v = 59; _DTP.mn = v; _dtpRender(); _dtpRenderClock(); }
@@ -5598,7 +5650,7 @@
     function dtpClockDown(e) {
       const svg = document.getElementById('dtp-csvg');
       const val = _dtpAngleToVal(e, svg);
-      if (_DTP.mode === 'hr') { _DTP.hr = val; _DTP.mode = 'mn'; } else { _DTP.mn = val; _DTP.mode = 'hr'; }
+      if (_DTP.mode === 'hr') { _DTP.hr = val; _DTP.mode = 'mn'; } else { _DTP.mn = val; }
       _dtpRender(); _dtpRenderClock();
       const onMove = ev => { const v = _dtpAngleToVal(ev, svg); if (_DTP.mode === 'hr') _DTP.hr = v; else _DTP.mn = v; _dtpRender(); _dtpRenderClock(); };
       const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
@@ -5608,7 +5660,7 @@
     function dtpClockTouch(e) {
       const svg = document.getElementById('dtp-csvg');
       const val = _dtpAngleToVal(e, svg);
-      if (_DTP.mode === 'hr') { _DTP.hr = val; _DTP.mode = 'mn'; } else { _DTP.mn = val; _DTP.mode = 'hr'; }
+      if (_DTP.mode === 'hr') { _DTP.hr = val; _DTP.mode = 'mn'; } else { _DTP.mn = val; }
       _dtpRender(); _dtpRenderClock();
       const onMove = ev => { const v = _dtpAngleToVal(ev, svg); if (_DTP.mode === 'hr') _DTP.hr = v; else _DTP.mn = v; _dtpRender(); _dtpRenderClock(); };
       const onUp = () => { document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp); };
@@ -5638,6 +5690,7 @@
     const _origOpenModal = openModal;
     openModal = function (html) {
       _origOpenModal(html);
+      if (typeof ensureBackTrap === 'function') ensureBackTrap();
       // Bind DTP to all datetime-local inputs inside modal
       setTimeout(() => { document.querySelectorAll('#mc input[type="datetime-local"]').forEach(inp => { if (!inp.nextSibling || inp.nextSibling.tagName !== 'BUTTON') dtpBind(inp.id); }); }, 0);
     };
@@ -5650,6 +5703,7 @@
       initAuth();
       updateHeaderAvatar();
       _initSwipe();
+      if (typeof ensureBackTrap === 'function') ensureBackTrap();
     }
   </script> <!-- MUI DateTime Picker Overlay -->
   <div class="dtpicker-overlay" id="dtpicker-overlay" onclick="dtpOverlayClick(event)">
@@ -5697,7 +5751,7 @@
         <div class="dtp-clock-pnl" id="dtp-clock-pnl">
           <div class="dtp-clbl">Select Time</div>
           <div class="dtp-cwrap">
-            <svg class="dtp-csvg" id="dtp-csvg" viewBox="0 0 180 180" onmousedown="dtpClockDown(event)"
+            <svg class="dtp-csvg" id="dtp-csvg" viewBox="0 0 210 210" onmousedown="dtpClockDown(event)"
               ontouchstart="dtpClockTouch(event)"></svg>
           </div>
           <div class="dtp-ti">
