@@ -2675,7 +2675,9 @@
         </button>
         <button class="hbtn" onclick="openSyncModal()" title="Account &amp; Sync"
           style="padding:3px;background:none;border:none;position:relative;">
-          <div class="sync-dot" id="sync-dot" style="display:none;position:absolute;top:0;right:0;z-index:2;"></div>
+          <div class="sync-dot" id="sync-dot"
+            style="display:none;position:absolute;top:-2px;right:-2px;z-index:2;border:2px solid var(--bg);box-sizing:content-box;">
+          </div>
           <div class="hdr-avatar" id="hdr-avatar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
               stroke-linejoin="round" style="width:16px;height:16px;">
@@ -3763,7 +3765,8 @@
         const rows = extras.map((e, i) => {
           const fn = "delLoanSubEntry('" + l.id + "'," + i + ")";
           const smStyle = "font-family:'Space Mono',monospace;font-weight:700;color:var(--" + sc.acol + ")";
-          return '<div class="loan-pay-item"><span style="display:flex;align-items:center;gap:4px;">' + CAL_SVG + ' ' + fmtD(e.date) + (e.note ? ' - ' + e.note : '') + '</span><div style="display:flex;align-items:center;gap:8px;"><span style="' + smStyle + ';">+' + fmt(e.amount) + '</span><button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="' + fn + '">x</button></div></div>';
+          const wTxt = e.wallet ? ' &bull; ' + getWlt(e.wallet).name : '';
+          return '<div class="loan-pay-item"><span style="display:flex;align-items:center;gap:4px;">' + CAL_SVG + ' ' + fmtD(e.date) + wTxt + (e.note ? ' - ' + e.note : '') + '</span><div style="display:flex;align-items:center;gap:8px;"><span style="' + smStyle + ';">+' + fmt(e.amount) + '</span><button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="' + fn + '">x</button></div></div>';
         }).join('');
         const smStyle2 = "font-family:'Space Mono',monospace;color:var(--" + sc.acol + ")";
         return '<div style="border-top:1px solid var(--borderl);margin-top:10px;padding-top:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:6px;">Additional Entries</div>' + rows + '<div style="font-size:12px;font-weight:700;color:var(--text2);margin-top:8px;padding-top:8px;border-top:1px solid var(--borderl);display:flex;justify-content:space-between;"><span>Total</span><span style="' + smStyle2 + ';">' + fmt(loanTotal(l)) + '</span></div></div>';
@@ -3782,14 +3785,17 @@
           const smG = "font-family:'Space Mono',monospace;font-weight:700;color:var(--green)";
           const pRows = l.payments.map((p, i) => {
             const df = "delLoanPayment('" + l.id + "'," + i + ")";
-            return '<div class="loan-pay-item"><span style="display:flex;align-items:center;gap:4px;">' + CAL_SVG + ' ' + fmtD(p.date) + (p.note ? ' - ' + p.note : '') + '</span><div style="display:flex;align-items:center;gap:8px;"><span style="' + smG + ';">' + fmt(p.amount) + '</span><button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="' + df + '">x</button></div></div>';
+            const wTxt = p.wallet ? ' &bull; ' + getWlt(p.wallet).name : '';
+            return '<div class="loan-pay-item"><span style="display:flex;align-items:center;gap:4px;">' + CAL_SVG + ' ' + fmtD(p.date) + wTxt + (p.note ? ' - ' + p.note : '') + '</span><div style="display:flex;align-items:center;gap:8px;"><span style="' + smG + ';">' + fmt(p.amount) + '</span><button class="del-btn" style="width:22px;height:22px;font-size:11px;" onclick="' + df + '">x</button></div></div>';
           }).join('');
           return '<div class="loan-payments"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;font-weight:700;margin-bottom:7px;">Payment History</div>' + pRows + '</div>';
         })() : ''
         return `<div class="loan-card"><div class="loan-hdr"><div>
       <div style="display:flex;align-items:center;gap:10px;"><div style="width:42px;height:42px;border-radius:12px;background:${lIcCol}22;display:flex;align-items:center;justify-content:center;color:${lIcCol};flex-shrink:0;">${loanIco(l.type, 20)}</div><div><div class="loan-person">${l.person}</div><span class="loan-type-badge" style="background:var(--${sc.acol}-d);color:var(--${sc.acol});">${statusLabel}</span></div></div>
-      ${l.wallet ? `<div style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);margin-top:5px;">${WAL_SVG} ${getWlt(l.wallet).name}</div>` : ''}
-      <div style="font-size:11px;color:var(--text3);margin-top:9px;display:flex;align-items:center;gap:5px;">${CAL_SVG} ${fmtD(l.date)}${l.dueDate ? ' - Due: ' + fmtD(l.dueDate) : ''}</div>
+      <div style="margin-top:8px;display:flex;flex-direction:column;gap:3px;">
+        ${l.wallet ? `<div style="display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--text3);">${WAL_SVG} ${getWlt(l.wallet).name}</div>` : ''}
+        <div style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:5px;">${CAL_SVG} ${fmtD(l.date)}${l.dueDate ? ' - Due: ' + fmtD(l.dueDate) : ''}</div>
+      </div>
       ${l.note ? '<div style="font-size:11px;color:var(--text3);margin-top:3px;">' + l.note + '</div>' : ''}
     </div>
     <div style="text-align:right;flex-shrink:0;">
@@ -5630,11 +5636,11 @@
     }
     // Patch openAddTx, txModalHTML, loan modals to bind DTP after rendering
     const _origOpenModal = openModal;
-    function openModal(html) {
+    openModal = function (html) {
       _origOpenModal(html);
       // Bind DTP to all datetime-local inputs inside modal
       setTimeout(() => { document.querySelectorAll('#mc input[type="datetime-local"]').forEach(inp => { if (!inp.nextSibling || inp.nextSibling.tagName !== 'BUTTON') dtpBind(inp.id); }); }, 0);
-    }
+    };
 
     if (!handleSharedAppInit()) {
 
