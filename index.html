@@ -2164,11 +2164,12 @@
       border-radius: 24px;
       box-shadow: 0 28px 72px rgba(0, 0, 0, .8), 0 0 0 1px rgba(77, 159, 255, .08);
       overflow: hidden;
-      width: min(680px, calc(100vw - 24px));
+      width: min(730px, calc(100vw - 24px));
       max-height: calc(100dvh - 40px);
       display: flex;
       flex-direction: column;
       animation: dtpIn .28s cubic-bezier(.34, 1.38, .64, 1);
+      position: relative;
     }
 
     @keyframes dtpIn {
@@ -2236,9 +2237,9 @@
     }
 
     .dtp-clock-pnl {
-      width: 260px;
+      width: 306px;
       border-left: 1px solid var(--borderl);
-      padding: 16px;
+      padding: 16px 18px 18px;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -2267,24 +2268,31 @@
     }
 
     .dtp-nb {
-      width: 30px;
-      height: 30px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, .04);
-      border: 1px solid rgba(255, 255, 255, .08);
-      color: #8892a4;
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .075), rgba(255, 255, 255, .025));
+      border: 1px solid rgba(255, 255, 255, .09);
+      color: #a9b6ca;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       transition: all .15s;
-      font-size: 14px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 8px 20px rgba(0, 0, 0, .16);
     }
 
     .dtp-nb:hover {
       background: rgba(77, 159, 255, .12);
       border-color: rgba(77, 159, 255, .3);
       color: #4d9fff;
+      transform: translateY(-1px);
+    }
+
+    .dtp-nb svg {
+      width: 17px;
+      height: 17px;
+      stroke-width: 2.4;
     }
 
     .dtp-wds {
@@ -2347,92 +2355,267 @@
       box-shadow: 0 3px 10px rgba(77, 159, 255, .45);
     }
 
+    .dtp-clock-head {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
     .dtp-clbl {
       font-size: 10px;
       color: #4a5568;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 10px;
-      align-self: flex-start;
+    }
+
+    .dtp-ampm {
+      display: inline-flex;
+      gap: 3px;
+      padding: 3px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .04);
+      border: 1px solid rgba(255, 255, 255, .08);
+      flex-shrink: 0;
     }
 
     .dtp-cwrap {
       position: relative;
-      width: 210px;
-      height: 210px;
+      width: min(252px, 100%);
+      height: min(252px, 68vw);
       flex-shrink: 0;
       cursor: pointer;
+      touch-action: none;
     }
 
     .dtp-csvg {
       width: 100%;
       height: 100%;
       user-select: none;
+      display: block;
     }
 
     .dtp-ti {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 4px;
-      margin-top: 12px;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 13px;
       width: 100%;
     }
 
-    .dtp-tinp {
-      width: 48px;
-      flex: none;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 6px;
-      text-align: center;
-      font-size: 18px;
-      font-weight: 800;
+    .dtp-time-read {
       color: var(--text);
-      font-family: 'Outfit', sans-serif;
-      outline: none;
-      transition: border-color .15s;
-    }
-
-    .dtp-tinp:focus {
-      border-color: var(--blue);
-      background: var(--blue-d);
-    }
-
-    .dtp-tcol {
       font-size: 20px;
       font-weight: 800;
-      color: var(--text3);
-      padding: 0 2px;
+      line-height: 1;
+      font-family: 'Outfit', sans-serif;
     }
 
-    .dtp-ampm {
+    .dtp-time-mode {
+      color: var(--text3);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: .7px;
+      text-transform: uppercase;
+      margin-left: 5px;
+    }
+
+    .dtp-kb {
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, .045);
+      border: 1px solid rgba(255, 255, 255, .09);
+      color: #9fb0c8;
       display: flex;
-      gap: 6px;
-      margin-top: 10px;
-      width: 100%;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .15s;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04);
+    }
+
+    .dtp-kb:hover {
+      color: var(--blue);
+      border-color: rgba(77, 159, 255, .38);
+      background: rgba(77, 159, 255, .12);
+      transform: translateY(-1px);
     }
 
     .dtp-ab {
-      flex: 1;
-      padding: 6px 10px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, .04);
-      border: 1px solid rgba(255, 255, 255, .08);
+      min-width: 38px;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: transparent;
+      border: 0;
       color: #8892a4;
-      font-size: 12px;
-      font-weight: 700;
+      font-size: 11px;
+      font-weight: 800;
       cursor: pointer;
       font-family: 'Outfit', sans-serif;
       transition: all .15s;
     }
 
     .dtp-ab.a {
-      background: rgba(77, 159, 255, .15);
-      border-color: rgba(77, 159, 255, .4);
+      background: var(--blue);
+      color: #07090f;
+      box-shadow: 0 6px 14px rgba(77, 159, 255, .25);
+    }
+
+    .dtp-manual {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(3, 5, 10, .55);
+      backdrop-filter: blur(8px);
+    }
+
+    .dtp-manual.open {
+      display: flex;
+    }
+
+    .dtp-manual-card {
+      width: min(410px, 100%);
+      border-radius: 18px;
+      overflow: hidden;
+      background: #30333a;
+      border: 1px solid rgba(255, 255, 255, .09);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
+      animation: dtpManualIn .2s ease;
+    }
+
+    @keyframes dtpManualIn {
+      from {
+        transform: translateY(8px) scale(.98);
+        opacity: 0
+      }
+
+      to {
+        transform: translateY(0) scale(1);
+        opacity: 1
+      }
+    }
+
+    .dtp-manual-title {
+      padding: 24px 28px;
+      background: rgba(255, 255, 255, .08);
+      color: #fff;
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .dtp-manual-body {
+      padding: 24px 28px 18px;
+    }
+
+    .dtp-manual-label {
+      color: #f3f5fa;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 22px;
+    }
+
+    .dtp-manual-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 13px;
+    }
+
+    .dtp-manual-field {
+      width: 76px;
+    }
+
+    .dtp-manual-input {
+      width: 100%;
+      background: transparent;
+      border: 0;
+      border-bottom: 1px solid rgba(255, 255, 255, .7);
+      color: #edf2fb;
+      font-size: 36px;
+      font-weight: 500;
+      line-height: 1.1;
+      padding: 0 6px 8px;
+      outline: none;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .dtp-manual-input:focus {
+      border-bottom-color: var(--blue);
+      color: #fff;
+    }
+
+    .dtp-manual-help {
+      color: rgba(255, 255, 255, .66);
+      font-size: 15px;
+      margin-top: 10px;
+    }
+
+    .dtp-manual-colon {
+      color: #f5f7fb;
+      font-size: 32px;
+      line-height: 1;
+      padding-top: 6px;
+    }
+
+    .dtp-manual-ap {
+      margin-left: auto;
+      min-width: 106px;
+      padding: 10px 8px;
+      border: 0;
+      border-radius: 10px;
+      background: transparent;
+      color: #fff;
+      font-size: 22px;
+      font-weight: 500;
+      font-family: 'Outfit', sans-serif;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .dtp-manual-ap option {
+      color: #111827;
+    }
+
+    .dtp-manual-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 28px 24px;
+    }
+
+    .dtp-manual-clock {
+      width: 40px;
+      height: 40px;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      margin-right: auto;
+    }
+
+    .dtp-manual-btn {
+      border: 0;
+      background: transparent;
       color: #4d9fff;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .6px;
+      padding: 9px 4px;
+      cursor: pointer;
+      font-family: 'Outfit', sans-serif;
+      text-transform: uppercase;
     }
 
     .dtpicker-ftr {
@@ -2562,19 +2745,56 @@
       border-color: rgba(0, 0, 0, .08);
     }
 
-    body.theme-light .dtp-tinp {
-      background: #fff;
-      border-color: rgba(0, 0, 0, .12);
+    body.theme-light .dtp-kb,
+    body.theme-light .dtp-ampm,
+    body.theme-light .dtp-nb {
+      background: rgba(255, 255, 255, .58);
+      border-color: rgba(0, 0, 0, .09);
+      color: #4a5568;
+    }
+
+    body.theme-light .dtp-time-read {
       color: #131720;
     }
 
+    body.theme-light .dtp-manual {
+      background: rgba(70, 82, 112, .34);
+    }
+
+    body.theme-light .dtp-manual-card {
+      background: #f2f5fb;
+      border-color: rgba(0, 0, 0, .08);
+      box-shadow: 0 24px 60px rgba(40, 54, 85, .22);
+    }
+
+    body.theme-light .dtp-manual-title {
+      background: #dfe7f5;
+      color: #131720;
+    }
+
+    body.theme-light .dtp-manual-label,
+    body.theme-light .dtp-manual-colon,
+    body.theme-light .dtp-manual-clock,
+    body.theme-light .dtp-manual-ap,
+    body.theme-light .dtp-manual-input {
+      color: #131720;
+    }
+
+    body.theme-light .dtp-manual-input {
+      border-bottom-color: rgba(19, 23, 32, .55);
+    }
+
+    body.theme-light .dtp-manual-help {
+      color: #667085;
+    }
+
     body.theme-light .dtpicker-ftr,
-    .body.theme-light .dtp-vtog {
+    body.theme-light .dtp-vtog {
       border-color: rgba(0, 0, 0, .08);
     }
 
     body.theme-light .dtp-qb,
-    .body.theme-light .dtp-can {
+    body.theme-light .dtp-can {
       background: rgba(0, 0, 0, .04);
       border-color: rgba(0, 0, 0, .1);
       color: #4a5568;
@@ -2602,6 +2822,7 @@
         border-left: none;
         border-top: 1px solid rgba(255, 255, 255, .06);
         display: none;
+        padding: 16px 20px 20px;
       }
 
       .dtp-clock-pnl.ms {
@@ -2614,6 +2835,57 @@
 
       .dtp-vtog {
         display: flex;
+      }
+
+      .dtp-cwrap {
+        width: min(278px, 78vw);
+        height: min(278px, 78vw);
+      }
+
+      .dtp-ti {
+        max-width: 300px;
+      }
+
+      .dtp-manual {
+        align-items: flex-end;
+        padding: 12px;
+      }
+
+      .dtp-manual-card {
+        width: 100%;
+        border-radius: 18px;
+      }
+
+      .dtp-manual-title {
+        font-size: 31px;
+        padding: 22px 24px;
+      }
+
+      .dtp-manual-body {
+        padding: 22px 20px 16px;
+      }
+
+      .dtp-manual-row {
+        gap: 8px;
+      }
+
+      .dtp-manual-field {
+        width: 62px;
+      }
+
+      .dtp-manual-input {
+        font-size: 32px;
+      }
+
+      .dtp-manual-ap {
+        min-width: 74px;
+        font-size: 18px;
+        padding-left: 4px;
+        padding-right: 4px;
+      }
+
+      .dtp-manual-actions {
+        padding: 10px 20px 22px;
       }
     }
   </style>
@@ -5465,7 +5737,7 @@
       else if (mod && mod.classList.contains('open')) { closeModal(); handled = true; }
       else if (pp && pp.classList.contains('open')) { document.getElementById('pp-overlay').classList.remove('open'); handled = true; }
       else if (S.view !== 'dashboard') { go('dashboard'); handled = true; }
-      
+
       if (handled) {
         ensureBackTrap();
       } else {
@@ -5533,7 +5805,7 @@
       if (window.innerWidth <= 600) dtpMobileView('date');
       if (typeof ensureBackTrap === 'function') ensureBackTrap();
     }
-    function closeDTP() { document.getElementById('dtpicker-overlay').classList.remove('open'); }
+    function closeDTP() { dtpCloseManual(); document.getElementById('dtpicker-overlay').classList.remove('open'); }
     function dtpOverlayClick(e) { if (e.target === document.getElementById('dtpicker-overlay')) closeDTP(); }
     function _dtpISO() {
       const pad = n => String(n).padStart(2, '0');
@@ -5565,31 +5837,31 @@
     }
     function _dtpRenderClock() {
       const svg = document.getElementById('dtp-csvg'); if (!svg) return;
-      const cx = 105, cy = 105, R = 95, r = 72, ri = 12;
+      const cx = 120, cy = 120, R = 112, r = 88, ri = 12;
       const isHrMode = _DTP.mode === 'hr';
       // Build SVG content
-      let s = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/>`;
+      let s = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/><circle cx="${cx}" cy="${cy}" r="${R - 13}" fill="none" stroke="rgba(77,159,255,.06)" stroke-width="1"/>`;
       if (isHrMode) {
         // Hour numbers 1-12 at radius r
         for (let h = 1; h <= 12; h++) {
           const a = ((h / 12) * 360 - 90) * Math.PI / 180;
           const nx = cx + r * Math.cos(a), ny = cy + r * Math.sin(a);
           const isSel = h === _DTP.hr;
-          if (isSel) s += `<circle cx="${nx}" cy="${ny}" r="14" fill="#4d9fff"/>`;
-          s += `<text x="${nx}" y="${ny + 4}" text-anchor="middle" font-size="12" font-weight="${isSel ? 800 : 500}" fill="${isSel ? '#07090f' : '#8892a4'}" font-family="Outfit,sans-serif" style="cursor:pointer" onclick="dtpHrClick(${h})">${h}</text>`;
+          if (isSel) s += `<circle cx="${nx}" cy="${ny}" r="16" fill="#4d9fff"/>`;
+          s += `<text x="${nx}" y="${ny + 5}" text-anchor="middle" font-size="13" font-weight="${isSel ? 800 : 600}" fill="${isSel ? '#07090f' : '#8892a4'}" font-family="Outfit,sans-serif" style="cursor:pointer" onclick="dtpHrClick(${h})">${h}</text>`;
         }
         // Needle
         const ha = (((_DTP.hr % 12) / 12) * 360 - 90) * Math.PI / 180;
-        const hx = cx + (r - 16) * Math.cos(ha), hy = cy + (r - 16) * Math.sin(ha);
-        s += `<line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#4d9fff" stroke-width="2" stroke-linecap="round"/>`;
+        const hx = cx + (r - 18) * Math.cos(ha), hy = cy + (r - 18) * Math.sin(ha);
+        s += `<line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#4d9fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="${hx}" cy="${hy}" r="5" fill="#4d9fff"/>`;
       } else {
         // Minute marks 0-55 at radius r
         for (let m = 0; m < 60; m += 5) {
           const a = ((m / 60) * 360 - 90) * Math.PI / 180;
           const nx = cx + r * Math.cos(a), ny = cy + r * Math.sin(a);
           const isSel = m === _DTP.mn;
-          if (isSel) s += `<circle cx="${nx}" cy="${ny}" r="14" fill="#4d9fff"/>`;
-          s += `<text x="${nx}" y="${ny + 4}" text-anchor="middle" font-size="11" font-weight="${isSel ? 800 : 500}" fill="${isSel ? '#07090f' : '#8892a4'}" font-family="Outfit,sans-serif" style="cursor:pointer" onclick="dtpMnClick(${m})">${String(m).padStart(2, '0')}</text>`;
+          if (isSel) s += `<circle cx="${nx}" cy="${ny}" r="16" fill="#4d9fff"/>`;
+          s += `<text x="${nx}" y="${ny + 4}" text-anchor="middle" font-size="11.5" font-weight="${isSel ? 800 : 600}" fill="${isSel ? '#07090f' : '#8892a4'}" font-family="Outfit,sans-serif" style="cursor:pointer" onclick="dtpMnClick(${m})">${String(m).padStart(2, '0')}</text>`;
         }
         // Minute ticks (every minute)
         for (let m = 0; m < 60; m++) {
@@ -5601,14 +5873,13 @@
         }
         // Needle
         const ma = ((_DTP.mn / 60) * 360 - 90) * Math.PI / 180;
-        const mx = cx + (r - 16) * Math.cos(ma), my = cy + (r - 16) * Math.sin(ma);
-        s += `<line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="#4d9fff" stroke-width="2" stroke-linecap="round"/>`;
+        const mx = cx + (r - 18) * Math.cos(ma), my = cy + (r - 18) * Math.sin(ma);
+        s += `<line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="#4d9fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="${mx}" cy="${my}" r="5" fill="#4d9fff"/>`;
       }
       s += `<circle cx="${cx}" cy="${cy}" r="${ri}" fill="#4d9fff" opacity=".18"/><circle cx="${cx}" cy="${cy}" r="4" fill="#4d9fff"/>`;
       svg.innerHTML = s;
-      // sync text inputs
-      const hi = document.getElementById('dtp-hr'); if (hi) hi.value = _DTP.hr;
-      const mi = document.getElementById('dtp-mn'); if (mi) mi.value = String(_DTP.mn).padStart(2, '0');
+      const tm = document.getElementById('dtp-time-main'); if (tm) tm.textContent = `${_DTP.hr}:${String(_DTP.mn).padStart(2, '0')}`;
+      const md = document.getElementById('dtp-time-mode'); if (md) md.textContent = _DTP.mode === 'hr' ? 'hour' : 'minute';
       // sync AM/PM
       const am = document.getElementById('dtp-am'), pm = document.getElementById('dtp-pm');
       if (am) { am.classList.toggle('a', _DTP.ap === 'AM'); pm.classList.toggle('a', _DTP.ap === 'PM'); }
@@ -5628,6 +5899,43 @@
     function dtpSetAP(ap) { _DTP.ap = ap; _dtpRender(); _dtpRenderClock(); }
     function dtpHrInp(el) { let v = parseInt(el.value); if (isNaN(v) || v < 1) v = 1; if (v > 12) v = 12; _DTP.hr = v; _dtpRender(); _dtpRenderClock(); }
     function dtpMnInp(el) { let v = parseInt(el.value); if (isNaN(v) || v < 0) v = 0; if (v > 59) v = 59; _DTP.mn = v; _dtpRender(); _dtpRenderClock(); }
+    function dtpOpenManual() {
+      const pop = document.getElementById('dtp-manual');
+      const hi = document.getElementById('dtp-manual-hr');
+      const mi = document.getElementById('dtp-manual-mn');
+      const ap = document.getElementById('dtp-manual-ap');
+      if (!pop || !hi || !mi || !ap) return;
+      hi.value = _DTP.hr;
+      mi.value = String(_DTP.mn).padStart(2, '0');
+      ap.value = _DTP.ap;
+      pop.classList.add('open');
+      setTimeout(() => { hi.focus(); hi.select(); }, 40);
+    }
+    function dtpCloseManual() {
+      const pop = document.getElementById('dtp-manual');
+      if (pop) pop.classList.remove('open');
+    }
+    function dtpManualApply() {
+      const hi = document.getElementById('dtp-manual-hr');
+      const mi = document.getElementById('dtp-manual-mn');
+      const ap = document.getElementById('dtp-manual-ap');
+      let h = parseInt(hi ? hi.value : _DTP.hr);
+      let m = parseInt(mi ? mi.value : _DTP.mn);
+      if (isNaN(h) || h < 1) h = 1;
+      if (h > 12) h = 12;
+      if (isNaN(m) || m < 0) m = 0;
+      if (m > 59) m = 59;
+      _DTP.hr = h;
+      _DTP.mn = m;
+      _DTP.ap = ap && ap.value === 'PM' ? 'PM' : 'AM';
+      dtpCloseManual();
+      _dtpRender();
+      _dtpRenderClock();
+    }
+    function dtpManualKey(e) {
+      if (e.key === 'Enter') dtpManualApply();
+      if (e.key === 'Escape') dtpCloseManual();
+    }
     function dtpNow() { const n = new Date(); let h = n.getHours(); _DTP.ap = h >= 12 ? 'PM' : 'AM'; _DTP.hr = h % 12 || 12; _DTP.mn = n.getMinutes(); _DTP.dy = n.getDate(); _DTP.mo = n.getMonth(); _DTP.yr = n.getFullYear(); _DTP.vmo = _DTP.mo; _DTP.vyr = _DTP.yr; _dtpRender(); _dtpRenderClock(); }
     function dtpToday() { const n = new Date(); _DTP.dy = n.getDate(); _DTP.mo = n.getMonth(); _DTP.yr = n.getFullYear(); _DTP.vmo = _DTP.mo; _DTP.vyr = _DTP.yr; _dtpRender(); }
     function dtpConfirm() { if (_DTP.cb) _DTP.cb(_dtpISO()); closeDTP(); }
@@ -5649,21 +5957,42 @@
     }
     function dtpClockDown(e) {
       const svg = document.getElementById('dtp-csvg');
+      const startMode = _DTP.mode;
+      const sx = e.clientX, sy = e.clientY;
+      let dragged = false;
       const val = _dtpAngleToVal(e, svg);
-      if (_DTP.mode === 'hr') { _DTP.hr = val; _DTP.mode = 'mn'; } else { _DTP.mn = val; }
+      if (_DTP.mode === 'hr') _DTP.hr = val; else _DTP.mn = val;
       _dtpRender(); _dtpRenderClock();
-      const onMove = ev => { const v = _dtpAngleToVal(ev, svg); if (_DTP.mode === 'hr') _DTP.hr = v; else _DTP.mn = v; _dtpRender(); _dtpRenderClock(); };
-      const onUp = () => { document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); };
+      const onMove = ev => {
+        if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) > 4) dragged = true;
+        const v = _dtpAngleToVal(ev, svg); if (_DTP.mode === 'hr') _DTP.hr = v; else _DTP.mn = v; _dtpRender(); _dtpRenderClock();
+      };
+      const onUp = () => {
+        if (startMode === 'hr' && !dragged) { _DTP.mode = 'mn'; _dtpRender(); _dtpRenderClock(); }
+        document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp);
+      };
       document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
       e.preventDefault();
     }
     function dtpClockTouch(e) {
       const svg = document.getElementById('dtp-csvg');
+      const t0 = e.touches[0];
+      const startMode = _DTP.mode;
+      const sx = t0.clientX, sy = t0.clientY;
+      let dragged = false;
       const val = _dtpAngleToVal(e, svg);
-      if (_DTP.mode === 'hr') { _DTP.hr = val; _DTP.mode = 'mn'; } else { _DTP.mn = val; }
+      if (_DTP.mode === 'hr') _DTP.hr = val; else _DTP.mn = val;
       _dtpRender(); _dtpRenderClock();
-      const onMove = ev => { const v = _dtpAngleToVal(ev, svg); if (_DTP.mode === 'hr') _DTP.hr = v; else _DTP.mn = v; _dtpRender(); _dtpRenderClock(); };
-      const onUp = () => { document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp); };
+      const onMove = ev => {
+        if (ev.cancelable) ev.preventDefault();
+        const t = ev.touches[0];
+        if (t && Math.abs(t.clientX - sx) + Math.abs(t.clientY - sy) > 4) dragged = true;
+        const v = _dtpAngleToVal(ev, svg); if (_DTP.mode === 'hr') _DTP.hr = v; else _DTP.mn = v; _dtpRender(); _dtpRenderClock();
+      };
+      const onUp = () => {
+        if (startMode === 'hr' && !dragged) { _DTP.mode = 'mn'; _dtpRender(); _dtpRenderClock(); }
+        document.removeEventListener('touchmove', onMove); document.removeEventListener('touchend', onUp);
+      };
       document.addEventListener('touchmove', onMove, { passive: false }); document.addEventListener('touchend', onUp);
       e.preventDefault();
     }
@@ -5733,9 +6062,17 @@
       <div class="dtpicker-body">
         <div class="dtp-cal" id="dtp-cal">
           <div class="dtp-mnav">
-            <button class="dtp-nb" onclick="dtpNavMonth(-1)">&#8592;</button>
+            <button class="dtp-nb" onclick="dtpNavMonth(-1)" aria-label="Previous month">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
             <div class="dtp-mlbl" id="dtp-mlbl">Month 2024</div>
-            <button class="dtp-nb" onclick="dtpNavMonth(1)">&#8594;</button>
+            <button class="dtp-nb" onclick="dtpNavMonth(1)" aria-label="Next month">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 6l6 6-6 6" />
+              </svg>
+            </button>
           </div>
           <div class="dtp-wds">
             <div class="dtp-wd">S</div>
@@ -5749,21 +6086,63 @@
           <div class="dtp-days" id="dtp-days"></div>
         </div>
         <div class="dtp-clock-pnl" id="dtp-clock-pnl">
-          <div class="dtp-clbl">Select Time</div>
+          <div class="dtp-clock-head">
+            <div class="dtp-clbl">Select Time</div>
+            <div class="dtp-ampm" aria-label="Select AM or PM">
+              <button class="dtp-ab a" id="dtp-am" onclick="dtpSetAP('AM')">AM</button>
+              <button class="dtp-ab" id="dtp-pm" onclick="dtpSetAP('PM')">PM</button>
+            </div>
+          </div>
           <div class="dtp-cwrap">
-            <svg class="dtp-csvg" id="dtp-csvg" viewBox="0 0 210 210" onmousedown="dtpClockDown(event)"
+            <svg class="dtp-csvg" id="dtp-csvg" viewBox="0 0 240 240" onmousedown="dtpClockDown(event)"
               ontouchstart="dtpClockTouch(event)"></svg>
           </div>
           <div class="dtp-ti">
-            <input class="dtp-tinp" id="dtp-hr" type="number" min="1" max="12" oninput="dtpHrInp(this)"
-              onfocus="this.select()">
-            <span class="dtp-tcol">:</span>
-            <input class="dtp-tinp" id="dtp-mn" type="number" min="0" max="59" oninput="dtpMnInp(this)"
-              onfocus="this.select()">
+            <div class="dtp-time-read"><span id="dtp-time-main">12:00</span><span class="dtp-time-mode"
+                id="dtp-time-mode">hour</span></div>
+            <button class="dtp-kb" onclick="dtpOpenManual()" aria-label="Type time manually" title="Type time manually">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="5" width="18" height="14" rx="2" />
+                <path d="M7 9h.01M11 9h.01M15 9h.01M19 9h.01M7 13h.01M11 13h.01M15 13h.01M8 17h8" />
+              </svg>
+            </button>
           </div>
-          <div class="dtp-ampm">
-            <button class="dtp-ab a" id="dtp-am" onclick="dtpSetAP('AM')">AM</button>
-            <button class="dtp-ab" id="dtp-pm" onclick="dtpSetAP('PM')">PM</button>
+        </div>
+      </div>
+      <div class="dtp-manual" id="dtp-manual" onclick="if(event.target===this)dtpCloseManual()">
+        <div class="dtp-manual-card" onclick="event.stopPropagation()">
+          <div class="dtp-manual-title">Set time</div>
+          <div class="dtp-manual-body">
+            <div class="dtp-manual-label">Type in time</div>
+            <div class="dtp-manual-row">
+              <div class="dtp-manual-field">
+                <input class="dtp-manual-input" id="dtp-manual-hr" type="number" min="1" max="12"
+                  onkeydown="dtpManualKey(event)" onfocus="this.select()">
+                <div class="dtp-manual-help">hour</div>
+              </div>
+              <div class="dtp-manual-colon">:</div>
+              <div class="dtp-manual-field">
+                <input class="dtp-manual-input" id="dtp-manual-mn" type="number" min="0" max="59"
+                  onkeydown="dtpManualKey(event)" onfocus="this.select()">
+                <div class="dtp-manual-help">minute</div>
+              </div>
+              <select class="dtp-manual-ap" id="dtp-manual-ap" onkeydown="dtpManualKey(event)">
+                <option value="AM">AM</option>
+                <option value="PM">PM</option>
+              </select>
+            </div>
+          </div>
+          <div class="dtp-manual-actions">
+            <button class="dtp-manual-clock" onclick="dtpCloseManual()" aria-label="Return to clock">
+              <svg width="29" height="29" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 7v5l3 2" />
+              </svg>
+            </button>
+            <button class="dtp-manual-btn" onclick="dtpCloseManual()">Cancel</button>
+            <button class="dtp-manual-btn" onclick="dtpManualApply()">OK</button>
           </div>
         </div>
       </div>
