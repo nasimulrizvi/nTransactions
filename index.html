@@ -2415,6 +2415,18 @@
       font-family: 'Outfit', sans-serif;
     }
 
+    .dtp-time-part {
+      cursor: pointer;
+      border-radius: 8px;
+      padding: 3px 4px;
+      transition: background .15s, color .15s;
+    }
+
+    .dtp-time-part.a {
+      background: var(--blue-d);
+      color: var(--blue);
+    }
+
     .dtp-time-mode {
       color: var(--text3);
       font-size: 11px;
@@ -2486,8 +2498,8 @@
       width: min(410px, 100%);
       border-radius: 18px;
       overflow: hidden;
-      background: #30333a;
-      border: 1px solid rgba(255, 255, 255, .09);
+      background: var(--bg2);
+      border: 1px solid var(--border);
       box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
       animation: dtpManualIn .2s ease;
     }
@@ -2506,11 +2518,12 @@
 
     .dtp-manual-title {
       padding: 24px 28px;
-      background: rgba(255, 255, 255, .08);
-      color: #fff;
+      background: linear-gradient(135deg, var(--bg), var(--bg2));
+      color: var(--text);
       font-size: 36px;
       font-weight: 700;
       line-height: 1.1;
+      border-bottom: 1px solid var(--border);
     }
 
     .dtp-manual-body {
@@ -2518,7 +2531,7 @@
     }
 
     .dtp-manual-label {
-      color: #f3f5fa;
+      color: var(--text);
       font-size: 18px;
       font-weight: 800;
       margin-bottom: 22px;
@@ -2538,8 +2551,8 @@
       width: 100%;
       background: transparent;
       border: 0;
-      border-bottom: 1px solid rgba(255, 255, 255, .7);
-      color: #edf2fb;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
       font-size: 36px;
       font-weight: 500;
       line-height: 1.1;
@@ -2550,17 +2563,17 @@
 
     .dtp-manual-input:focus {
       border-bottom-color: var(--blue);
-      color: #fff;
+      color: var(--text);
     }
 
     .dtp-manual-help {
-      color: rgba(255, 255, 255, .66);
+      color: var(--text3);
       font-size: 15px;
       margin-top: 10px;
     }
 
     .dtp-manual-colon {
-      color: #f5f7fb;
+      color: var(--text);
       font-size: 32px;
       line-height: 1;
       padding-top: 6px;
@@ -2572,8 +2585,8 @@
       padding: 10px 8px;
       border: 0;
       border-radius: 10px;
-      background: transparent;
-      color: #fff;
+      background: var(--bg3);
+      color: var(--text);
       font-size: 22px;
       font-weight: 500;
       font-family: 'Outfit', sans-serif;
@@ -2597,7 +2610,7 @@
       height: 40px;
       border: 0;
       background: transparent;
-      color: #fff;
+      color: var(--text);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -3091,6 +3104,8 @@
         S.incCatOrder = d.incCatOrder || S.incCatOrder || [];
         S.hiddenExpCats = d.hiddenExpCats || S.hiddenExpCats || [];
         S.hiddenIncCats = d.hiddenIncCats || S.hiddenIncCats || [];
+        S.savingsHistory = d.savingsHistory || S.savingsHistory || [];
+        S.currency = d.currency || S.currency || 'BDT';
         S.username = d.username || S.username || '';
         S.lastSync = d.ts;
         saveLocal(); setSyncDot('ok'); renderMain();
@@ -3131,6 +3146,30 @@
       { id: 'wallet', label: 'Wallet' }, { id: 'cash', label: 'Cash' }, { id: 'mfs', label: 'MFS' },
     ];
     function wltTypeOpts(selVal) { return WLT_TYPES.map(t => `<option value="${t.id}" ${t.id === selVal ? 'selected' : ''}>${t.label}</option>`).join(''); }
+    const CURRENCIES = [
+      { code: 'BDT', symbol: '৳', name: 'Bangladeshi Taka' }, { code: 'USD', symbol: '$', name: 'US Dollar' },
+      { code: 'EUR', symbol: '€', name: 'Euro' }, { code: 'GBP', symbol: '£', name: 'British Pound' },
+      { code: 'INR', symbol: '₹', name: 'Indian Rupee' }, { code: 'PKR', symbol: '₨', name: 'Pakistani Rupee' },
+      { code: 'NPR', symbol: 'रू', name: 'Nepalese Rupee' }, { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+      { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' }, { code: 'KRW', symbol: '₩', name: 'South Korean Won' },
+      { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }, { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+      { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' }, { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+      { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' }, { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+      { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' }, { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
+      { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' }, { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' },
+      { code: 'QAR', symbol: 'ر.ق', name: 'Qatari Riyal' }, { code: 'KWD', symbol: 'د.ك', name: 'Kuwaiti Dinar' },
+      { code: 'TRY', symbol: '₺', name: 'Turkish Lira' }, { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
+      { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' }, { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
+      { code: 'DKK', symbol: 'kr', name: 'Danish Krone' }, { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+      { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' }, { code: 'MXN', symbol: 'MX$', name: 'Mexican Peso' },
+      { code: 'RUB', symbol: '₽', name: 'Russian Ruble' }, { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
+      { code: 'EGP', symbol: 'E£', name: 'Egyptian Pound' }, { code: 'LKR', symbol: 'Rs', name: 'Sri Lankan Rupee' },
+      { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' }
+    ];
+    function getCurrency() { return CURRENCIES.find(c => c.code === (S.currency || 'BDT')) || CURRENCIES[0]; }
+    function curSymbol() { return getCurrency().symbol; }
+    function moneyPrefix() { return `<span class="amt-pre">${curSymbol()}</span>`; }
+    function currencyOpts() { return CURRENCIES.map(c => `<option value="${c.code}" ${c.code === (S.currency || 'BDT') ? 'selected' : ''}>${c.code} - ${c.name} (${c.symbol})</option>`).join(''); }
     const COLORS = ['#0ce97f', '#4d9fff', '#ff3d5a', '#ffb020', '#9d6fff', '#ff6b35', '#00d4ff', '#f472b6'];
 
     // ============ ICON PATHS ============
@@ -3215,7 +3254,7 @@
     function loanIco(tid, size = 18) { const m = { deposit: 'deposit', deposit_given: 'deposit', loan_recv: 'loan_recv', loan_given: 'loan_given' }; return ico(m[tid] || 'loan_recv', size); }
 
     // ============ STATE ============
-    let S = { transactions: [], wallets: [], budgets: [], loans: [], customExpCats: [], customIncCats: [], expCatOrder: [], incCatOrder: [], hiddenExpCats: [], hiddenIncCats: [], username: '', view: 'dashboard', month: todayYM(), lastSync: null };
+    let S = { transactions: [], wallets: [], budgets: [], loans: [], customExpCats: [], customIncCats: [], expCatOrder: [], incCatOrder: [], hiddenExpCats: [], hiddenIncCats: [], username: '', currency: 'BDT', view: 'dashboard', month: todayYM(), lastSync: null };
     let txF = 'all', txQ = '', txDuration = 'all', loanF = 'all', txType = 'expense', editWltId = '', selColor = COLORS[0];
 
     let syncTimeout = null, balHidden = false, netHidden = true;
@@ -3311,10 +3350,11 @@
         if (!S.savingsHistory) S.savingsHistory = [];
         if (!S.wltHistory) S.wltHistory = [];
         if (!S.username) S.username = '';
+        if (!S.currency) S.currency = 'BDT';
       } catch (e) { }
     }
     function saveLocal() {
-      try { localStorage.setItem('ntx4', JSON.stringify({ transactions: S.transactions, wallets: S.wallets, budgets: S.budgets, loans: S.loans, customExpCats: S.customExpCats, customIncCats: S.customIncCats, expCatOrder: S.expCatOrder, incCatOrder: S.incCatOrder, hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [], savingsHistory: S.savingsHistory || [], wltHistory: S.wltHistory || [], username: S.username || '', month: S.month, lastSync: S.lastSync })); } catch (e) { }
+      try { localStorage.setItem('ntx4', JSON.stringify({ transactions: S.transactions, wallets: S.wallets, budgets: S.budgets, loans: S.loans, customExpCats: S.customExpCats, customIncCats: S.customIncCats, expCatOrder: S.expCatOrder, incCatOrder: S.incCatOrder, hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [], savingsHistory: S.savingsHistory || [], wltHistory: S.wltHistory || [], username: S.username || '', currency: S.currency || 'BDT', month: S.month, lastSync: S.lastSync })); } catch (e) { }
     }
     function normalizeLoan(l) {
       if (!l.payments) l.payments = [];
@@ -3333,7 +3373,7 @@
           customExpCats: S.customExpCats || [], customIncCats: S.customIncCats || [],
           expCatOrder: S.expCatOrder || [], incCatOrder: S.incCatOrder || [],
           hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [],
-          savingsHistory: S.savingsHistory || [], username: S.username || '', ts
+          savingsHistory: S.savingsHistory || [], username: S.username || '', currency: S.currency || 'BDT', ts
         };
         S.lastSync = ts;
         await fbDb.ref('users/' + fbUser.uid + '/data').set(payload);
@@ -3374,6 +3414,7 @@
         S.hiddenExpCats = d.hiddenExpCats || S.hiddenExpCats || [];
         S.hiddenIncCats = d.hiddenIncCats || S.hiddenIncCats || [];
         S.savingsHistory = d.savingsHistory || S.savingsHistory || [];
+        S.currency = d.currency || S.currency || 'BDT';
         S.username = d.username || S.username || '';
         S.lastSync = serverTs;
         saveLocal(); setSyncDot('ok'); renderMain();
@@ -3403,6 +3444,7 @@
             S.hiddenExpCats = d.hiddenExpCats || S.hiddenExpCats || [];
             S.hiddenIncCats = d.hiddenIncCats || S.hiddenIncCats || [];
             S.savingsHistory = d.savingsHistory || S.savingsHistory || [];
+            S.currency = d.currency || S.currency || 'BDT';
             S.username = d.username || S.username || '';
             S.lastSync = serverTs; saveLocal();
           }
@@ -3444,10 +3486,10 @@
 
     // ============ UTILS ============
     function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-    function fmt(n) { return '৳' + Math.abs(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-    function fmtInt(n) { return '৳' + Math.abs(Math.round(n || 0)).toLocaleString('en-US'); }
-    function fmtSigned(n) { const abs = Math.abs(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return (n < 0 ? '-' : '') + '৳' + abs; }
-    function fmtIntSigned(n) { const abs = Math.abs(Math.round(n || 0)).toLocaleString('en-US'); return (n < 0 ? '-' : '') + '৳' + abs; }
+    function fmt(n) { return curSymbol() + Math.abs(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    function fmtInt(n) { return curSymbol() + Math.abs(Math.round(n || 0)).toLocaleString('en-US'); }
+    function fmtSigned(n) { const abs = Math.abs(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); return (n < 0 ? '-' : '') + curSymbol() + abs; }
+    function fmtIntSigned(n) { const abs = Math.abs(Math.round(n || 0)).toLocaleString('en-US'); return (n < 0 ? '-' : '') + curSymbol() + abs; }
     function fmtD(d) { if (!d) return ''; const base = d.slice(0, 10); const hasTime = d.length > 10; const dateObj = new Date(base + 'T12:00:00'); const datePart = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); if (hasTime) { const [, time] = d.split('T'); const [h, m] = time.split(':'); const hr = parseInt(h); const ampm = hr >= 12 ? 'PM' : 'AM'; const h12 = hr % 12 || 12; return `${datePart}, ${h12}:${m} ${ampm}`; } return datePart; }
     function fmtMY(ym) { if (!ym) return ''; const [y, m] = ym.split('-'); const mn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][parseInt(m) - 1]; return mn + " '" + y.slice(2); }
     function getCat(type, id) { return (type === 'expense' ? getExpCats() : getIncCats()).find(c => c.id === id) || { label: id || '?', icon: '📋' }; }
@@ -3581,7 +3623,9 @@
       const hasData12 = months12.some(b => b.exp > 0 || b.inc > 0);
       const expCats = catSpendAll(S.month); const totalExp = expCats.reduce((s, c) => s + c.amount, 0);
       const hasCatData = expCats.length > 0 && totalExp > 0;
-      const hasSavings = (mSavBgt && ms.net > 0) || (ySav && yrStats(yr).simpleNet > 0);
+      const mSaved = savingsTotal('monthly', S.month);
+      const ySaved = savingsTotal('yearly', yr);
+      const hasSavings = (mSavBgt && (mSaved > 0 || ms.net > 0)) || (ySav && (ySaved > 0 || yrStats(yr).simpleNet > 0));
       // category trend: top 4 cats over last 6 months
       const top4cats = catSpendAll(S.month).slice(0, 4).map(c => c.id);
       const months6 = months12.slice(6);
@@ -3699,7 +3743,7 @@
         destroyChart('trend');
         const months12 = [];
         for (let i = 11; i >= 0; i--) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); const ym = d.toISOString().slice(0, 7); const s = mStats(ym); months12.push({ lbl: d.toLocaleDateString('en-US', { month: 'short' }), exp: s.exp, inc: s.inc }); }
-        _charts['trend'] = new Chart(c1, { type: 'line', data: { labels: months12.map(m => m.lbl), datasets: [{ label: 'Income', data: months12.map(m => m.inc), borderColor: '#0ce97f', backgroundColor: 'rgba(12,233,127,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#0ce97f', borderWidth: 2 }, { label: 'Expense', data: months12.map(m => m.exp), borderColor: '#ff3d5a', backgroundColor: 'rgba(255,61,90,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#ff3d5a', borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(13,16,24,0.92)', titleColor: '#e8edf5', bodyColor: '#8892a4', padding: 10, callbacks: { label: ctx => `${ctx.dataset.label}: ৳${Math.round(ctx.raw).toLocaleString()}` } } }, scales: { x: { grid: { color: gridCol }, ticks: { color: textCol, font: { size: 10 } } }, y: { grid: { color: gridCol }, ticks: { color: textCol, font: { size: 10 }, callback: v => '৳' + Math.round(v / 1000) + 'k' } } } } });
+        _charts['trend'] = new Chart(c1, { type: 'line', data: { labels: months12.map(m => m.lbl), datasets: [{ label: 'Income', data: months12.map(m => m.inc), borderColor: '#0ce97f', backgroundColor: 'rgba(12,233,127,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#0ce97f', borderWidth: 2 }, { label: 'Expense', data: months12.map(m => m.exp), borderColor: '#ff3d5a', backgroundColor: 'rgba(255,61,90,0.08)', fill: true, tension: 0.4, pointRadius: 3, pointBackgroundColor: '#ff3d5a', borderWidth: 2 }] }, options: { responsive: true, maintainAspectRatio: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(13,16,24,0.92)', titleColor: '#e8edf5', bodyColor: '#8892a4', padding: 10, callbacks: { label: ctx => `${ctx.dataset.label}: ${curSymbol()}${Math.round(ctx.raw).toLocaleString()}` } } }, scales: { x: { grid: { color: gridCol }, ticks: { color: textCol, font: { size: 10 } } }, y: { grid: { color: gridCol }, ticks: { color: textCol, font: { size: 10 }, callback: v => curSymbol() + Math.round(v / 1000) + 'k' } } } } });
       }
 
       // ---- CHART 2: Donut (monthly + yearly, all categories) ----
@@ -3708,9 +3752,9 @@
         destroyChart(canvasId);
         if (total <= 0) return;
         const usedCols = catsData.map((_, i) => COLS[i % COLS.length]);
-        _charts[canvasId] = new Chart(c, { type: 'doughnut', data: { labels: catsData.map(x => x.label), datasets: [{ data: catsData.map(x => x.amount), backgroundColor: usedCols, borderWidth: 2, borderColor: bgBorder, hoverOffset: 6 }] }, options: { responsive: true, cutout: '68%', plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(13,16,24,0.92)', titleColor: '#e8edf5', bodyColor: '#8892a4', callbacks: { label: ctx => `${ctx.label}: ৳${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw / total * 100).toFixed(1)}%)` } } } } });
+        _charts[canvasId] = new Chart(c, { type: 'doughnut', data: { labels: catsData.map(x => x.label), datasets: [{ data: catsData.map(x => x.amount), backgroundColor: usedCols, borderWidth: 2, borderColor: bgBorder, hoverOffset: 6 }] }, options: { responsive: true, cutout: '68%', plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(13,16,24,0.92)', titleColor: '#e8edf5', bodyColor: '#8892a4', callbacks: { label: ctx => `${ctx.label}: ${curSymbol()}${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw / total * 100).toFixed(1)}%)` } } } } });
         const leg = document.getElementById(legendId);
-        if (leg) leg.innerHTML = catsData.map((x, i) => `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${usedCols[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);flex-shrink:0;">৳${Math.round(x.amount).toLocaleString('en-US')}</span></div>`).join('');
+        if (leg) leg.innerHTML = catsData.map((x, i) => `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${usedCols[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);flex-shrink:0;">${curSymbol()}${Math.round(x.amount).toLocaleString('en-US')}</span></div>`).join('');
       }
       if (chartVis.donut) {
         // monthly — all cats
@@ -3753,7 +3797,7 @@
         if (top4.length >= 2) {
           const CATCOLS = ['#ff3d5a', '#ffb020', '#4d9fff', '#9d6fff'];
           const datasets = top4.map((cat, i) => ({ label: cat.label, data: months6.map(m => S.transactions.filter(t => t.date && t.date.startsWith(m.ym) && t.type === 'expense' && t.category === cat.id).reduce((s, t) => s + t.amount, 0)), borderColor: CATCOLS[i], backgroundColor: CATCOLS[i] + '22', fill: false, tension: 0.4, pointRadius: 3, borderWidth: 2 }));
-          _charts['cattrend'] = new Chart(c4, { type: 'line', data: { labels: months6.map(m => m.lbl), datasets }, options: { responsive: true, maintainAspectRatio: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { color: textCol, font: { size: 10 }, boxWidth: 10, padding: 10 } }, tooltip: { backgroundColor: 'rgba(13,16,24,0.92)', titleColor: '#e8edf5', bodyColor: '#8892a4', callbacks: { label: ctx => `${ctx.dataset.label}: ৳${Math.round(ctx.raw).toLocaleString()}` } } }, scales: { x: { grid: { color: gridCol }, ticks: { color: textCol, font: { size: 10 } } }, y: { grid: { color: gridCol }, ticks: { color: textCol, font: { size: 10 }, callback: v => '৳' + Math.round(v).toLocaleString() } } } } });
+          _charts['cattrend'] = new Chart(c4, { type: 'line', data: { labels: months6.map(m => m.lbl), datasets }, options: { responsive: true, maintainAspectRatio: true, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'bottom', labels: { color: textCol, font: { size: 10 }, boxWidth: 10, padding: 10 } }, tooltip: { backgroundColor: 'rgba(13,16,24,0.92)', titleColor: '#e8edf5', bodyColor: '#8892a4', callbacks: { label: ctx => `${ctx.dataset.label}: ${curSymbol()}${Math.round(ctx.raw).toLocaleString()}` } } }, scales: { x: { grid: { color: gridCol }, ticks: { color: textCol, font: { size: 10 } } }, y: { grid: { color: gridCol }, ticks: { color: textCol, font: { size: 10 }, callback: v => curSymbol() + Math.round(v).toLocaleString() } } } } });
         }
       }
     }
@@ -3766,7 +3810,8 @@
       const mSavBgt = getSavingsBgt('monthly', S.month);
       const ySav = getSavingsBgt('yearly', curYear());
       const bgt = mSavBgt || ySav;
-      const net = mSavBgt ? mStats(S.month).net : yrStats(curYear()).simpleNet;
+      const saved = mSavBgt ? savingsTotal('monthly', S.month) : savingsTotal('yearly', curYear());
+      const net = saved > 0 ? saved : (mSavBgt ? mStats(S.month).net : yrStats(curYear()).simpleNet);
       if (!bgt || bgt.amount <= 0) {
         wrap.innerHTML = '<div style="padding:30px 0;font-size:12px;color:var(--text3);">No savings goal set</div>';
         return;
@@ -3987,14 +4032,16 @@
       function eBudgetCard(label, gc, ic, onClick) {
         return `<div style="${themeCardBg('empty')}border-radius:18px;padding:18px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">${ico('barChart', 20, `var(--${ic})`)}<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--${ic});">${label}</div></div><div style="font-size:13px;color:var(--text3);margin-bottom:10px;">No budget set yet.</div><button class="sm-btn" onclick="${onClick}" style="width:100%;">Set</button></div>`;
       }
-      function savCard(bgt, net, label, ac, editFn) {
+      function savCard(bgt, net, label, ac, editFn, sourceLabel = 'Actual net') {
         const pct = Math.max(0, Math.min(100, (net / bgt.amount) * 100)); const col = net >= bgt.amount ? 'var(--green)' : pct > 50 ? 'var(--amber)' : 'var(--red)';
-        return `<div style="${themeCardBg('savings')}border-radius:18px;padding:18px;margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;"><div style="display:flex;align-items:center;gap:6px;">${ico('savings', 16, '#0ce97f')}<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">${label}</div></div><div style="display:flex;gap:6px;">${editFn ? `<button class="sm-btn" onclick="${editFn}" style="font-size:10px;padding:4px 9px;">${EDIT_SVG}</button>` : ''}<button class="del-btn" style="width:24px;height:24px;" onclick="delBgt('${bgt.id}')">${TRASH_SVG}</button></div></div><div style="display:flex;align-items:baseline;gap:8px;"><div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:700;">${fmt(bgt.amount)}</div><div style="font-size:12px;color:var(--text3);">target</div></div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin:9px 0 5px;"><span>Actual net ${fmt(net)}</span><span style="color:${col};font-weight:700;">${pct.toFixed(0)}%</span></div><div class="prog" style="height:8px;"><div class="prog-fill" style="width:${pct}%;background:${col};"></div></div><div style="font-size:12px;margin-top:7px;font-weight:700;color:${col};">${net >= bgt.amount ? 'Savings target met!' : fmt(bgt.amount - Math.max(0, net)) + ' more to save'}</div></div>`;
+        return `<div style="${themeCardBg('savings')}border-radius:18px;padding:18px;margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;"><div style="display:flex;align-items:center;gap:6px;">${ico('savings', 16, '#0ce97f')}<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">${label}</div></div><div style="display:flex;gap:6px;">${editFn ? `<button class="sm-btn" onclick="${editFn}" style="font-size:10px;padding:4px 9px;">${EDIT_SVG}</button>` : ''}<button class="del-btn" style="width:24px;height:24px;" onclick="delBgt('${bgt.id}')">${TRASH_SVG}</button></div></div><div style="display:flex;align-items:baseline;gap:8px;"><div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:700;">${fmt(bgt.amount)}</div><div style="font-size:12px;color:var(--text3);">target</div></div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin:9px 0 5px;"><span>${sourceLabel} ${fmt(net)}</span><span style="color:${col};font-weight:700;">${pct.toFixed(0)}%</span></div><div class="prog" style="height:8px;"><div class="prog-fill" style="width:${pct}%;background:${col};"></div></div><div style="font-size:12px;margin-top:7px;font-weight:700;color:${col};">${net >= bgt.amount ? 'Savings target met!' : fmt(bgt.amount - Math.max(0, net)) + ' more to save'}</div></div>`;
       }
       const mHTML = mOb ? bCard(mOb, st.exp, `Monthly Budget - ${fmtMY(S.month)}`, '255,176,32', `openEditBgt('${mOb.id}')`, 'amber') : eBudgetCard(`Monthly Budget - ${fmtMY(S.month)}`, 'amber', 'amber', `openAddBudgetModal('monthly')`);
       const yHTML = yOb ? bCard(yOb, yrExp, `Yearly Budget - ${yr}`, '77,159,255', `openEditBgt('${yOb.id}')`, 'blue') : eBudgetCard(`Yearly Budget - ${yr}`, 'blue', 'blue', `openAddBudgetModal('yearly')`);
-      const mSavHTML = mSav ? savCard(mSav, st.net, `Monthly Savings Target - ${fmtMY(S.month)}`, '12,233,127', `openEditBgt('${mSav.id}')`) : `<div style="padding:10px 0;"><div style="font-size:12px;color:var(--text3);margin-bottom:10px;">No monthly savings target set.</div><button class="sm-btn" onclick="openAddSavingsModal('monthly')" style="width:100%;padding:9px 12px;">+ Set Monthly Savings Target</button></div>`;
-      const ySavHTML = ySav ? savCard(ySav, yrNet, `Yearly Savings Target - ${yr}`, '12,233,127', `openEditBgt('${ySav.id}')`) : `<div style="padding:10px 0;"><div style="font-size:12px;color:var(--text3);margin-bottom:10px;">No yearly savings target set.</div><button class="sm-btn" onclick="openAddSavingsModal('yearly')" style="width:100%;padding:9px 12px;">+ Set Yearly Savings Target</button></div>`;
+      const mSaved = savingsTotal('monthly', S.month);
+      const ySaved = savingsTotal('yearly', yr);
+      const mSavHTML = mSav ? savCard(mSav, mSaved > 0 ? mSaved : st.net, `Monthly Savings Target - ${fmtMY(S.month)}`, '12,233,127', `openEditBgt('${mSav.id}')`, mSaved > 0 ? 'Saved' : 'Actual net') : `<div style="padding:10px 0;"><div style="font-size:12px;color:var(--text3);margin-bottom:10px;">No monthly savings target set.</div><button class="sm-btn" onclick="openAddSavingsModal('monthly')" style="width:100%;padding:9px 12px;">+ Set Monthly Savings Target</button></div>`;
+      const ySavHTML = ySav ? savCard(ySav, ySaved > 0 ? ySaved : yrNet, `Yearly Savings Target - ${yr}`, '12,233,127', `openEditBgt('${ySav.id}')`, ySaved > 0 ? 'Saved' : 'Actual net') : `<div style="padding:10px 0;"><div style="font-size:12px;color:var(--text3);margin-bottom:10px;">No yearly savings target set.</div><button class="sm-btn" onclick="openAddSavingsModal('yearly')" style="width:100%;padding:9px 12px;">+ Set Yearly Savings Target</button></div>`;
       const catItems = getExpCats().map(c => {
         const bgt = S.budgets.find(b => b.category === c.id && b.month === S.month && b.period !== 'yearly');
         const spent = mTxs(S.month).filter(t => t.type === 'expense' && t.category === c.id).reduce((s, t) => s + t.amount, 0);
@@ -4003,17 +4050,19 @@
         return `<div class="bgt-item"><div class="bgt-hdr"><div class="bgt-cat"><div style="width:28px;height:28px;border-radius:8px;background:var(--red-d);display:flex;align-items:center;justify-content:center;color:#ff3d5a;">${catIco(c.id, 14)}</div><span>${c.label}</span></div><div style="display:flex;align-items:center;gap:8px;"><div class="bgt-amts">${bgt ? `${fmt(spent)} / ${fmt(bgt.amount)}` : `${fmt(spent)}`}</div>${bgt ? `<button class="sm-btn" style="padding:3px 8px;font-size:10px;" onclick="openEditBgt('${bgt.id}')">${EDIT_SVG}</button><button class="del-btn" style="width:22px;height:22px;" onclick="delBgt('${bgt.id}')">${TRASH_SVG}</button>` : `<button class="sm-btn" style="padding:3px 8px;font-size:10px;" onclick="openAddBgtCat('${c.id}')">Set</button>`}</div></div>${bgt ? `<div class="prog"><div class="prog-fill" style="width:${pct}%;background:${col};"></div></div>${pct > 80 ? `<div style="font-size:11px;color:${col};margin-top:4px;font-weight:700;">${pct >= 100 ? 'Exceeded!' : pct.toFixed(0) + '% used'}</div>` : ''}` : ''}
     </div>`;
       }).filter(Boolean).join('');
+      const mSavRows = savingsEntries().filter(h => (h.date || h.at || '').startsWith(S.month)).slice(-4).reverse().map(h => `<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--borderl);font-size:12px;"><span style="color:var(--text3);">${fmtD(h.date || h.at)}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(h.amount)}</span></div>`).join('');
+      const ySavRows = savingsEntries().filter(h => (h.date || h.at || '').startsWith(yr)).slice(-5).reverse().map(h => `<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--borderl);font-size:12px;"><span style="color:var(--text3);">${fmtD(h.date || h.at)}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(h.amount)}</span></div>`).join('');
       return `<div class="section" style="padding-top:16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Budget &amp; Savings</div><div style="font-weight:800;font-size:16px;">${fmtMY(S.month)} - ${yr}</div></div><button class="sm-btn" onclick="openAddBgt()">+ Set Budget</button></div>
     <div class="bgt-tab-wrap"><button id="btab-m" class="bgt-tab-btn active" onclick="showBgtTab('monthly')">Monthly</button><button id="btab-y" class="bgt-tab-btn" onclick="showBgtTab('yearly')">Yearly</button></div>
     <div id="bgt-monthly">
       ${mHTML}
-      <div style="${themeCardBg('savingsWrap')}border-radius:16px;padding:14px;margin-bottom:12px;"><div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;">${ico('savings', 14, 'var(--green)')} Monthly Savings</div>${mSavHTML}</div>
+      <div style="${themeCardBg('savingsWrap')}border-radius:16px;padding:14px;margin-bottom:12px;"><div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;">${ico('savings', 14, 'var(--green)')} Monthly Savings</div>${mSavHTML}${mSaved > 0 ? `<div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:4px 0 2px;">Recent Saved</div>${mSavRows}` : ''}</div>
       <div class="card">${catItems || `<div class="empty" style="padding:28px;"><div style="display:flex;justify-content:center;margin-bottom:10px;opacity:.4;">${ico('empty_budget', 36)}</div><div class="empty-t">No category budgets</div><div class="empty-s">Tap "+ Set Budget" to add one</div></div>`}</div>
     </div>
     <div id="bgt-yearly" style="display:none;">
       ${yHTML}
-      <div style="${themeCardBg('savingsWrap')}border-radius:16px;padding:14px;margin-bottom:12px;"><div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;">${ico('savings', 14, 'var(--green)')} Yearly Savings</div>${ySavHTML}</div>
+      <div style="${themeCardBg('savingsWrap')}border-radius:16px;padding:14px;margin-bottom:12px;"><div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;">${ico('savings', 14, 'var(--green)')} Yearly Savings</div>${ySavHTML}${ySaved > 0 ? `<div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:4px 0 2px;">Recent Saved</div>${ySavRows}` : ''}</div>
       <div class="card" style="padding:14px 16px;">
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;"><span style="color:var(--text3);">Total Income ${yr}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(yrInc)}</span></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;"><span style="color:var(--text3);">Total Expense ${yr}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--red);">${fmt(yrExp)}</span></div>
@@ -4355,6 +4404,11 @@
     <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">Appearance</div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
       <div style="padding:13px 14px;border-bottom:1px solid var(--borderl);">
+        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;">Currency</div>
+        <select class="fi" id="currency-select" onchange="saveCurrencySetting()" style="font-size:13px;">${currencyOpts()}</select>
+        <div style="font-size:11px;color:var(--text3);margin-top:7px;">Used for balances, budgets, loans, savings and records.</div>
+      </div>
+      <div style="padding:13px 14px;border-bottom:1px solid var(--borderl);">
         <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:10px;">Choose Theme</div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;" id="theme-picker"></div>
       </div>
@@ -4425,6 +4479,14 @@
     </button>
     <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
       }
+    }
+    function saveCurrencySetting() {
+      const sel = document.getElementById('currency-select');
+      if (!sel) return;
+      S.currency = sel.value || 'BDT';
+      save();
+      renderMain();
+      openSyncModal();
     }
     async function promptUsername() {
       const uname = prompt("Enter an available username (alphanumeric only):", S.username || '');
@@ -4507,15 +4569,15 @@
     function txModalHTML() {
       // For expense, hide wallets with balance <= 0
       const availWallets = txType === 'expense' ? S.wallets.filter(w => w.balance > 0) : S.wallets;
-      function fmtWltBal(b) { const n = Math.abs(b); return '৳' + (Number.isInteger(n) ? n.toLocaleString('en-US') : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); }
+      function fmtWltBal(b) { const n = Math.abs(b); return curSymbol() + (Number.isInteger(n) ? n.toLocaleString('en-US') : n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })); }
       const wOpts = availWallets.map(w => `<option value="${w.id}">${w.name} • ${fmtWltBal(w.balance)}</option>`).join('');
       const wSelect = txType === 'expense' && availWallets.length === 0
         ? `<div style="background:var(--red-d);border:1px solid rgba(255,61,90,.25);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--red);">No wallet has sufficient balance.</div>`
         : `<select class="fi" id="tx-w">${wOpts}</select>`;
       const photoSection = `<div id="tx-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="tx-photo-img" style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)" title="Tap to view full size"/><button onclick="clearTxPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="tx-photo-input" accept="image/*" style="display:none;" onchange="handleTxPhoto(this)"><input type="file" id="tx-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleTxCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('tx-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('tx-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div>`;
       let body = txType !== 'transfer'
-        ? `<div class="fg"><label class="fl">Wallet</label>${wSelect}</div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label><select class="fi" id="tx-cat">${txCatOpts(txType)}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg" style="position:relative;"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?" autocomplete="off" oninput="showNoteSugg(this,'${txType}')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div><div class="fg"><label class="fl">Photo (optional)</label>${photoSection}</div>`
-        : `<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Transfer Fee <span style="color:var(--text3);font-weight:400;">(optional — deducted from sender)</span></label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="tx-fee" placeholder="0.00" min="0" step="0.01" value="0"></div></div><div class="fg" style="position:relative;"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason" autocomplete="off" oninput="showNoteSugg(this,'transfer')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div>`;
+        ? `<div class="fg"><label class="fl">Wallet</label>${wSelect}</div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label><select class="fi" id="tx-cat">${txCatOpts(txType)}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg" style="position:relative;"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?" autocomplete="off" oninput="showNoteSugg(this,'${txType}')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div><div class="fg"><label class="fl">Photo (optional)</label>${photoSection}</div>`
+        : `<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Transfer Fee <span style="color:var(--text3);font-weight:400;">(optional — deducted from sender)</span></label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-fee" placeholder="0.00" min="0" step="0.01" value="0"></div></div><div class="fg" style="position:relative;"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason" autocomplete="off" oninput="showNoteSugg(this,'transfer')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div>`;
       return `<div class="modal-title">Add Transaction</div><div class="tab-grp"><button class="tab-btn te ${txType === 'expense' ? 'active' : ''}" onclick="swTxT('expense')">Expense</button><button class="tab-btn ti ${txType === 'income' ? 'active' : ''}" onclick="swTxT('income')">Cash In</button><button class="tab-btn tt ${txType === 'transfer' ? 'active' : ''}" onclick="swTxT('transfer')">Transfer</button></div>${body}<button class="btn btn-p" onclick="submitTx()">Save Transaction</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`;
     }
     function swTxT(t) { txType = t; document.getElementById('mc').innerHTML = txModalHTML(); }
@@ -4540,8 +4602,45 @@
       }
       else if (txType === 'expense') { const fw = S.wallets.find(x => x.id === tx.wallet); if (fw) fw.balance -= amt; }
       else { const tw = S.wallets.find(x => x.id === tx.wallet); if (tw) tw.balance += amt; }
-      S.transactions.unshift(tx); save(); closeModal(); renderMain();
+      S.transactions.unshift(tx); save();
+      if (txType === 'income') openCashInSavingsModal(tx.id);
+      else { closeModal(); renderMain(); }
     }
+    function savingsEntries() { return (S.savingsHistory || []).filter(h => h.type === 'deposit' || h.kind === 'deposit'); }
+    function savingsTotal(period, key) {
+      return savingsEntries().filter(h => {
+        const d = h.date || h.at || '';
+        return period === 'yearly' ? d.startsWith(key) : d.startsWith(key);
+      }).reduce((s, h) => s + (parseFloat(h.amount) || 0), 0);
+    }
+    function addSavingsDeposit(amount, txId) {
+      if (!S.savingsHistory) S.savingsHistory = [];
+      S.savingsHistory.push({ id: uid(), type: 'deposit', source: 'cash_in', txId, amount, date: todayDT(), at: new Date().toISOString() });
+    }
+    function openCashInSavingsModal(txId) {
+      const tx = S.transactions.find(t => t.id === txId);
+      if (!tx || tx.type !== 'income') { closeModal(); renderMain(); return; }
+      openModal(`<div class="modal-title">Add to Savings?</div>
+  <div style="background:var(--green-d);border:1px solid rgba(12,233,127,.25);border-radius:12px;padding:13px 14px;margin-bottom:14px;color:var(--green);font-size:13px;line-height:1.6;">
+    Cash In saved: <b>${fmt(tx.amount)}</b>. Choose how much of this amount should go into Savings.
+  </div>
+  <div class="fg"><label class="fl">Savings Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="cashin-save-amt" placeholder="0.00" min="0" max="${tx.amount}" step="0.01"></div></div>
+  <div style="font-size:11px;color:var(--text3);margin:-4px 0 14px;">This creates a Savings entry with the current date and time.</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <button class="btn btn-p" onclick="submitCashInSavings('${txId}')" style="margin:0;">Add to Savings</button>
+    <button class="btn btn-s" onclick="skipCashInSavings()" style="margin:0;">Skip</button>
+  </div>`);
+    }
+    function submitCashInSavings(txId) {
+      const tx = S.transactions.find(t => t.id === txId);
+      const amt = parseFloat(document.getElementById('cashin-save-amt')?.value || 0);
+      if (!tx) return skipCashInSavings();
+      if (!amt || amt <= 0) return alert('Enter a valid savings amount, or tap Skip.');
+      if (amt > tx.amount) return alert('Savings amount cannot be more than the Cash In amount.');
+      addSavingsDeposit(amt, txId);
+      save(); closeModal(); renderMain();
+    }
+    function skipCashInSavings() { closeModal(); renderMain(); }
     function showTxD(id) {
       const t = S.transactions.find(x => x.id === id); if (!t) return;
       let icon, label, ac, pfx;
@@ -4599,7 +4698,7 @@
       const wOpts = `<option value="">No Wallet</option>` + S.wallets.map(w => `<option value="${w.id}" ${w.id === entry.wallet ? 'selected' : ''}>${w.name}</option>`).join('');
       openModal(`<div class="modal-title">Edit — ${label}</div>
     <div style="background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;font-size:12px;color:var(--blue);">Editing entry for <b>${l.person}</b></div>
-    <div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="ele-amt" value="${entry.amount}" min="0" step="0.01"></div></div>
+    <div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="ele-amt" value="${entry.amount}" min="0" step="0.01"></div></div>
     <div class="fg"><label class="fl">Date &amp; Time</label><input type="datetime-local" class="fi" id="ele-dt" value="${dtVal}"></div>
     <div class="fg"><label class="fl">Wallet</label><select class="fi" id="ele-wlt">${wOpts}</select></div>
     <div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="ele-nt" value="${entry.note || ''}" placeholder="Note"></div>
@@ -4654,7 +4753,7 @@
         else if (t.date.length > 16) dtVal = t.date.slice(0, 16); // trim seconds
         else dtVal = todayDT();
       } else dtVal = todayDT();
-      openModal(`<div class="modal-title">Edit ${t.type === 'expense' ? 'Expense' : 'Income'}</div><div class="fg"><label class="fl">Wallet</label><select class="fi" id="et-w">${wOpts}</select></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="et-dt" value="${dtVal}"></div><div class="fg"><label class="fl">Category</label><select class="fi" id="et-cat">${catOpts}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="et-amt" value="${t.amount}" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="et-note" value="${t.note || ''}" placeholder="What was this for?"></div><button class="btn btn-p" onclick="submitEditTx('${id}')">Update</button><button class="btn btn-s" onclick="showTxD('${id}')" style="margin-top:8px;">Back</button>`);
+      openModal(`<div class="modal-title">Edit ${t.type === 'expense' ? 'Expense' : 'Income'}</div><div class="fg"><label class="fl">Wallet</label><select class="fi" id="et-w">${wOpts}</select></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="et-dt" value="${dtVal}"></div><div class="fg"><label class="fl">Category</label><select class="fi" id="et-cat">${catOpts}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="et-amt" value="${t.amount}" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Note</label><input type="text" class="fi" id="et-note" value="${t.note || ''}" placeholder="What was this for?"></div><button class="btn btn-p" onclick="submitEditTx('${id}')">Update</button><button class="btn btn-s" onclick="showTxD('${id}')" style="margin-top:8px;">Back</button>`);
     }
     function submitEditTx(id) {
       const t = S.transactions.find(x => x.id === id); if (!t) return;
@@ -4687,7 +4786,7 @@
     function openEditWlt(id) { editWltId = id; const w = S.wallets.find(x => x.id === id); selColor = w ? w.color : COLORS[0]; showWltModal(); }
     function showWltModal() {
       const e = editWltId ? S.wallets.find(x => x.id === editWltId) : null;
-      openModal(`<div class="modal-title">${e ? 'Edit' : 'Add'} Wallet</div><div class="fg"><label class="fl">Name</label><input type="text" class="fi" id="w-nm" placeholder="e.g. bKash Main" value="${e ? e.name : ''}"></div><div class="fg"><label class="fl">Type</label><select class="fi" id="w-tp">${wltTypeOpts(e ? e.type : '')}</select></div><div class="fg"><label class="fl">${e ? 'Current' : 'Initial'} Balance</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="w-bal" placeholder="0.00" value="${e ? e.balance : 0}"></div></div><div class="fg"><label class="fl">Color</label><div class="col-picker">${COLORS.map(c => `<div class="col-swatch${selColor === c ? ' sel' : ''}" style="background:${c};" onclick="pickCol('${c}')" data-c="${c}"></div>`).join('')}</div></div><button class="btn btn-p" onclick="submitWlt()">${e ? 'Update' : 'Add'} Wallet</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+      openModal(`<div class="modal-title">${e ? 'Edit' : 'Add'} Wallet</div><div class="fg"><label class="fl">Name</label><input type="text" class="fi" id="w-nm" placeholder="e.g. bKash Main" value="${e ? e.name : ''}"></div><div class="fg"><label class="fl">Type</label><select class="fi" id="w-tp">${wltTypeOpts(e ? e.type : '')}</select></div><div class="fg"><label class="fl">${e ? 'Current' : 'Initial'} Balance</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="w-bal" placeholder="0.00" value="${e ? e.balance : 0}"></div></div><div class="fg"><label class="fl">Color</label><div class="col-picker">${COLORS.map(c => `<div class="col-swatch${selColor === c ? ' sel' : ''}" style="background:${c};" onclick="pickCol('${c}')" data-c="${c}"></div>`).join('')}</div></div><button class="btn btn-p" onclick="submitWlt()">${e ? 'Update' : 'Add'} Wallet</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
     }
     function pickCol(c) { selColor = c; document.querySelectorAll('.col-swatch').forEach(el => el.classList.toggle('sel', el.dataset.c === c)); }
     function openWltHistory(wid) {
@@ -4760,11 +4859,11 @@
 
     // ============ BUDGET MODALS ============
     function openAddBgt() {
-      openModal(`<div class="modal-title">Set Budget / Savings</div><div class="fg"><label class="fl">Type</label><select class="fi" id="b-type" onchange="bgtTypeChanged()"><option value="monthly_overall">Monthly Overall Budget</option><option value="yearly_overall">Yearly Overall Budget</option><option value="monthly_savings">Monthly Savings Target</option><option value="yearly_savings">Yearly Savings Target</option><option value="category" selected>Category Budget (Monthly)</option></select></div><div class="fg" id="b-cat-wrap"><label class="fl">Category</label><select class="fi" id="b-cat">${getExpCats().map(c => `<option value="${c.id}">${c.label}</option>`).join('')}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><div id="b-hint" style="font-size:12px;color:var(--text3);margin-bottom:14px;">Applies to ${fmtMY(S.month)}</div><button class="btn btn-p" onclick="submitBgt()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+      openModal(`<div class="modal-title">Set Budget / Savings</div><div class="fg"><label class="fl">Type</label><select class="fi" id="b-type" onchange="bgtTypeChanged()"><option value="monthly_overall">Monthly Overall Budget</option><option value="yearly_overall">Yearly Overall Budget</option><option value="monthly_savings">Monthly Savings Target</option><option value="yearly_savings">Yearly Savings Target</option><option value="category" selected>Category Budget (Monthly)</option></select></div><div class="fg" id="b-cat-wrap"><label class="fl">Category</label><select class="fi" id="b-cat">${getExpCats().map(c => `<option value="${c.id}">${c.label}</option>`).join('')}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><div id="b-hint" style="font-size:12px;color:var(--text3);margin-bottom:14px;">Applies to ${fmtMY(S.month)}</div><button class="btn btn-p" onclick="submitBgt()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
     }
-    function openAddBudgetModal(period) { openModal(`<div class="modal-title">Set ${period === 'monthly' ? 'Monthly' : 'Yearly'} Budget</div><div class="fg"><label class="fl">Amount - ${period === 'monthly' ? fmtMY(S.month) : curYear()}</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitBudgetOnly('${period}')">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`); }
-    function openAddSavingsModal(period) { openModal(`<div class="modal-title">Set ${period === 'monthly' ? 'Monthly' : 'Yearly'} Savings Target</div><div class="fg"><label class="fl">Target Amount - ${period === 'monthly' ? fmtMY(S.month) : curYear()}</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitSavingsOnly('${period}')">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`); }
-    function openAddBgtCat(catId) { openModal(`<div class="modal-title">Set Category Budget</div><div class="fg"><label class="fl">Category</label><select class="fi" id="b-cat">${getExpCats().map(c => `<option value="${c.id}" ${c.id === catId ? 'selected' : ''}>${c.label}</option>`).join('')}</select></div><div class="fg"><label class="fl">Amount - ${fmtMY(S.month)}</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitBgtCat()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`); }
+    function openAddBudgetModal(period) { openModal(`<div class="modal-title">Set ${period === 'monthly' ? 'Monthly' : 'Yearly'} Budget</div><div class="fg"><label class="fl">Amount - ${period === 'monthly' ? fmtMY(S.month) : curYear()}</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitBudgetOnly('${period}')">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`); }
+    function openAddSavingsModal(period) { openModal(`<div class="modal-title">Set ${period === 'monthly' ? 'Monthly' : 'Yearly'} Savings Target</div><div class="fg"><label class="fl">Target Amount - ${period === 'monthly' ? fmtMY(S.month) : curYear()}</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitSavingsOnly('${period}')">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`); }
+    function openAddBgtCat(catId) { openModal(`<div class="modal-title">Set Category Budget</div><div class="fg"><label class="fl">Category</label><select class="fi" id="b-cat">${getExpCats().map(c => `<option value="${c.id}" ${c.id === catId ? 'selected' : ''}>${c.label}</option>`).join('')}</select></div><div class="fg"><label class="fl">Amount - ${fmtMY(S.month)}</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitBgtCat()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`); }
     function openEditBgt(bgtId) {
       const b = S.budgets.find(x => x.id === bgtId); if (!b) return;
       const lbl = b.period === 'yearly' ? `Year ${b.year}` : `${fmtMY(b.month)}`; const isSav = b.category === 'savings';
@@ -4790,7 +4889,7 @@
           histHTML = `<div style="margin-top:14px;"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.9px;margin-bottom:8px;">Adjustment History</div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:10px 14px;">${rows}</div></div>`;
         }
       }
-      openModal(`<div class="modal-title">Edit ${isSav ? 'Savings Target' : 'Budget'}</div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--text2);">Period: <b style="color:var(--text);">${lbl}</b></div><div class="fg"><label class="fl">New Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="b-edit-amt" placeholder="0.00" min="0" value="${b.amount}"></div></div>${calcHTML}${histHTML}<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;"><button class="btn btn-p" onclick="submitEditBgt('${bgtId}')" style="margin:0;">Update</button><button class="btn btn-d" onclick="delBgt('${bgtId}')" style="margin:0;">Delete</button></div><button class="btn btn-s" onclick="closeModal()" style="margin-top:10px;font-size:16px;font-weight:800;padding:15px;">Close</button>`);
+      openModal(`<div class="modal-title">Edit ${isSav ? 'Savings Target' : 'Budget'}</div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:13px;color:var(--text2);">Period: <b style="color:var(--text);">${lbl}</b></div><div class="fg"><label class="fl">New Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="b-edit-amt" placeholder="0.00" min="0" value="${b.amount}"></div></div>${calcHTML}${histHTML}<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px;"><button class="btn btn-p" onclick="submitEditBgt('${bgtId}')" style="margin:0;">Update</button><button class="btn btn-d" onclick="delBgt('${bgtId}')" style="margin:0;">Delete</button></div><button class="btn btn-s" onclick="closeModal()" style="margin-top:10px;font-size:16px;font-weight:800;padding:15px;">Close</button>`);
     }
     function applyCalc() {
       const mainEl = document.getElementById('b-edit-amt'); const opEl = document.getElementById('calc-op'); const valEl = document.getElementById('calc-val'); if (!mainEl || !opEl || !valEl) return;
@@ -4854,14 +4953,14 @@
       const cBtnClick = contactsAPI ? 'pickFromContacts()' : "alert('Contacts API not available on this browser. Please type the name manually.')";
       const contactBtn = `<button type="button" onclick="${cBtnClick}" style="display:inline-flex;align-items:center;gap:5px;padding:8px 12px;border-radius:10px;${cBtnStyle}font-size:12px;font-weight:700;font-family:'Outfit',sans-serif;white-space:nowrap;flex-shrink:0;transition:all .2s;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts</button>`;
       const walletsHtml = `<option value="">Select a Wallet</option>` + S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
-      openModal(`<div class="modal-title">New Loan / Deposit Entry</div><div class="fg"><label class="fl">Type</label><select class="fi" id="ln-tp" onchange="lnTypeChanged()"><option value="deposit">Taking a Deposit</option><option value="loan_recv">Loan Received</option><option value="loan_given">Loan Given</option></select></div><div id="ln-wallet-info" style="font-size:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--blue);display:none;"></div><div class="fg"><label class="fl">Wallet (Optional)</label><select class="fi" id="ln-wlt">${walletsHtml}</select></div><div class="fg"><label class="fl">Person / Organization</label><div style="display:flex;gap:8px;align-items:center;"><input type="text" class="fi" id="ln-pr" placeholder="Type name or pick from Contacts" style="flex:1;min-width:0;">${contactBtn}</div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="ln-amt" placeholder="0" min="0"></div></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="ln-dt" value="${new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}"></div><div class="fg"><label class="fl">Due Date (optional)</label><input type="date" class="fi" id="ln-dd"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="ln-nt" placeholder="Additional details"></div><div class="fg"><label class="fl">Photo (optional)</label><div id="ln-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="ln-photo-img" style="width:100%;max-height:140px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)" /><button onclick="document.getElementById('ln-photo-preview').style.display='none';document.getElementById('ln-photo-input').value='';" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="ln-photo-input" accept="image/*" style="display:none;" onchange="handleLnPhoto(this)"><input type="file" id="ln-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleLnCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('ln-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('ln-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div></div><button class="btn btn-p" onclick="submitLoan()">Add Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+      openModal(`<div class="modal-title">New Loan / Deposit Entry</div><div class="fg"><label class="fl">Type</label><select class="fi" id="ln-tp" onchange="lnTypeChanged()"><option value="deposit">Taking a Deposit</option><option value="loan_recv">Loan Received</option><option value="loan_given">Loan Given</option></select></div><div id="ln-wallet-info" style="font-size:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--blue);display:none;"></div><div class="fg"><label class="fl">Wallet (Optional)</label><select class="fi" id="ln-wlt">${walletsHtml}</select></div><div class="fg"><label class="fl">Person / Organization</label><div style="display:flex;gap:8px;align-items:center;"><input type="text" class="fi" id="ln-pr" placeholder="Type name or pick from Contacts" style="flex:1;min-width:0;">${contactBtn}</div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="ln-amt" placeholder="0" min="0"></div></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="ln-dt" value="${new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}"></div><div class="fg"><label class="fl">Due Date (optional)</label><input type="date" class="fi" id="ln-dd"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="ln-nt" placeholder="Additional details"></div><div class="fg"><label class="fl">Photo (optional)</label><div id="ln-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="ln-photo-img" style="width:100%;max-height:140px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)" /><button onclick="document.getElementById('ln-photo-preview').style.display='none';document.getElementById('ln-photo-input').value='';" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="ln-photo-input" accept="image/*" style="display:none;" onchange="handleLnPhoto(this)"><input type="file" id="ln-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleLnCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('ln-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('ln-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div></div><button class="btn btn-p" onclick="submitLoan()">Add Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
     }
     function openAddSubEntry(loanId) {
       const loan = S.loans.find(l => l.id === loanId); if (!loan) return; const cfg = LOAN_TYPES[loan.type];
       const photoSectionSE = `<div class="fg"><label class="fl">Photo (optional)</label><div id="lp-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="lp-photo-img" style="width:100%;max-height:120px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)"/><button onclick="document.getElementById('lp-photo-preview').style.display='none';_lpPhoto='';" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:22px;height:22px;color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="lp-photo-input" accept="image/*" style="display:none;" onchange="handleLpPhoto(this)"><input type="file" id="lp-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleLpCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('lp-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('lp-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div></div>`;
       const walletsHtml = `<option value="">Select a Wallet</option>` + S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
       const seNow = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-      openModal(`<div class="modal-title">Add More - ${loan.person}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Type: <b style="color:var(--text);">${cfg.label}</b></div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Remaining: <b style="color:var(--red);">${fmt(loanRemain(loan))}</b></div></div><div class="fg"><label class="fl">Wallet (Optional)</label><select class="fi" id="se-wlt">${walletsHtml}</select></div><div class="fg"><label class="fl">Additional Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="se-amt" placeholder="0" min="0"></div></div><div class="fg"><label class="fl">Date &amp; Time</label><input type="datetime-local" class="fi" id="se-dt" value="${seNow}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="se-nt" placeholder="e.g. second installment"></div>${photoSectionSE}<button class="btn btn-p" onclick="submitSubEntry('${loanId}')">Add to Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+      openModal(`<div class="modal-title">Add More - ${loan.person}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:12px;color:var(--text3);">Type: <b style="color:var(--text);">${cfg.label}</b></div><div style="font-size:12px;color:var(--text3);margin-top:3px;">Remaining: <b style="color:var(--red);">${fmt(loanRemain(loan))}</b></div></div><div class="fg"><label class="fl">Wallet (Optional)</label><select class="fi" id="se-wlt">${walletsHtml}</select></div><div class="fg"><label class="fl">Additional Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="se-amt" placeholder="0" min="0"></div></div><div class="fg"><label class="fl">Date &amp; Time</label><input type="datetime-local" class="fi" id="se-dt" value="${seNow}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="se-nt" placeholder="e.g. second installment"></div>${photoSectionSE}<button class="btn btn-p" onclick="submitSubEntry('${loanId}')">Add to Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
     }
     function submitSubEntry(loanId) {
       if (window._submitting) return; window._submitting = true; setTimeout(() => window._submitting = false, 2000);
@@ -4938,7 +5037,7 @@
       const photoSectionLP = `<div class="fg"><label class="fl">Photo (optional)</label><div id="lp-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="lp-photo-img" style="width:100%;max-height:120px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)"/><button onclick="document.getElementById('lp-photo-preview').style.display='none';_lpPhoto='';" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:22px;height:22px;color:#fff;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="lp-photo-input" accept="image/*" style="display:none;" onchange="handleLpPhoto(this)"><input type="file" id="lp-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleLpCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('lp-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('lp-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div></div>`;
       const walletsHtml = `<option value="">Select a Wallet</option>` + S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
       const lpNow = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-      openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">${loan.person}</div><div style="font-size:12px;color:var(--text3);">${remLabel}: <b style="color:${remColor};">${fmt(remain)}</b></div></div><div class="fg"><label class="fl">Wallet (Optional)</label><select class="fi" id="lp-wlt">${walletsHtml}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="lp-amt" placeholder="0" min="0" step="0.01" value="${defaultAmt}"></div></div><div class="fg"><label class="fl">Date &amp; Time</label><input type="datetime-local" class="fi" id="lp-dt" value="${lpNow}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div>${photoSectionLP}<button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+      openModal(`<div class="modal-title">${cfg.childLabel}</div><div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:16px;"><div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px;">${loan.person}</div><div style="font-size:12px;color:var(--text3);">${remLabel}: <b style="color:${remColor};">${fmt(remain)}</b></div></div><div class="fg"><label class="fl">Wallet (Optional)</label><select class="fi" id="lp-wlt">${walletsHtml}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="lp-amt" placeholder="0" min="0" step="0.01" value="${defaultAmt}"></div></div><div class="fg"><label class="fl">Date &amp; Time</label><input type="datetime-local" class="fi" id="lp-dt" value="${lpNow}"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="lp-nt" placeholder="Payment note"></div>${photoSectionLP}<button class="btn btn-p" onclick="submitLoanPayment('${loanId}')">Record Payment</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
     }
     function submitLoanPayment(loanId) {
       if (window._submitting) return; window._submitting = true; setTimeout(() => window._submitting = false, 2000);
@@ -4947,7 +5046,7 @@
       if (!loan.extraEntries) loan.extraEntries = [];
       const amt = parseFloat(document.getElementById('lp-amt').value); const dt = document.getElementById('lp-dt').value; const nt = document.getElementById('lp-nt').value.trim(); const remain = loanRemain(loan);
       if (!amt || amt <= 0) return alert('Enter a valid amount.');
-      // Allow up to 5% overpayment or ৳100 rounding tolerance, whichever is smaller
+      // Allow up to 5% overpayment or a small rounding tolerance, whichever is smaller
       if (remain > 0) { const maxAllowed = remain + Math.min(remain * 0.05, 100); if (amt > maxAllowed + 0.01) return alert(`Amount too large. You can pay up to ${fmt(maxAllowed)} (allows small rounding).`); }
       if (!dt) return alert('Select a date.');
       const wltId = document.getElementById('lp-wlt') ? document.getElementById('lp-wlt').value : '';
@@ -5379,7 +5478,7 @@
       <div class="fg"><label class="fl">Type</label><select class="fi" id="sp-type" onchange="refreshSmsParserFields()"><option value="expense" ${parsed.type === 'expense' ? 'selected' : ''}>Expense</option><option value="income" ${parsed.type === 'income' ? 'selected' : ''}>Cash In</option><option value="transfer" ${parsed.type === 'transfer' ? 'selected' : ''}>Transfer</option></select></div>
       <div id="sp-wallet-fields">${walletField}</div>
       <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="sp-dt" value="${parsed.date}"></div>
-      <div class="fg"><label class="fl">Amount (৳)</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sp-amt" value="${parsed.amount}" min="0" step="0.01"></div></div>
+      <div class="fg"><label class="fl">Amount (${curSymbol()})</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="sp-amt" value="${parsed.amount}" min="0" step="0.01"></div></div>
       <div id="sp-cat-field">${catField}</div>
       <div class="fg"><label class="fl">Note (from SMS)</label><input type="text" class="fi" id="sp-note" value="${parsed.note}"></div>
       <button class="btn btn-p" onclick="submitSmsTransaction()" style="margin-top:4px;">Add Transaction</button>
@@ -5428,7 +5527,9 @@
         if (type === 'expense' && fw) fw.balance -= amt;
         else if (type === 'income' && fw) fw.balance += amt;
       }
-      S.transactions.unshift(tx); save(); closeModal(); renderMain();
+      S.transactions.unshift(tx); save();
+      if (type === 'income') openCashInSavingsModal(tx.id);
+      else { closeModal(); renderMain(); }
     }
     function openImportInfo() {
       openModal(`<div class="modal-title">Backup & Sync</div>
@@ -5527,7 +5628,7 @@
   <div class="fg"><label class="fl">Type</label><select class="fi" id="sms-type" onchange="smsTypeChanged(${idx})">${typeOpts}</select></div>
   <div id="sms-wallet-fields">${buildWalletFields(isTransfer)}</div>
   <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="sms-dt" value="${dtVal}"></div>
-  <div class="fg"><label class="fl">Amount</label><div class="amt-wrap"><span class="amt-pre">৳</span><input type="number" class="fi amt-fi" id="sms-amt" value="${p.amount || ''}" min="0" step="0.01"></div></div>
+  <div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="sms-amt" value="${p.amount || ''}" min="0" step="0.01"></div></div>
   <div id="sms-cat-field">${buildCatField(isTransfer, isIncome)}</div>
   <div class="fg"><label class="fl">Description / Note</label><input type="text" class="fi" id="sms-note" value="${p.description || ''}" placeholder="Auto-filled from SMS"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
@@ -5584,7 +5685,8 @@
       try { await fbDb.ref('users/' + fbUser.uid + '/sms_pending/' + p._key).remove(); } catch (e) { }
       _smsPending.splice(idx, 1);
       updateSmsBadge();
-      if (_smsPending.length > idx) showSmsReview(idx);
+      if (type === 'income') openCashInSavingsModal(tx.id);
+      else if (_smsPending.length > idx) showSmsReview(idx);
       else { closeModal(); renderMain(); }
     }
     async function discardSmsTx(idx) {
@@ -5840,7 +5942,7 @@
       const cx = 120, cy = 120, R = 112, r = 88, ri = 12;
       const isHrMode = _DTP.mode === 'hr';
       // Build SVG content
-      let s = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/><circle cx="${cx}" cy="${cy}" r="${R - 13}" fill="none" stroke="rgba(77,159,255,.06)" stroke-width="1"/>`;
+      let s = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="var(--bg3)" stroke="var(--border)" stroke-width="1"/>`;
       if (isHrMode) {
         // Hour numbers 1-12 at radius r
         for (let h = 1; h <= 12; h++) {
@@ -5878,7 +5980,12 @@
       }
       s += `<circle cx="${cx}" cy="${cy}" r="${ri}" fill="#4d9fff" opacity=".18"/><circle cx="${cx}" cy="${cy}" r="4" fill="#4d9fff"/>`;
       svg.innerHTML = s;
-      const tm = document.getElementById('dtp-time-main'); if (tm) tm.textContent = `${_DTP.hr}:${String(_DTP.mn).padStart(2, '0')}`;
+      const tm = document.getElementById('dtp-time-main');
+      if (tm) {
+        const hA = _DTP.mode === 'hr' ? ' a' : '';
+        const mA = _DTP.mode === 'mn' ? ' a' : '';
+        tm.innerHTML = `<span class="dtp-time-part${hA}" onclick="dtpSetMode('hr')">${_DTP.hr}</span>:<span class="dtp-time-part${mA}" onclick="dtpSetMode('mn')">${String(_DTP.mn).padStart(2, '0')}</span>`;
+      }
       const md = document.getElementById('dtp-time-mode'); if (md) md.textContent = _DTP.mode === 'hr' ? 'hour' : 'minute';
       // sync AM/PM
       const am = document.getElementById('dtp-am'), pm = document.getElementById('dtp-pm');
@@ -5897,6 +6004,7 @@
     function dtpHrClick(h) { _DTP.hr = h; _DTP.mode = 'mn'; _dtpRender(); _dtpRenderClock(); }
     function dtpMnClick(m) { _DTP.mn = m; _dtpRender(); _dtpRenderClock(); }
     function dtpSetAP(ap) { _DTP.ap = ap; _dtpRender(); _dtpRenderClock(); }
+    function dtpSetMode(mode) { _DTP.mode = mode === 'hr' ? 'hr' : 'mn'; _dtpRenderClock(); }
     function dtpHrInp(el) { let v = parseInt(el.value); if (isNaN(v) || v < 1) v = 1; if (v > 12) v = 12; _DTP.hr = v; _dtpRender(); _dtpRenderClock(); }
     function dtpMnInp(el) { let v = parseInt(el.value); if (isNaN(v) || v < 0) v = 0; if (v > 59) v = 59; _DTP.mn = v; _dtpRender(); _dtpRenderClock(); }
     function dtpOpenManual() {
@@ -5954,6 +6062,43 @@
       let ang = Math.atan2(y, x) * (180 / Math.PI) + 90; if (ang < 0) ang += 360;
       if (_DTP.mode === 'hr') { let h = Math.round(ang / 30); if (h === 0) h = 12; if (h > 12) h = 12; return h; }
       else { return Math.round(ang / 6) % 60; }
+    }
+    let _dtpClockRaf = 0;
+    function _dtpSetClockVal(v) {
+      if (_DTP.mode === 'hr') _DTP.hr = v;
+      else _DTP.mn = v;
+      const vd = document.getElementById('dtp-val-disp'); if (vd) vd.textContent = _dtpFmt();
+      if (!_dtpClockRaf) {
+        _dtpClockRaf = requestAnimationFrame(() => {
+          _dtpClockRaf = 0;
+          _dtpRenderClock();
+        });
+      }
+    }
+    function dtpClockPointerDown(e) {
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      const svg = document.getElementById('dtp-csvg');
+      const startMode = _DTP.mode;
+      const sx = e.clientX, sy = e.clientY;
+      let dragged = false;
+      try { svg.setPointerCapture(e.pointerId); } catch (err) { }
+      _dtpSetClockVal(_dtpAngleToVal(e, svg));
+      const onMove = ev => {
+        if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) > 4) dragged = true;
+        _dtpSetClockVal(_dtpAngleToVal(ev, svg));
+        ev.preventDefault();
+      };
+      const onUp = ev => {
+        if (startMode === 'hr' && !dragged) { _DTP.mode = 'mn'; _dtpRenderClock(); }
+        try { svg.releasePointerCapture(ev.pointerId); } catch (err) { }
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        document.removeEventListener('pointercancel', onUp);
+      };
+      document.addEventListener('pointermove', onMove, { passive: false });
+      document.addEventListener('pointerup', onUp);
+      document.addEventListener('pointercancel', onUp);
+      e.preventDefault();
     }
     function dtpClockDown(e) {
       const svg = document.getElementById('dtp-csvg');
@@ -6094,11 +6239,13 @@
             </div>
           </div>
           <div class="dtp-cwrap">
-            <svg class="dtp-csvg" id="dtp-csvg" viewBox="0 0 240 240" onmousedown="dtpClockDown(event)"
-              ontouchstart="dtpClockTouch(event)"></svg>
+            <svg class="dtp-csvg" id="dtp-csvg" viewBox="0 0 240 240"
+              onpointerdown="dtpClockPointerDown(event)"></svg>
           </div>
           <div class="dtp-ti">
-            <div class="dtp-time-read"><span id="dtp-time-main">12:00</span><span class="dtp-time-mode"
+            <div class="dtp-time-read"><span id="dtp-time-main"><span class="dtp-time-part a"
+                  onclick="dtpSetMode('hr')">12</span>:<span class="dtp-time-part"
+                  onclick="dtpSetMode('mn')">00</span></span><span class="dtp-time-mode"
                 id="dtp-time-mode">hour</span></div>
             <button class="dtp-kb" onclick="dtpOpenManual()" aria-label="Type time manually" title="Type time manually">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
