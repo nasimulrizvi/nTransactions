@@ -1359,6 +1359,129 @@
       font-weight: 700 !important;
     }
 
+    .amount-calc {
+      margin-top: 10px;
+      background: linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .025));
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 8px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .055);
+    }
+
+    .amount-calc-display {
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      margin-bottom: 7px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, .16);
+      border: 1px solid var(--border);
+    }
+
+    body.theme-light .amount-calc-display {
+      background: rgba(255, 255, 255, .52);
+    }
+
+    .amount-calc-value {
+      flex: 1;
+      min-width: 0;
+      text-align: right;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .amount-calc-back {
+      width: 42px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text2);
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      flex-shrink: 0;
+    }
+
+    .amount-calc-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+    }
+
+    .amount-calc-btn {
+      min-height: 54px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg3);
+      color: var(--text);
+      cursor: pointer;
+      font-family: 'Space Mono', monospace;
+      font-size: 23px;
+      font-weight: 800;
+      transition: transform .12s, border-color .12s, background .12s;
+    }
+
+    .amount-calc-btn:hover,
+    .amount-calc-back:hover {
+      border-color: rgba(12, 233, 127, .35);
+      transform: translateY(-1px);
+    }
+
+    .amount-calc-btn.op {
+      background: var(--green-d);
+      color: var(--green);
+      border-color: rgba(12, 233, 127, .22);
+    }
+
+    .amount-calc-btn.eq {
+      background: var(--green);
+      color: #07100b;
+      border-color: rgba(12, 233, 127, .75);
+    }
+
+    @media(max-width:600px) {
+      .amount-calc {
+        margin-top: 8px;
+        padding: 6px;
+        border-radius: 13px;
+      }
+
+      .amount-calc-display {
+        min-height: 42px;
+        padding: 5px 8px;
+        margin-bottom: 5px;
+      }
+
+      .amount-calc-value {
+        font-size: 23px;
+      }
+
+      .amount-calc-back {
+        width: 38px;
+        height: 34px;
+      }
+
+      .amount-calc-grid {
+        gap: 5px;
+      }
+
+      .amount-calc-btn {
+        min-height: 43px;
+        font-size: 20px;
+      }
+    }
+
     .tab-grp {
       display: flex;
       gap: 5px;
@@ -3147,26 +3270,57 @@
     ];
     function wltTypeOpts(selVal) { return WLT_TYPES.map(t => `<option value="${t.id}" ${t.id === selVal ? 'selected' : ''}>${t.label}</option>`).join(''); }
     const CURRENCIES = [
-      { code: 'BDT', symbol: '৳', name: 'Bangladeshi Taka' }, { code: 'USD', symbol: '$', name: 'US Dollar' },
-      { code: 'EUR', symbol: '€', name: 'Euro' }, { code: 'GBP', symbol: '£', name: 'British Pound' },
-      { code: 'INR', symbol: '₹', name: 'Indian Rupee' }, { code: 'PKR', symbol: '₨', name: 'Pakistani Rupee' },
-      { code: 'NPR', symbol: 'रू', name: 'Nepalese Rupee' }, { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-      { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' }, { code: 'KRW', symbol: '₩', name: 'South Korean Won' },
-      { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' }, { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-      { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' }, { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
-      { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' }, { code: 'THB', symbol: '฿', name: 'Thai Baht' },
-      { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' }, { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
-      { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' }, { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' },
-      { code: 'QAR', symbol: 'ر.ق', name: 'Qatari Riyal' }, { code: 'KWD', symbol: 'د.ك', name: 'Kuwaiti Dinar' },
-      { code: 'TRY', symbol: '₺', name: 'Turkish Lira' }, { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
-      { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' }, { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
-      { code: 'DKK', symbol: 'kr', name: 'Danish Krone' }, { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
-      { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' }, { code: 'MXN', symbol: 'MX$', name: 'Mexican Peso' },
-      { code: 'RUB', symbol: '₽', name: 'Russian Ruble' }, { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
-      { code: 'EGP', symbol: 'E£', name: 'Egyptian Pound' }, { code: 'LKR', symbol: 'Rs', name: 'Sri Lankan Rupee' },
-      { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' }
+      { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+      { code: 'ARS', symbol: 'AR$', name: 'Argentine Peso' },
+      { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+      { code: 'BDT', symbol: '৳', name: 'Bangladeshi Taka' },
+      { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+      { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+      { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
+      { code: 'CLP', symbol: 'CL$', name: 'Chilean Peso' },
+      { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+      { code: 'COP', symbol: 'COL$', name: 'Colombian Peso' },
+      { code: 'CZK', symbol: 'Kč', name: 'Czech Koruna' },
+      { code: 'DKK', symbol: 'kr', name: 'Danish Krone' },
+      { code: 'EGP', symbol: 'E£', name: 'Egyptian Pound' },
+      { code: 'EUR', symbol: '€', name: 'Euro' },
+      { code: 'GBP', symbol: '£', name: 'British Pound' },
+      { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
+      { code: 'HUF', symbol: 'Ft', name: 'Hungarian Forint' },
+      { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' },
+      { code: 'ILS', symbol: '₪', name: 'Israeli Shekel' },
+      { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+      { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+      { code: 'KES', symbol: 'KSh', name: 'Kenyan Shilling' },
+      { code: 'KRW', symbol: '₩', name: 'South Korean Won' },
+      { code: 'KWD', symbol: 'د.ك', name: 'Kuwaiti Dinar' },
+      { code: 'LKR', symbol: 'Rs', name: 'Sri Lankan Rupee' },
+      { code: 'MAD', symbol: 'DH', name: 'Moroccan Dirham' },
+      { code: 'MXN', symbol: 'MX$', name: 'Mexican Peso' },
+      { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' },
+      { code: 'NGN', symbol: '₦', name: 'Nigerian Naira' },
+      { code: 'NOK', symbol: 'kr', name: 'Norwegian Krone' },
+      { code: 'NPR', symbol: 'रू', name: 'Nepalese Rupee' },
+      { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
+      { code: 'PEN', symbol: 'S/', name: 'Peruvian Sol' },
+      { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
+      { code: 'PKR', symbol: '₨', name: 'Pakistani Rupee' },
+      { code: 'PLN', symbol: 'zł', name: 'Polish Zloty' },
+      { code: 'QAR', symbol: 'ر.ق', name: 'Qatari Riyal' },
+      { code: 'RON', symbol: 'lei', name: 'Romanian Leu' },
+      { code: 'RUB', symbol: '₽', name: 'Russian Ruble' },
+      { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' },
+      { code: 'SEK', symbol: 'kr', name: 'Swedish Krona' },
+      { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+      { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+      { code: 'TRY', symbol: '₺', name: 'Turkish Lira' },
+      { code: 'TWD', symbol: 'NT$', name: 'Taiwan Dollar' },
+      { code: 'UAH', symbol: '₴', name: 'Ukrainian Hryvnia' },
+      { code: 'USD', symbol: '$', name: 'US Dollar' },
+      { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' },
+      { code: 'ZAR', symbol: 'R', name: 'South African Rand' }
     ];
-    function getCurrency() { return CURRENCIES.find(c => c.code === (S.currency || 'BDT')) || CURRENCIES[0]; }
+    function getCurrency() { return CURRENCIES.find(c => c.code === (S.currency || 'BDT')) || CURRENCIES.find(c => c.code === 'BDT') || CURRENCIES[0]; }
     function curSymbol() { return getCurrency().symbol; }
     function moneyPrefix() { return `<span class="amt-pre">${curSymbol()}</span>`; }
     function currencyOpts() { return CURRENCIES.map(c => `<option value="${c.code}" ${c.code === (S.currency || 'BDT') ? 'selected' : ''}>${c.code} - ${c.name} (${c.symbol})</option>`).join(''); }
@@ -4566,6 +4720,140 @@
     // ============ ADD TRANSACTION ============
     function openAddTx() { txType = 'expense'; openModal(txModalHTML()); }
     function txCatOpts(type) { const cats = type === 'expense' ? getExpCats() : getIncCats(); return '<option value="">Select a category</option>' + cats.map(c => `<option value="${c.id}">${c.label}</option>`).join(''); }
+    let _amountCalcTarget = null;
+    let _amountCalcExpr = '';
+    let _amountCalcJustSolved = false;
+    function amountCalcIsTouchDevice() {
+      return window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches;
+    }
+    function amountCalcPrepareInput(inputId) {
+      const inp = document.getElementById(inputId);
+      if (!inp) return;
+      const touch = amountCalcIsTouchDevice();
+      inp.readOnly = touch;
+      inp.setAttribute('inputmode', touch ? 'none' : 'decimal');
+    }
+    function amountCalcHTML(inputId) {
+      const buttons = [
+        ['+', '+', 'op'], ['7', '7', ''], ['8', '8', ''], ['9', '9', ''],
+        ['-', '-', 'op'], ['4', '4', ''], ['5', '5', ''], ['6', '6', ''],
+        ['*', '×', 'op'], ['1', '1', ''], ['2', '2', ''], ['3', '3', ''],
+        ['/', '÷', 'op'], ['0', '0', ''], ['.', '.', ''], ['=', '=', 'eq']
+      ];
+      return `<div class="amount-calc" id="${inputId}-calc" style="display:none;">
+        <div class="amount-calc-display">
+          <div class="amount-calc-value" id="${inputId}-calc-display">0</div>
+          <button type="button" class="amount-calc-back" onclick="amountCalcBack()" aria-label="Backspace">⌫</button>
+        </div>
+        <div class="amount-calc-grid">
+          ${buttons.map(([val, label, cls]) => `<button type="button" class="amount-calc-btn ${cls}" onclick="amountCalcPress('${val}')">${label}</button>`).join('')}
+        </div>
+      </div>`;
+    }
+    function openAmountCalc(inputId) {
+      const inp = document.getElementById(inputId);
+      const calc = document.getElementById(inputId + '-calc');
+      if (!inp || !calc) return;
+      amountCalcPrepareInput(inputId);
+      document.querySelectorAll('.amount-calc').forEach(el => { if (el !== calc) el.style.display = 'none'; });
+      _amountCalcTarget = inputId;
+      _amountCalcExpr = (inp.value || '').replace(/,/g, '');
+      _amountCalcJustSolved = false;
+      calc.style.display = 'block';
+      amountCalcRender();
+      amountCalcReveal(calc);
+    }
+    function amountCalcReveal(calc) {
+      if (!amountCalcIsTouchDevice()) return;
+      const modal = document.getElementById('modal');
+      if (!modal || !calc) return;
+      const reveal = () => {
+        const cr = calc.getBoundingClientRect();
+        const mr = modal.getBoundingClientRect();
+        const overflow = cr.bottom - (mr.bottom - 12);
+        if (overflow > 0) modal.scrollBy({ top: overflow, behavior: 'smooth' });
+      };
+      setTimeout(reveal, 35);
+      setTimeout(reveal, 180);
+    }
+    function amountCalcCurrentInput() {
+      return _amountCalcTarget ? document.getElementById(_amountCalcTarget) : null;
+    }
+    function closeAmountCalc() {
+      if (!_amountCalcTarget) return;
+      const calc = document.getElementById(_amountCalcTarget + '-calc');
+      const inp = amountCalcCurrentInput();
+      if (calc) calc.style.display = 'none';
+      if (inp) inp.blur();
+    }
+    function amountCalcSafeEval(expr) {
+      const clean = String(expr || '').replace(/[+\-*/.]+$/, '');
+      if (!clean || !/^[\d+\-*/.]+$/.test(clean)) return '';
+      try {
+        const val = Function(`"use strict";return (${clean})`)();
+        if (!Number.isFinite(val)) return '';
+        return Math.round((val + Number.EPSILON) * 100) / 100;
+      } catch (e) {
+        return '';
+      }
+    }
+    function amountCalcRender() {
+      if (!_amountCalcTarget) return;
+      const disp = document.getElementById(_amountCalcTarget + '-calc-display');
+      const inp = amountCalcCurrentInput();
+      const shown = _amountCalcExpr || '0';
+      if (disp) disp.textContent = shown.replace(/\*/g, '×').replace(/\//g, '÷');
+      const val = amountCalcSafeEval(_amountCalcExpr);
+      if (inp && val !== '') inp.value = val;
+    }
+    function amountCalcPress(val) {
+      if (!_amountCalcTarget) return;
+      const isOp = ['+', '-', '*', '/'].includes(val);
+      if (val === '=') {
+        const solved = amountCalcSafeEval(_amountCalcExpr);
+        if (solved !== '') {
+          _amountCalcExpr = String(solved);
+          _amountCalcJustSolved = true;
+          const inp = amountCalcCurrentInput();
+          if (inp) inp.value = solved;
+        }
+        amountCalcRender();
+        closeAmountCalc();
+        return;
+      }
+      if (isOp) {
+        if (!_amountCalcExpr) _amountCalcExpr = '0';
+        _amountCalcExpr = /[+\-*/.]$/.test(_amountCalcExpr) ? _amountCalcExpr.slice(0, -1) + val : _amountCalcExpr + val;
+        _amountCalcJustSolved = false;
+        amountCalcRender();
+        return;
+      }
+      if (_amountCalcJustSolved) {
+        _amountCalcExpr = '';
+        _amountCalcJustSolved = false;
+      }
+      const parts = _amountCalcExpr.split(/[+\-*/]/);
+      const current = parts[parts.length - 1] || '';
+      if (val === '.' && current.includes('.')) return;
+      _amountCalcExpr += val;
+      amountCalcRender();
+    }
+    function amountCalcBack() {
+      if (!_amountCalcTarget) return;
+      _amountCalcExpr = _amountCalcExpr.slice(0, -1);
+      const inp = amountCalcCurrentInput();
+      if (inp && !_amountCalcExpr) inp.value = '';
+      _amountCalcJustSolved = false;
+      amountCalcRender();
+    }
+    function amountCalcSync(inputId) {
+      if (_amountCalcTarget !== inputId) return;
+      const inp = document.getElementById(inputId);
+      _amountCalcExpr = inp ? inp.value.replace(/,/g, '') : '';
+      _amountCalcJustSolved = false;
+      const disp = document.getElementById(inputId + '-calc-display');
+      if (disp) disp.textContent = _amountCalcExpr || '0';
+    }
     function txModalHTML() {
       // For expense, hide wallets with balance <= 0
       const availWallets = txType === 'expense' ? S.wallets.filter(w => w.balance > 0) : S.wallets;
@@ -4576,8 +4864,8 @@
         : `<select class="fi" id="tx-w">${wOpts}</select>`;
       const photoSection = `<div id="tx-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="tx-photo-img" style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)" title="Tap to view full size"/><button onclick="clearTxPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="tx-photo-input" accept="image/*" style="display:none;" onchange="handleTxPhoto(this)"><input type="file" id="tx-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleTxCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('tx-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('tx-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div>`;
       let body = txType !== 'transfer'
-        ? `<div class="fg"><label class="fl">Wallet</label>${wSelect}</div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label><select class="fi" id="tx-cat">${txCatOpts(txType)}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg" style="position:relative;"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?" autocomplete="off" oninput="showNoteSugg(this,'${txType}')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div><div class="fg"><label class="fl">Photo (optional)</label>${photoSection}</div>`
-        : `<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01"></div></div><div class="fg"><label class="fl">Transfer Fee <span style="color:var(--text3);font-weight:400;">(optional — deducted from sender)</span></label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-fee" placeholder="0.00" min="0" step="0.01" value="0"></div></div><div class="fg" style="position:relative;"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason" autocomplete="off" oninput="showNoteSugg(this,'transfer')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div>`;
+        ? `<div class="fg"><label class="fl">Wallet</label>${wSelect}</div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label><select class="fi" id="tx-cat">${txCatOpts(txType)}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01" inputmode="decimal" onpointerdown="amountCalcPrepareInput('tx-amt')" ontouchstart="amountCalcPrepareInput('tx-amt')" onfocus="openAmountCalc('tx-amt')" onclick="openAmountCalc('tx-amt')" oninput="amountCalcSync('tx-amt')" autocomplete="off"></div>${amountCalcHTML('tx-amt')}</div><div class="fg" style="position:relative;"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?" autocomplete="off" oninput="showNoteSugg(this,'${txType}')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div><div class="fg"><label class="fl">Photo (optional)</label>${photoSection}</div>`
+        : `<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01" inputmode="decimal" onpointerdown="amountCalcPrepareInput('tx-amt')" ontouchstart="amountCalcPrepareInput('tx-amt')" onfocus="openAmountCalc('tx-amt')" onclick="openAmountCalc('tx-amt')" oninput="amountCalcSync('tx-amt')" autocomplete="off"></div>${amountCalcHTML('tx-amt')}</div><div class="fg"><label class="fl">Transfer Fee <span style="color:var(--text3);font-weight:400;">(optional — deducted from sender)</span></label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-fee" placeholder="0.00" min="0" step="0.01" value="0"></div></div><div class="fg" style="position:relative;"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason" autocomplete="off" oninput="showNoteSugg(this,'transfer')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div>`;
       return `<div class="modal-title">Add Transaction</div><div class="tab-grp"><button class="tab-btn te ${txType === 'expense' ? 'active' : ''}" onclick="swTxT('expense')">Expense</button><button class="tab-btn ti ${txType === 'income' ? 'active' : ''}" onclick="swTxT('income')">Cash In</button><button class="tab-btn tt ${txType === 'transfer' ? 'active' : ''}" onclick="swTxT('transfer')">Transfer</button></div>${body}<button class="btn btn-p" onclick="submitTx()">Save Transaction</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`;
     }
     function swTxT(t) { txType = t; document.getElementById('mc').innerHTML = txModalHTML(); }
@@ -6148,8 +6436,8 @@
       const fmt = val ? (() => { const d = new Date(val.length === 10 ? val + 'T12:00:00' : val); return isNaN(d) ? val : `${_MONS3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${((d.getHours() % 12) || 12)}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`; })() : 'Set date & time';
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.style.cssText = 'width:100%;padding:11px 14px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:600;font-family:Outfit,sans-serif;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px;transition:border-color .15s;';
-      btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span id="${inputId}-dtpfmt">${fmt}</span>`;
+      btn.style.cssText = 'width:100%;padding:11px 14px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:600;font-family:Outfit,sans-serif;cursor:pointer;text-align:left;display:flex;align-items:center;transition:border-color .15s;';
+      btn.innerHTML = `<span id="${inputId}-dtpfmt">${fmt}</span>`;
       btn.onmouseenter = () => btn.style.borderColor = 'var(--blue)';
       btn.onmouseleave = () => btn.style.borderColor = 'var(--border)';
       btn.onclick = () => openDTP(inp.value, v => {
