@@ -610,6 +610,85 @@
       gap: 16px;
     }
 
+    .donut-card,
+    .dash-gauge-card {
+      min-width: 0;
+      overflow: hidden;
+    }
+
+    .donut-chart-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin: auto 0;
+    }
+
+    .donut-chart-wrap {
+      flex: 0 0 120px;
+      width: 120px;
+      height: 120px;
+      position: relative;
+    }
+
+    .donut-chart-wrap canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+
+    .donut-legend {
+      flex: 1;
+      min-width: 130px;
+    }
+
+    @media(max-width:600px) {
+
+      .donut-grid,
+      .gauge-grid {
+        gap: 12px;
+      }
+
+      .donut-card,
+      .dash-gauge-card {
+        padding: 14px !important;
+      }
+
+      .donut-chart-row {
+        gap: 12px !important;
+        flex-wrap: nowrap;
+      }
+
+      .donut-chart-wrap {
+        flex-basis: 106px;
+        width: 106px;
+        height: 106px;
+      }
+
+      .donut-legend {
+        min-width: 0;
+      }
+
+      #savings-gauge-wrap svg {
+        max-height: 118px !important;
+        max-width: 235px;
+      }
+
+      #loan-gauge-wrap svg {
+        max-height: 134px !important;
+        max-width: 230px;
+      }
+
+      #gauge-label span:first-child {
+        font-size: 22px !important;
+      }
+
+      #loan-gauge-label>div {
+        gap: 10px !important;
+      }
+    }
+
     @media(min-width:1024px) {
 
       .donut-grid,
@@ -3228,6 +3307,7 @@
         S.hiddenExpCats = d.hiddenExpCats || S.hiddenExpCats || [];
         S.hiddenIncCats = d.hiddenIncCats || S.hiddenIncCats || [];
         S.savingsHistory = d.savingsHistory || S.savingsHistory || [];
+        S.savingsTargetSettings = normalizeSavingsTargetSettings(d.savingsTargetSettings || S.savingsTargetSettings);
         S.currency = d.currency || S.currency || 'BDT';
         if (d.currency) markCurrencyConfigured();
         S.username = d.username || S.username || '';
@@ -3562,7 +3642,8 @@
     function loanIco(tid, size = 18) { const m = { deposit: 'deposit', deposit_given: 'deposit', loan_recv: 'loan_recv', loan_given: 'loan_given' }; return ico(m[tid] || 'loan_recv', size); }
 
     // ============ STATE ============
-    let S = { transactions: [], wallets: [], budgets: [], loans: [], customExpCats: [], customIncCats: [], expCatOrder: [], incCatOrder: [], hiddenExpCats: [], hiddenIncCats: [], username: '', currency: 'BDT', view: 'dashboard', month: todayYM(), lastSync: null };
+    const SAVINGS_TARGET_DEFAULTS = { monthlyPct: 5, yearlyPct: 2, monthlyOverrides: {}, yearlyOverrides: {} };
+    let S = { transactions: [], wallets: [], budgets: [], loans: [], customExpCats: [], customIncCats: [], expCatOrder: [], incCatOrder: [], hiddenExpCats: [], hiddenIncCats: [], savingsTargetSettings: { ...SAVINGS_TARGET_DEFAULTS, monthlyOverrides: {}, yearlyOverrides: {} }, username: '', currency: 'BDT', view: 'dashboard', month: todayYM(), lastSync: null };
     let _currencySetupNeeded = false;
     let txF = 'all', txQ = '', txDuration = 'all', loanF = 'all', txType = 'expense', editWltId = '', selColor = COLORS[0];
 
@@ -3662,13 +3743,14 @@
         if (!S.hiddenExpCats) S.hiddenExpCats = [];
         if (!S.hiddenIncCats) S.hiddenIncCats = [];
         if (!S.savingsHistory) S.savingsHistory = [];
+        S.savingsTargetSettings = normalizeSavingsTargetSettings(S.savingsTargetSettings);
         if (!S.wltHistory) S.wltHistory = [];
         if (!S.username) S.username = '';
         if (!S.currency) S.currency = 'BDT';
       } catch (e) { }
     }
     function saveLocal() {
-      try { localStorage.setItem('ntx4', JSON.stringify({ transactions: S.transactions, wallets: S.wallets, budgets: S.budgets, loans: S.loans, customExpCats: S.customExpCats, customIncCats: S.customIncCats, expCatOrder: S.expCatOrder, incCatOrder: S.incCatOrder, hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [], savingsHistory: S.savingsHistory || [], wltHistory: S.wltHistory || [], username: S.username || '', currency: S.currency || 'BDT', month: S.month, lastSync: S.lastSync })); } catch (e) { }
+      try { localStorage.setItem('ntx4', JSON.stringify({ transactions: S.transactions, wallets: S.wallets, budgets: S.budgets, loans: S.loans, customExpCats: S.customExpCats, customIncCats: S.customIncCats, expCatOrder: S.expCatOrder, incCatOrder: S.incCatOrder, hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [], savingsHistory: S.savingsHistory || [], savingsTargetSettings: normalizeSavingsTargetSettings(S.savingsTargetSettings), wltHistory: S.wltHistory || [], username: S.username || '', currency: S.currency || 'BDT', month: S.month, lastSync: S.lastSync })); } catch (e) { }
     }
     function normalizeLoan(l) {
       if (!l.payments) l.payments = [];
@@ -3687,7 +3769,7 @@
           customExpCats: S.customExpCats || [], customIncCats: S.customIncCats || [],
           expCatOrder: S.expCatOrder || [], incCatOrder: S.incCatOrder || [],
           hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [],
-          savingsHistory: S.savingsHistory || [], username: S.username || '', currency: S.currency || 'BDT', ts
+          savingsHistory: S.savingsHistory || [], savingsTargetSettings: normalizeSavingsTargetSettings(S.savingsTargetSettings), username: S.username || '', currency: S.currency || 'BDT', ts
         };
         S.lastSync = ts;
         await fbDb.ref('users/' + fbUser.uid + '/data').set(payload);
@@ -3728,6 +3810,7 @@
         S.hiddenExpCats = d.hiddenExpCats || S.hiddenExpCats || [];
         S.hiddenIncCats = d.hiddenIncCats || S.hiddenIncCats || [];
         S.savingsHistory = d.savingsHistory || S.savingsHistory || [];
+        S.savingsTargetSettings = normalizeSavingsTargetSettings(d.savingsTargetSettings || S.savingsTargetSettings);
         S.currency = d.currency || S.currency || 'BDT';
         if (d.currency) markCurrencyConfigured();
         S.username = d.username || S.username || '';
@@ -3759,6 +3842,7 @@
             S.hiddenExpCats = d.hiddenExpCats || S.hiddenExpCats || [];
             S.hiddenIncCats = d.hiddenIncCats || S.hiddenIncCats || [];
             S.savingsHistory = d.savingsHistory || S.savingsHistory || [];
+            S.savingsTargetSettings = normalizeSavingsTargetSettings(d.savingsTargetSettings || S.savingsTargetSettings);
             S.currency = d.currency || S.currency || 'BDT';
             if (d.currency) markCurrencyConfigured();
             S.username = d.username || S.username || '';
@@ -3813,7 +3897,49 @@
     function totalBal() { return S.wallets.reduce((s, w) => s + (w.balance || 0), 0); }
     function mTxs(m) { return S.transactions.filter(t => t.date && t.date.startsWith(m)); }
     function mStats(m) { const txs = mTxs(m); const inc = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0); const exp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0); return { inc, exp, net: inc - exp }; }
-    function yrStats(yr) { const txs = S.transactions.filter(t => t.date && t.date.startsWith(yr)); const inc = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0); const exp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0); const savBgt = S.budgets.find(b => b.category === 'savings' && b.year === yr && b.period === 'yearly'); const sav = savBgt ? savBgt.amount : 0; return { inc, exp, net: inc - exp - sav, simpleNet: inc - exp, sav }; }
+    function yrStats(yr) { const txs = S.transactions.filter(t => t.date && t.date.startsWith(yr)); const inc = txs.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0); const exp = txs.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0); const sav = savingsTotal('yearly', yr); return { inc, exp, net: inc - exp - sav, simpleNet: inc - exp, sav }; }
+    function roundMoney(n) { return Math.round((parseFloat(n) || 0) * 100) / 100; }
+    function cleanPct(v, fallback) { const n = parseFloat(v); return Number.isFinite(n) && n >= 0 ? n : fallback; }
+    function cleanPctMap(map) {
+      const out = {};
+      Object.entries(map || {}).forEach(([k, v]) => { const n = parseFloat(v); if (k && Number.isFinite(n) && n >= 0) out[k] = n; });
+      return out;
+    }
+    function normalizeSavingsTargetSettings(raw = {}) {
+      raw = raw || {};
+      return {
+        monthlyPct: cleanPct(raw.monthlyPct !== undefined && raw.monthlyPct !== null ? raw.monthlyPct : raw.monthlyDefaultPct, SAVINGS_TARGET_DEFAULTS.monthlyPct),
+        yearlyPct: cleanPct(raw.yearlyPct !== undefined && raw.yearlyPct !== null ? raw.yearlyPct : raw.yearlyDefaultPct, SAVINGS_TARGET_DEFAULTS.yearlyPct),
+        monthlyOverrides: cleanPctMap(raw.monthlyOverrides || raw.monthlyPctByMonth || {}),
+        yearlyOverrides: cleanPctMap(raw.yearlyOverrides || raw.yearlyPctByYear || {})
+      };
+    }
+    function savingsTargetSettings() { S.savingsTargetSettings = normalizeSavingsTargetSettings(S.savingsTargetSettings); return S.savingsTargetSettings; }
+    function pctLabel(pct) { return (Math.round((parseFloat(pct) || 0) * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 }) + '%'; }
+    function savingsTargetPct(period, key) {
+      const cfg = savingsTargetSettings();
+      if (period === 'yearly') return Object.prototype.hasOwnProperty.call(cfg.yearlyOverrides, key) ? cfg.yearlyOverrides[key] : cfg.yearlyPct;
+      return Object.prototype.hasOwnProperty.call(cfg.monthlyOverrides, key) ? cfg.monthlyOverrides[key] : cfg.monthlyPct;
+    }
+    function savingsTargetIncome(period, key) {
+      if (period === 'yearly') {
+        return S.transactions.filter(t => t.type === 'income' && t.date && t.date.startsWith(key)).reduce((s, t) => s + t.amount, 0);
+      }
+      return mStats(key).inc;
+    }
+    function findManualSavingsBgt(period, key) {
+      if (period === 'yearly') return S.budgets.find(b => b.category === 'savings' && b.year === key && b.period === 'yearly');
+      return S.budgets.find(b => b.category === 'savings' && b.month === key && b.period === 'monthly');
+    }
+    function getSavingsBgt(period, key) {
+      const manual = findManualSavingsBgt(period, key);
+      const pct = savingsTargetPct(period, key);
+      const income = savingsTargetIncome(period, key);
+      const autoAmount = roundMoney(income * pct / 100);
+      if (manual) return { ...manual, targetSource: 'manual', percentage: pct, autoAmount, incomeBase: income };
+      return { id: '', category: 'savings', amount: autoAmount, period, month: period === 'monthly' ? key : undefined, year: period === 'yearly' ? key : undefined, targetSource: 'auto', percentage: pct, autoAmount, incomeBase: income };
+    }
+    function savingsProgressPct(saved, target) { return target > 0 ? Math.max(0, Math.min(100, (saved / target) * 100)) : 0; }
     function catSpendAll(m) { const map = {}; mTxs(m).filter(t => t.type === 'expense').forEach(t => { map[t.category] = (map[t.category] || 0) + t.amount; }); return Object.entries(map).map(([id, amount]) => ({ ...getCat('expense', id), id, amount })).sort((a, b) => b.amount - a.amount); }
     function catIncomeAll(m) { const map = {}; mTxs(m).filter(t => t.type === 'income').forEach(t => { map[t.category] = (map[t.category] || 0) + t.amount; }); return Object.entries(map).map(([id, amount]) => ({ ...getCat('income', id), id, amount })).sort((a, b) => b.amount - a.amount); }
     function loanTotal(l) { return l.amount + (l.extraEntries || []).reduce((s, e) => s + e.amount, 0); }
@@ -3845,7 +3971,6 @@
       return 'Unknown';
     }
     function curYear() { return S.month.slice(0, 4); }
-    function getSavingsBgt(period, key) { if (period === 'yearly') return S.budgets.find(b => b.category === 'savings' && b.year === key && b.period === 'yearly'); return S.budgets.find(b => b.category === 'savings' && b.month === key && b.period === 'monthly'); }
 
     // ============ SIDEBAR AUTO-CLOSE ============
     let _sbHoverTimer = null, _sbAutoTimer = null, _sbTimerInterval = null;
@@ -3938,10 +4063,14 @@
       for (let i = 11; i >= 0; i--) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); const ym = d.toISOString().slice(0, 7); const s = mStats(ym); months12.push({ ym, lbl: d.toLocaleDateString('en-US', { month: 'short' }), exp: s.exp, inc: s.inc, net: s.net }); }
       const hasData12 = months12.some(b => b.exp > 0 || b.inc > 0);
       const expCats = catSpendAll(S.month); const totalExp = expCats.reduce((s, c) => s + c.amount, 0);
-      const hasCatData = expCats.length > 0 && totalExp > 0;
+      const yrExpTxs = S.transactions.filter(t => t.type === 'expense' && t.date && t.date.startsWith(yr));
+      const yrExpTotal = yrExpTxs.reduce((s, t) => s + t.amount, 0);
+      const hasCatData = (expCats.length > 0 && totalExp > 0) || yrExpTotal > 0;
       const mSaved = savingsTotal('monthly', S.month);
       const ySaved = savingsTotal('yearly', yr);
-      const hasSavings = (mSavBgt && (mSaved > 0 || ms.net > 0)) || (ySav && (ySaved > 0 || yrStats(yr).simpleNet > 0));
+      const mSavPct = savingsProgressPct(mSaved, mSavBgt.amount);
+      const dashSavingsPeriod = (mSavBgt.amount > 0 || mSaved > 0) ? 'monthly' : 'yearly';
+      const hasSavings = (mSavBgt && (mSaved > 0 || mSavBgt.amount > 0)) || (ySav && (ySaved > 0 || ySav.amount > 0));
       // category trend: top 4 cats over last 6 months
       const top4cats = catSpendAll(S.month).slice(0, 4).map(c => c.id);
       const months6 = months12.slice(6);
@@ -3956,7 +4085,7 @@
         <button onclick="toggleBal()" style="background:rgba(255,255,255,.07);border:none;border-radius:8px;padding:5px 8px;cursor:pointer;color:var(--text2);display:flex;align-items:center;">${balHidden ? ico('eye', 15) : ico('eye_off', 15)}</button>
       </div>
       <div class="bal-amount" style="color:${balColor};">${balDisplay}</div>
-      <div class="bal-sub">${ys.sav > 0 ? 'Income - Expense - Savings target' : 'Yearly Income - Expense'}</div>
+      <div class="bal-sub">${ys.sav > 0 ? 'Income - Expense - Saved Amount' : 'Yearly Income - Expense'}</div>
       <div class="bal-row">
         <div class="bal-stat"><div class="bsl">Yr Income</div><div class="bsv c-green" style="font-size:12px;">${fmtInt(ys.inc)}</div></div>
         <div class="bal-stat"><div class="bsl">Yr Expense</div><div class="bsv c-red" style="font-size:12px;">${fmtInt(ys.exp)}</div></div>
@@ -3971,7 +4100,7 @@
         <div style="flex:1;background:var(--red-d);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Expense</div><div style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:var(--red);">${fmtInt(ms.exp)}</div></div>
         <div style="flex:1;background:rgba(255,255,255,.04);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">Net</div><div style="font-family:'Space Mono',monospace;font-size:14px;font-weight:700;color:${ms.net >= 0 ? 'var(--green)' : 'var(--red)'};">${fmtIntSigned(ms.net)}</div></div>
       </div>
-      ${mSavBgt ? `<div style="margin-top:10px;border-top:1px solid var(--borderl);padding-top:10px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;"><span>Monthly Savings Target</span><span style="color:var(--green);font-weight:700;">${fmtInt(mSavBgt.amount)}</span></div><div class="prog"><div class="prog-fill" style="width:${Math.min(100, (ms.net / mSavBgt.amount) * 100)}%;background:${ms.net >= mSavBgt.amount ? 'var(--green)' : 'var(--amber)'};"></div></div></div>` : ''}
+      ${mSavBgt ? `<div style="margin-top:10px;border-top:1px solid var(--borderl);padding-top:10px;"><div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:5px;"><span>Monthly Savings Target</span><span style="color:var(--green);font-weight:700;">${fmtInt(mSavBgt.amount)}</span></div><div class="prog"><div class="prog-fill" style="width:${mSavPct}%;background:${mSaved >= mSavBgt.amount && mSavBgt.amount > 0 ? 'var(--green)' : 'var(--amber)'};"></div></div></div>` : ''}
     </div>
   </div>
 
@@ -3993,18 +4122,18 @@
   <div class="section dash-grid-full" style="padding-top:16px;">
     <div class="sec-hdr"><div class="sec-title">Spending by Category</div></div>
     <div class="donut-grid">
-      <div class="card" id="donut-card-m" style="padding:16px;display:flex;flex-direction:column;justify-content:center;">
+      <div class="card donut-card" id="donut-card-m" style="padding:16px;display:flex;flex-direction:column;justify-content:center;">
         <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">${fmtMY(S.month)} — Monthly</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:auto 0;">
-          <div style="flex:0 0 120px;width:120px;"><canvas id="chart-donut" style="width:100%;display:block;"></canvas></div>
-          <div style="flex:1;min-width:130px;" id="donut-legend"></div>
+        <div class="donut-chart-row">
+          <div class="donut-chart-wrap"><canvas id="chart-donut"></canvas></div>
+          <div class="donut-legend" id="donut-legend"></div>
         </div>
       </div>
-      <div class="card" id="donut-card-y" style="padding:16px;display:flex;flex-direction:column;justify-content:center;">
+      <div class="card donut-card" id="donut-card-y" style="padding:16px;display:flex;flex-direction:column;justify-content:center;">
         <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;">${yr} — Yearly</div>
-        <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;margin:auto 0;">
-          <div style="flex:0 0 120px;width:120px;"><canvas id="chart-donut-yr" style="width:100%;display:block;"></canvas></div>
-          <div style="flex:1;min-width:130px;" id="donut-legend-yr"></div>
+        <div class="donut-chart-row">
+          <div class="donut-chart-wrap"><canvas id="chart-donut-yr"></canvas></div>
+          <div class="donut-legend" id="donut-legend-yr"></div>
         </div>
       </div>
     </div>
@@ -4015,13 +4144,13 @@
   <div class="section dash-grid-full" style="padding-top:16px;">
     <div class="gauge-grid">
       ${chartVis.savings && hasSavings ? `
-      <div class="card" style="padding:16px;">
-        <div class="sec-hdr" style="margin-bottom:8px;"><div class="sec-title">Savings Progress</div><span style="font-size:11px;color:var(--text3);">${mSavBgt ? fmtMY(S.month) : yr}</span></div>
+      <div class="card dash-gauge-card" style="padding:16px;">
+        <div class="sec-hdr" style="margin-bottom:8px;"><div class="sec-title">Savings Progress</div><span style="font-size:11px;color:var(--text3);">${dashSavingsPeriod === 'monthly' ? fmtMY(S.month) : yr}</span></div>
         <div id="savings-gauge-wrap" style="text-align:center;"></div>
         <div id="gauge-label" style="margin-top:4px;font-size:12px;color:var(--text3);text-align:center;"></div>
       </div>`: ``}
       ${chartVis.savings && (iOwe > 0 || owesMe > 0 || depPend > 0) ? `
-      <div class="card" style="padding:16px;">
+      <div class="card dash-gauge-card" style="padding:16px;">
         <div class="sec-hdr" style="margin-bottom:8px;"><div class="sec-title">Loan Overview</div><button class="see-all" onclick="go('loans')">See All</button></div>
         <div id="loan-gauge-wrap" style="text-align:center;"></div>
         <div id="loan-gauge-label" style="margin-top:4px;"></div>
@@ -4066,10 +4195,13 @@
       function drawDonut(canvasId, legendId, catsData, total) {
         const c = document.getElementById(canvasId); if (!c) return;
         destroyChart(canvasId);
-        if (total <= 0) return;
-        const usedCols = catsData.map((_, i) => COLS[i % COLS.length]);
-        _charts[canvasId] = new Chart(c, { type: 'doughnut', data: { labels: catsData.map(x => x.label), datasets: [{ data: catsData.map(x => x.amount), backgroundColor: usedCols, borderWidth: 2, borderColor: bgBorder, hoverOffset: 6 }] }, options: { responsive: true, cutout: '68%', plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(13,16,24,0.92)', titleColor: '#e8edf5', bodyColor: '#8892a4', callbacks: { label: ctx => `${ctx.label}: ${curSymbol()}${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw / total * 100).toFixed(1)}%)` } } } } });
         const leg = document.getElementById(legendId);
+        if (total <= 0) {
+          if (leg) leg.innerHTML = '<div style="font-size:11px;color:var(--text3);">No spending yet</div>';
+          return;
+        }
+        const usedCols = catsData.map((_, i) => COLS[i % COLS.length]);
+        _charts[canvasId] = new Chart(c, { type: 'doughnut', data: { labels: catsData.map(x => x.label), datasets: [{ data: catsData.map(x => x.amount), backgroundColor: usedCols, borderWidth: 2, borderColor: bgBorder, hoverOffset: 6 }] }, options: { responsive: true, maintainAspectRatio: false, cutout: '68%', plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(13,16,24,0.92)', titleColor: '#e8edf5', bodyColor: '#8892a4', callbacks: { label: ctx => `${ctx.label}: ${curSymbol()}${Math.round(ctx.raw).toLocaleString()} (${(ctx.raw / total * 100).toFixed(1)}%)` } } } } });
         if (leg) leg.innerHTML = catsData.map((x, i) => `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;"><span style="width:9px;height:9px;border-radius:3px;background:${usedCols[i]};flex-shrink:0;display:inline-block;"></span><span style="font-size:11px;color:var(--text2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${x.label}</span><span style="font-size:10px;font-family:'Space Mono',monospace;color:var(--text3);flex-shrink:0;">${curSymbol()}${Math.round(x.amount).toLocaleString('en-US')}</span></div>`).join('');
       }
       if (chartVis.donut) {
@@ -4083,8 +4215,8 @@
         const yrCats = Object.entries(yrMap).map(([id, amount]) => ({ ...getCat('expense', id), id, amount })).sort((a, b) => b.amount - a.amount);
         const yrTotal = yrCats.reduce((s, c) => s + c.amount, 0);
         drawDonut('chart-donut-yr', 'donut-legend-yr', yrCats, yrTotal);
-        // sync card heights so monthly matches yearly
-        setTimeout(() => {
+        // sync card heights on wider screens so monthly matches yearly
+        if (window.innerWidth >= 600) setTimeout(() => {
           const d1 = document.getElementById('donut-card-m'), d2 = document.getElementById('donut-card-y');
           if (d1 && d2) {
             d1.style.minHeight = ''; d2.style.minHeight = ''; // reset first
@@ -4125,14 +4257,15 @@
       wrap.innerHTML = '';
       const mSavBgt = getSavingsBgt('monthly', S.month);
       const ySav = getSavingsBgt('yearly', curYear());
-      const bgt = mSavBgt || ySav;
-      const saved = mSavBgt ? savingsTotal('monthly', S.month) : savingsTotal('yearly', curYear());
-      const net = saved > 0 ? saved : (mSavBgt ? mStats(S.month).net : yrStats(curYear()).simpleNet);
+      const mSaved = savingsTotal('monthly', S.month);
+      const useMonthly = mSavBgt && (mSavBgt.amount > 0 || mSaved > 0);
+      const bgt = useMonthly ? mSavBgt : ySav;
+      const saved = useMonthly ? mSaved : savingsTotal('yearly', curYear());
       if (!bgt || bgt.amount <= 0) {
         wrap.innerHTML = '<div style="padding:30px 0;font-size:12px;color:var(--text3);">No savings goal set</div>';
         return;
       }
-      const rawPct = Math.max(0, Math.min(100, (net / bgt.amount) * 100));
+      const rawPct = savingsProgressPct(saved, bgt.amount);
       const dur = 1.2; // Animation duration
       const pct = rawPct || 0.1; // Ensure slight animation even at 0
 
@@ -4140,7 +4273,8 @@
       const trackCol = 'rgba(255,255,255,0.06)';
       const trackShadowStr = isDark ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.5))' : 'drop-shadow(0 4px 6px rgba(0,0,0,0.15))';
 
-      const VW = 260, VH = 150, cx = 130, cy = 120, R = 98, sw = 18;
+      const compact = window.innerWidth <= 600;
+      const VW = compact ? 226 : 260, VH = compact ? 132 : 150, cx = VW / 2, cy = compact ? 106 : 120, R = compact ? 84 : 98, sw = compact ? 16 : 18;
 
       let stop1, stop2;
       if (pct >= 80) { stop1 = '#84cc16'; stop2 = '#0ce97f'; }
@@ -4183,7 +4317,7 @@
   </svg>`;
 
       const lbl = document.getElementById('gauge-label');
-      if (lbl) lbl.innerHTML = `<span style="font-family:'Space Mono',monospace;font-size:26px;font-weight:800;color:${stop2};letter-spacing:-1px;">${rawPct.toFixed(0)}%</span><br><span style="font-size:11px;color:var(--text3);margin-top:4px;display:inline-block;text-transform:uppercase;letter-spacing:1px;font-weight:700;">of goal (${fmt(bgt.amount)})</span>`;
+      if (lbl) lbl.innerHTML = `<span style="font-family:'Space Mono',monospace;font-size:${compact ? 22 : 26}px;font-weight:800;color:${stop2};letter-spacing:0;">${rawPct.toFixed(0)}%</span><br><span style="font-size:11px;color:var(--text3);margin-top:4px;display:inline-block;text-transform:uppercase;letter-spacing:1px;font-weight:700;">saved of goal (${fmt(bgt.amount)})</span>`;
     }
 
     // ============ LOAN GAUGE (Smart, Animated, Realistic) ============
@@ -4201,8 +4335,9 @@
         return;
       }
 
-      const VW = 240, VH = 185, cx = 120, cy = 110;
-      const R1 = 82, R2 = 64, R3 = 46, sw = 14;
+      const compact = window.innerWidth <= 600;
+      const VW = compact ? 218 : 240, VH = compact ? 156 : 185, cx = VW / 2, cy = compact ? 92 : 110;
+      const R1 = compact ? 70 : 82, R2 = compact ? 54 : 64, R3 = compact ? 38 : 46, sw = compact ? 12 : 14;
       const startDeg = 135, totalDeg = 270;
       const maxVal = Math.max(iOwe, owesMe, depPend, 1);
       const dur = 1.3;
@@ -4253,7 +4388,7 @@
       lines.push(`<circle cx="${cx}" cy="${cy}" r="12" fill="rgba(255,255,255,0.08)" filter="drop-shadow(0 2px 4px rgba(0,0,0,0.3))"/>`);
       lines.push(`<circle cx="${cx}" cy="${cy}" r="6" fill="#8892a4"/>`);
 
-      wrap.innerHTML = `<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;margin:0 auto;max-height:165px;overflow:visible;">${lines.join('')}</svg>`;
+      wrap.innerHTML = `<svg viewBox="0 0 ${VW} ${VH}" width="100%" style="display:block;margin:0 auto;max-height:${compact ? 134 : 165}px;overflow:visible;">${lines.join('')}</svg>`;
 
       if (lbl) lbl.innerHTML = `
     <div style="display:flex;justify-content:center;gap:16px;flex-wrap:wrap;margin-top:2px;">
@@ -4340,7 +4475,6 @@
       const mOb = S.budgets.find(b => b.category === 'overall' && b.month === S.month && b.period !== 'yearly');
       const yOb = S.budgets.find(b => b.category === 'overall' && b.year === yr && b.period === 'yearly');
       const mSav = getSavingsBgt('monthly', S.month); const ySav = getSavingsBgt('yearly', yr);
-      const yrNet = yrInc - yrExp;
       function bCard(bgt, spent, label, ac, editFn, gc) {
         const pct = Math.min(100, (spent / bgt.amount) * 100); const col = pct > 80 ? 'var(--red)' : pct > 60 ? 'var(--amber)' : 'var(--green)';
         return `<div style="${themeCardBg('budget')}border-radius:18px;padding:18px;margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;"><div style="display:flex;align-items:center;gap:6px;">${ico('barChart', 16, `var(--${gc})`)}<div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;font-weight:700;color:var(--${gc});">${label}</div></div><div style="display:flex;gap:6px;">${editFn ? `<button class="sm-btn" onclick="${editFn}" style="font-size:10px;padding:4px 9px;">${EDIT_SVG}</button>` : ''}<button class="del-btn" style="width:24px;height:24px;" onclick="delBgt('${bgt.id}')">${TRASH_SVG}</button></div></div><div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:700;">${fmt(bgt.amount)}</div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin:9px 0 5px;"><span>Spent ${fmt(spent)}</span><span style="color:${col};font-weight:700;">${pct.toFixed(1)}% used</span></div><div class="prog" style="height:8px;"><div class="prog-fill" style="width:${pct}%;background:${col};"></div></div><div style="font-size:12px;margin-top:7px;font-weight:700;color:${col};">${pct >= 100 ? 'Exceeded!' : pct > 80 ? 'Approaching limit' : 'OK - ' + fmt(bgt.amount - spent) + ' remaining'}</div></div>`;
@@ -4348,16 +4482,18 @@
       function eBudgetCard(label, gc, ic, onClick) {
         return `<div style="${themeCardBg('empty')}border-radius:18px;padding:18px;margin-bottom:12px;"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">${ico('barChart', 20, `var(--${ic})`)}<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--${ic});">${label}</div></div><div style="font-size:13px;color:var(--text3);margin-bottom:10px;">No budget set yet.</div><button class="sm-btn" onclick="${onClick}" style="width:100%;">Set</button></div>`;
       }
-      function savCard(bgt, net, label, ac, editFn, sourceLabel = 'Actual net') {
-        const pct = Math.max(0, Math.min(100, (net / bgt.amount) * 100)); const col = net >= bgt.amount ? 'var(--green)' : pct > 50 ? 'var(--amber)' : 'var(--red)';
-        return `<div style="${themeCardBg('savings')}border-radius:18px;padding:18px;margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;"><div style="display:flex;align-items:center;gap:6px;">${ico('savings', 16, '#0ce97f')}<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">${label}</div></div><div style="display:flex;gap:6px;">${editFn ? `<button class="sm-btn" onclick="${editFn}" style="font-size:10px;padding:4px 9px;">${EDIT_SVG}</button>` : ''}<button class="del-btn" style="width:24px;height:24px;" onclick="delBgt('${bgt.id}')">${TRASH_SVG}</button></div></div><div style="display:flex;align-items:baseline;gap:8px;"><div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:700;">${fmt(bgt.amount)}</div><div style="font-size:12px;color:var(--text3);">target</div></div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin:9px 0 5px;"><span>${sourceLabel} ${fmt(net)}</span><span style="color:${col};font-weight:700;">${pct.toFixed(0)}%</span></div><div class="prog" style="height:8px;"><div class="prog-fill" style="width:${pct}%;background:${col};"></div></div><div style="font-size:12px;margin-top:7px;font-weight:700;color:${col};">${net >= bgt.amount ? 'Savings target met!' : fmt(bgt.amount - Math.max(0, net)) + ' more to save'}</div></div>`;
+      function savCard(bgt, saved, label, ac, editFn, sourceLabel = 'Saved') {
+        const pct = savingsProgressPct(saved, bgt.amount); const col = saved >= bgt.amount && bgt.amount > 0 ? 'var(--green)' : pct > 50 ? 'var(--amber)' : 'var(--red)';
+        const targetMeta = bgt.targetSource === 'manual' ? `Manual target. Auto would be ${fmt(bgt.autoAmount)} (${pctLabel(bgt.percentage)} of ${fmt(bgt.incomeBase)})` : `${pctLabel(bgt.percentage)} of income (${fmt(bgt.incomeBase)})`;
+        return `<div style="${themeCardBg('savings')}border-radius:18px;padding:18px;margin-bottom:12px;"><div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px;"><div style="display:flex;align-items:center;gap:6px;">${ico('savings', 16, '#0ce97f')}<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">${label}</div></div><div style="display:flex;gap:6px;">${editFn ? `<button class="sm-btn" onclick="${editFn}" style="font-size:10px;padding:4px 9px;">${EDIT_SVG}</button>` : ''}${bgt.id ? `<button class="del-btn" style="width:24px;height:24px;" onclick="delBgt('${bgt.id}')">${TRASH_SVG}</button>` : ''}</div></div><div style="display:flex;align-items:baseline;gap:8px;"><div style="font-family:'Space Mono',monospace;font-size:26px;font-weight:700;">${fmt(bgt.amount)}</div><div style="font-size:12px;color:var(--text3);">target</div></div><div style="font-size:11px;color:var(--text3);margin-top:4px;">${targetMeta}</div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin:9px 0 5px;"><span>${sourceLabel} ${fmt(saved)}</span><span style="color:${col};font-weight:700;">${pct.toFixed(0)}%</span></div><div class="prog" style="height:8px;"><div class="prog-fill" style="width:${pct}%;background:${col};"></div></div><div style="font-size:12px;margin-top:7px;font-weight:700;color:${col};">${saved >= bgt.amount && bgt.amount > 0 ? 'Savings target met!' : fmt(Math.max(0, bgt.amount - saved)) + ' more to save'}</div></div>`;
       }
       const mHTML = mOb ? bCard(mOb, st.exp, `Monthly Budget - ${fmtMY(S.month)}`, '255,176,32', `openEditBgt('${mOb.id}')`, 'amber') : eBudgetCard(`Monthly Budget - ${fmtMY(S.month)}`, 'amber', 'amber', `openAddBudgetModal('monthly')`);
       const yHTML = yOb ? bCard(yOb, yrExp, `Yearly Budget - ${yr}`, '77,159,255', `openEditBgt('${yOb.id}')`, 'blue') : eBudgetCard(`Yearly Budget - ${yr}`, 'blue', 'blue', `openAddBudgetModal('yearly')`);
       const mSaved = savingsTotal('monthly', S.month);
       const ySaved = savingsTotal('yearly', yr);
-      const mSavHTML = mSav ? savCard(mSav, mSaved > 0 ? mSaved : st.net, `Monthly Savings Target - ${fmtMY(S.month)}`, '12,233,127', `openEditBgt('${mSav.id}')`, mSaved > 0 ? 'Saved' : 'Actual net') : `<div style="padding:10px 0;"><div style="font-size:12px;color:var(--text3);margin-bottom:10px;">No monthly savings target set.</div><button class="sm-btn" onclick="openAddSavingsModal('monthly')" style="width:100%;padding:9px 12px;">+ Set Monthly Savings Target</button></div>`;
-      const ySavHTML = ySav ? savCard(ySav, ySaved > 0 ? ySaved : yrNet, `Yearly Savings Target - ${yr}`, '12,233,127', `openEditBgt('${ySav.id}')`, ySaved > 0 ? 'Saved' : 'Actual net') : `<div style="padding:10px 0;"><div style="font-size:12px;color:var(--text3);margin-bottom:10px;">No yearly savings target set.</div><button class="sm-btn" onclick="openAddSavingsModal('yearly')" style="width:100%;padding:9px 12px;">+ Set Yearly Savings Target</button></div>`;
+      const yrAfterSaved = yrInc - yrExp - ySaved;
+      const mSavHTML = savCard(mSav, mSaved, `Monthly Savings Target - ${fmtMY(S.month)}`, '12,233,127', mSav.id ? `openEditBgt('${mSav.id}')` : `openAddSavingsModal('monthly')`);
+      const ySavHTML = savCard(ySav, ySaved, `Yearly Savings Target - ${yr}`, '12,233,127', ySav.id ? `openEditBgt('${ySav.id}')` : `openAddSavingsModal('yearly')`);
       const catItems = getExpCats().map(c => {
         const bgt = S.budgets.find(b => b.category === c.id && b.month === S.month && b.period !== 'yearly');
         const spent = mTxs(S.month).filter(t => t.type === 'expense' && t.category === c.id).reduce((s, t) => s + t.amount, 0);
@@ -4366,23 +4502,29 @@
         return `<div class="bgt-item"><div class="bgt-hdr"><div class="bgt-cat"><div style="width:28px;height:28px;border-radius:8px;background:var(--red-d);display:flex;align-items:center;justify-content:center;color:#ff3d5a;">${catIco(c.id, 14)}</div><span>${c.label}</span></div><div style="display:flex;align-items:center;gap:8px;"><div class="bgt-amts">${bgt ? `${fmt(spent)} / ${fmt(bgt.amount)}` : `${fmt(spent)}`}</div>${bgt ? `<button class="sm-btn" style="padding:3px 8px;font-size:10px;" onclick="openEditBgt('${bgt.id}')">${EDIT_SVG}</button><button class="del-btn" style="width:22px;height:22px;" onclick="delBgt('${bgt.id}')">${TRASH_SVG}</button>` : `<button class="sm-btn" style="padding:3px 8px;font-size:10px;" onclick="openAddBgtCat('${c.id}')">Set</button>`}</div></div>${bgt ? `<div class="prog"><div class="prog-fill" style="width:${pct}%;background:${col};"></div></div>${pct > 80 ? `<div style="font-size:11px;color:${col};margin-top:4px;font-weight:700;">${pct >= 100 ? 'Exceeded!' : pct.toFixed(0) + '% used'}</div>` : ''}` : ''}
     </div>`;
       }).filter(Boolean).join('');
-      const mSavRows = savingsEntries().filter(h => (h.date || h.at || '').startsWith(S.month)).slice(-4).reverse().map(h => `<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--borderl);font-size:12px;"><span style="color:var(--text3);">${fmtD(h.date || h.at)}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(h.amount)}</span></div>`).join('');
-      const ySavRows = savingsEntries().filter(h => (h.date || h.at || '').startsWith(yr)).slice(-5).reverse().map(h => `<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--borderl);font-size:12px;"><span style="color:var(--text3);">${fmtD(h.date || h.at)}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(h.amount)}</span></div>`).join('');
+      function savedRows(period, key, limit) {
+        const rows = savingsEntries().filter(h => (h.date || h.at || '').startsWith(key)).sort((a, b) => (b.date || b.at || '').localeCompare(a.date || a.at || '')).slice(0, limit);
+        if (!rows.length) return `<div style="font-size:12px;color:var(--text3);padding:8px 0;border-top:1px solid var(--borderl);">No saved amount recorded yet.</div>`;
+        return rows.map(h => `<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--borderl);font-size:12px;"><span style="color:var(--text3);">${fmtD(h.date || h.at)}${h.source === 'budget_manual' ? ' · Manual' : h.source === 'cash_in' ? ' · Cash In' : ''}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(h.amount)}</span></div>`).join('');
+      }
+      const mSavRows = savedRows('monthly', S.month, 6);
+      const ySavRows = savedRows('yearly', yr, 8);
       return `<div class="section" style="padding-top:16px;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;"><div><div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Budget &amp; Savings</div><div style="font-weight:800;font-size:16px;">${fmtMY(S.month)} - ${yr}</div></div><button class="sm-btn" onclick="openAddBgt()">+ Set Budget</button></div>
     <div class="bgt-tab-wrap"><button id="btab-m" class="bgt-tab-btn active" onclick="showBgtTab('monthly')">Monthly</button><button id="btab-y" class="bgt-tab-btn" onclick="showBgtTab('yearly')">Yearly</button></div>
     <div id="bgt-monthly">
       ${mHTML}
-      <div style="${themeCardBg('savingsWrap')}border-radius:16px;padding:14px;margin-bottom:12px;"><div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;">${ico('savings', 14, 'var(--green)')} Monthly Savings</div>${mSavHTML}${mSaved > 0 ? `<div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:4px 0 2px;">Recent Saved</div>${mSavRows}` : ''}</div>
+      <div style="${themeCardBg('savingsWrap')}border-radius:16px;padding:14px;margin-bottom:12px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;"><div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700;display:flex;align-items:center;gap:6px;">${ico('savings', 14, 'var(--green)')} Monthly Savings</div><button class="sm-btn" onclick="openAddSavedAmountModal('monthly')" style="padding:6px 10px;font-size:10px;">+ Saved</button></div>${mSavHTML}<div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:4px 0 2px;">Recent Saved</div>${mSavRows}</div>
       <div class="card">${catItems || `<div class="empty" style="padding:28px;"><div style="display:flex;justify-content:center;margin-bottom:10px;opacity:.4;">${ico('empty_budget', 36)}</div><div class="empty-t">No category budgets</div><div class="empty-s">Tap "+ Set Budget" to add one</div></div>`}</div>
     </div>
     <div id="bgt-yearly" style="display:none;">
       ${yHTML}
-      <div style="${themeCardBg('savingsWrap')}border-radius:16px;padding:14px;margin-bottom:12px;"><div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:6px;">${ico('savings', 14, 'var(--green)')} Yearly Savings</div>${ySavHTML}${ySaved > 0 ? `<div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:4px 0 2px;">Recent Saved</div>${ySavRows}` : ''}</div>
+      <div style="${themeCardBg('savingsWrap')}border-radius:16px;padding:14px;margin-bottom:12px;"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;"><div style="font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:1px;font-weight:700;display:flex;align-items:center;gap:6px;">${ico('savings', 14, 'var(--green)')} Yearly Savings</div><button class="sm-btn" onclick="openAddSavedAmountModal('yearly')" style="padding:6px 10px;font-size:10px;">+ Saved</button></div>${ySavHTML}<div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin:4px 0 2px;">Recent Saved</div>${ySavRows}</div>
       <div class="card" style="padding:14px 16px;">
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;"><span style="color:var(--text3);">Total Income ${yr}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(yrInc)}</span></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;"><span style="color:var(--text3);">Total Expense ${yr}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--red);">${fmt(yrExp)}</span></div>
-        <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px solid var(--borderl);padding-top:10px;"><span style="color:var(--text3);">Net Savings ${yr}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:${yrNet >= 0 ? 'var(--green)' : 'var(--red)'};">${fmtSigned(yrNet)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:10px;"><span style="color:var(--text3);">Actually Saved ${yr}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:var(--green);">${fmt(ySaved)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;border-top:1px solid var(--borderl);padding-top:10px;"><span style="color:var(--text3);">Balance After Saved ${yr}</span><span style="font-family:'Space Mono',monospace;font-weight:700;color:${yrAfterSaved >= 0 ? 'var(--green)' : 'var(--red)'};">${fmtSigned(yrAfterSaved)}</span></div>
       </div>
     </div>
   </div>`;
@@ -4662,6 +4804,8 @@
           : `<div class="profile-avatar-wrap auth-avatar" onclick="document.getElementById('avatar-upload').click()" style="width:52px;height:52px;font-size:20px;">${initials}<div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`;
         const remNotif = _remindersEnabled ? 'On' : 'Off';
         const remColor = _remindersEnabled ? 'var(--green)' : 'var(--text3)';
+        const stCfg = savingsTargetSettings();
+        const savingsTargetSummary = `Monthly ${pctLabel(savingsTargetPct('monthly', S.month))} · Yearly ${pctLabel(savingsTargetPct('yearly', curYear()))}`;
         openModal(`<input type="file" id="avatar-upload" accept="image/*" onchange="handleProfilePhotoSelect(this)">
     <div class="modal-title" style="margin-bottom:14px;">Settings</div>
 
@@ -4716,6 +4860,16 @@
       </div>
     </div>
 
+    <!-- SAVINGS TARGETS -->
+    <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">Savings Targets</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
+      <div onclick="openSavingsTargetSettings()" style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'" onmouseout="this.style.background='transparent'">
+        <div style="width:34px;height:34px;border-radius:10px;background:var(--green-d);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${ico('savings', 16, 'var(--green)')}</div>
+        <div style="flex:1;"><div style="font-size:13px;font-weight:700;">Savings Target Settings</div><div style="font-size:11px;color:var(--text3);margin-top:1px;">${savingsTargetSummary}; defaults ${pctLabel(stCfg.monthlyPct)} / ${pctLabel(stCfg.yearlyPct)}</div></div>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+
     <!-- APPEARANCE + CHARTS -->
     <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.1px;margin-bottom:8px;">Appearance</div>
     <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;">
@@ -4743,7 +4897,7 @@
           <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--green-d),var(--blue-d));border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;color:var(--green);flex-shrink:0;">n</div>
           <div>
             <div style="font-size:14px;font-weight:800;">nTransactions</div>
-            <div style="font-size:11px;color:var(--text3);margin-top:1px;">Personal Finance Tracker · v3.2</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:1px;">Personal Finance Tracker · v4.2</div>
           </div>
         </div>
       </div>
@@ -4804,6 +4958,54 @@
       save();
       renderMain();
       openSyncModal();
+    }
+    function openSavingsTargetSettings() {
+      const cfg = savingsTargetSettings();
+      const monthKey = S.month;
+      const yearKey = curYear();
+      const mTarget = getSavingsBgt('monthly', monthKey);
+      const yTarget = getSavingsBgt('yearly', yearKey);
+      const mOverride = cfg.monthlyOverrides[monthKey];
+      const yOverride = cfg.yearlyOverrides[yearKey];
+      openModal(`<div class="modal-title">Savings Target Settings</div>
+  <div style="background:var(--green-d);border:1px solid rgba(12,233,127,.22);border-radius:12px;padding:12px 14px;margin-bottom:14px;color:var(--green);font-size:12px;line-height:1.55;">Targets are calculated from income percentages unless you set a direct target amount from Budget.</div>
+  <div class="fg"><label class="fl">Default Monthly Target %</label><input type="number" class="fi" id="st-monthly-default" min="0" step="0.1" value="${cfg.monthlyPct}"><div style="font-size:11px;color:var(--text3);margin-top:6px;">Default: 5% of monthly income.</div></div>
+  <div class="fg"><label class="fl">Month-Specific %</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><input type="month" class="fi" id="st-month-key" value="${monthKey}"><input type="number" class="fi" id="st-month-pct" min="0" step="0.1" value="${mOverride !== undefined ? mOverride : ''}" placeholder="Use default"></div><div style="font-size:11px;color:var(--text3);margin-top:6px;">${fmtMY(monthKey)} currently uses ${pctLabel(savingsTargetPct('monthly', monthKey))}: ${fmt(mTarget.incomeBase)} income = ${fmt(mTarget.autoAmount)} auto target.</div></div>
+  <div class="fg"><label class="fl">Default Yearly Target %</label><input type="number" class="fi" id="st-yearly-default" min="0" step="0.1" value="${cfg.yearlyPct}"><div style="font-size:11px;color:var(--text3);margin-top:6px;">Default: 2% of yearly income.</div></div>
+  <div class="fg"><label class="fl">Year-Specific %</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"><input type="number" class="fi" id="st-year-key" min="1900" max="2999" step="1" value="${yearKey}"><input type="number" class="fi" id="st-year-pct" min="0" step="0.1" value="${yOverride !== undefined ? yOverride : ''}" placeholder="Use default"></div><div style="font-size:11px;color:var(--text3);margin-top:6px;">${yearKey} currently uses ${pctLabel(savingsTargetPct('yearly', yearKey))}: ${fmt(yTarget.incomeBase)} income = ${fmt(yTarget.autoAmount)} auto target.</div></div>
+  <button class="btn btn-p" onclick="saveSavingsTargetSettings()">Save Target Settings</button>
+  <button class="btn btn-s" onclick="openSyncModal()" style="margin-top:8px;">Back</button>`);
+    }
+    function saveSavingsTargetSettings() {
+      const cfg = savingsTargetSettings();
+      const monthlyDefault = parseFloat(document.getElementById('st-monthly-default')?.value);
+      const yearlyDefault = parseFloat(document.getElementById('st-yearly-default')?.value);
+      if (!Number.isFinite(monthlyDefault) || monthlyDefault < 0) return alert('Enter a valid monthly percentage.');
+      if (!Number.isFinite(yearlyDefault) || yearlyDefault < 0) return alert('Enter a valid yearly percentage.');
+      cfg.monthlyPct = monthlyDefault;
+      cfg.yearlyPct = yearlyDefault;
+      const monthKey = document.getElementById('st-month-key')?.value || S.month;
+      const monthPctRaw = document.getElementById('st-month-pct')?.value;
+      if (monthKey) {
+        if (monthPctRaw === '') delete cfg.monthlyOverrides[monthKey];
+        else {
+          const monthPct = parseFloat(monthPctRaw);
+          if (!Number.isFinite(monthPct) || monthPct < 0) return alert('Enter a valid month-specific percentage.');
+          cfg.monthlyOverrides[monthKey] = monthPct;
+        }
+      }
+      const yearKey = String(document.getElementById('st-year-key')?.value || curYear()).slice(0, 4);
+      const yearPctRaw = document.getElementById('st-year-pct')?.value;
+      if (yearKey) {
+        if (yearPctRaw === '') delete cfg.yearlyOverrides[yearKey];
+        else {
+          const yearPct = parseFloat(yearPctRaw);
+          if (!Number.isFinite(yearPct) || yearPct < 0) return alert('Enter a valid year-specific percentage.');
+          cfg.yearlyOverrides[yearKey] = yearPct;
+        }
+      }
+      S.savingsTargetSettings = normalizeSavingsTargetSettings(cfg);
+      save(); closeModal(); renderMain();
     }
     function promptCurrencySetup() {
       if (!_currencySetupNeeded) return;
@@ -5084,9 +5286,10 @@
         return period === 'yearly' ? d.startsWith(key) : d.startsWith(key);
       }).reduce((s, h) => s + (parseFloat(h.amount) || 0), 0);
     }
-    function addSavingsDeposit(amount, txId) {
+    function addSavingsDeposit(amount, txId = '', source = 'cash_in', date = todayDT(), note = '') {
       if (!S.savingsHistory) S.savingsHistory = [];
-      S.savingsHistory.push({ id: uid(), type: 'deposit', source: 'cash_in', txId, amount, date: todayDT(), at: new Date().toISOString() });
+      const dt = (date || todayDT()).length === 10 ? date + 'T00:00' : (date || todayDT()).slice(0, 16);
+      S.savingsHistory.push({ id: uid(), type: 'deposit', source, txId: txId || '', amount, date: dt, note: note || '', at: new Date().toISOString() });
     }
     function openCashInSavingsModal(txId) {
       const tx = S.transactions.find(t => t.id === txId);
@@ -5096,7 +5299,7 @@
     Cash In saved: <b>${fmt(tx.amount)}</b>. Choose how much of this amount should go into Savings.
   </div>
   <div class="fg"><label class="fl">Savings Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="cashin-save-amt" placeholder="0.00" min="0" max="${tx.amount}" step="0.01"></div></div>
-  <div style="font-size:11px;color:var(--text3);margin:-4px 0 14px;">This creates a Savings entry with the current date and time.</div>
+  <div style="font-size:11px;color:var(--text3);margin:-4px 0 14px;">This creates a Savings entry with the Cash In date and time.</div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
     <button class="btn btn-p" onclick="submitCashInSavings('${txId}')" style="margin:0;">Add to Savings</button>
     <button class="btn btn-s" onclick="skipCashInSavings()" style="margin:0;">Skip</button>
@@ -5108,10 +5311,29 @@
       if (!tx) return skipCashInSavings();
       if (!amt || amt <= 0) return alert('Enter a valid savings amount, or tap Skip.');
       if (amt > tx.amount) return alert('Savings amount cannot be more than the Cash In amount.');
-      addSavingsDeposit(amt, txId);
+      addSavingsDeposit(amt, txId, 'cash_in', tx.date || todayDT());
       save(); closeModal(); renderMain();
     }
     function skipCashInSavings() { closeModal(); renderMain(); }
+    function openAddSavedAmountModal(period = 'monthly') {
+      const label = period === 'yearly' ? `Year ${curYear()}` : fmtMY(S.month);
+      openModal(`<div class="modal-title">Add Saved Amount</div>
+  <div style="background:var(--green-d);border:1px solid rgba(12,233,127,.22);border-radius:12px;padding:12px 14px;margin-bottom:14px;color:var(--green);font-size:12px;line-height:1.55;">Add money you actually saved. This affects Savings progress and yearly balance.</div>
+  <div class="fg"><label class="fl">Amount Saved - ${label}</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="manual-save-amt" placeholder="0.00" min="0" step="0.01"></div></div>
+  <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="manual-save-dt" value="${todayDT()}"></div>
+  <div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="manual-save-note" placeholder="e.g. moved to savings account"></div>
+  <button class="btn btn-p" onclick="submitManualSavingsDeposit('${period}')">Add Saved Amount</button>
+  <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+    }
+    function submitManualSavingsDeposit(period = 'monthly') {
+      const amt = parseFloat(document.getElementById('manual-save-amt')?.value || 0);
+      const dt = document.getElementById('manual-save-dt')?.value || todayDT();
+      const note = document.getElementById('manual-save-note')?.value.trim() || '';
+      if (!amt || amt <= 0) return alert('Enter a valid saved amount.');
+      if (!dt) return alert('Select a date and time.');
+      addSavingsDeposit(amt, '', 'budget_manual', dt, note);
+      save(); closeModal(); renderMain(); setTimeout(() => showBgtTab(period), 0);
+    }
     function showTxD(id) {
       const t = S.transactions.find(x => x.id === id); if (!t) return;
       let icon, label, ac, pfx;
@@ -5333,7 +5555,13 @@
       openModal(`<div class="modal-title">Set Budget / Savings</div><div class="fg"><label class="fl">Type</label><select class="fi" id="b-type" onchange="bgtTypeChanged()"><option value="monthly_overall">Monthly Overall Budget</option><option value="yearly_overall">Yearly Overall Budget</option><option value="monthly_savings">Monthly Savings Target</option><option value="yearly_savings">Yearly Savings Target</option><option value="category" selected>Category Budget (Monthly)</option></select></div><div class="fg" id="b-cat-wrap"><label class="fl">Category</label><select class="fi" id="b-cat">${getExpCats().map(c => `<option value="${c.id}">${c.label}</option>`).join('')}</select></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><div id="b-hint" style="font-size:12px;color:var(--text3);margin-bottom:14px;">Applies to ${fmtMY(S.month)}</div><button class="btn btn-p" onclick="submitBgt()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
     }
     function openAddBudgetModal(period) { openModal(`<div class="modal-title">Set ${period === 'monthly' ? 'Monthly' : 'Yearly'} Budget</div><div class="fg"><label class="fl">Amount - ${period === 'monthly' ? fmtMY(S.month) : curYear()}</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitBudgetOnly('${period}')">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`); }
-    function openAddSavingsModal(period) { openModal(`<div class="modal-title">Set ${period === 'monthly' ? 'Monthly' : 'Yearly'} Savings Target</div><div class="fg"><label class="fl">Target Amount - ${period === 'monthly' ? fmtMY(S.month) : curYear()}</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitSavingsOnly('${period}')">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`); }
+    function openAddSavingsModal(period) {
+      const key = period === 'monthly' ? S.month : curYear();
+      const target = getSavingsBgt(period, key);
+      const label = period === 'monthly' ? fmtMY(S.month) : curYear();
+      const clearBtn = target.id ? `<button class="btn btn-s" onclick="clearSavingsAmountOverride('${period}')" style="margin-top:8px;">Use Percentage Target Again</button>` : '';
+      openModal(`<div class="modal-title">Set ${period === 'monthly' ? 'Monthly' : 'Yearly'} Savings Target</div><div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:11px 13px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.55;">Percentage target: ${pctLabel(target.percentage)} of ${fmt(target.incomeBase)} = <b style="color:var(--green);">${fmt(target.autoAmount)}</b>. Saving a value here creates a direct amount target for ${label}.</div><div class="fg"><label class="fl">Target Amount - ${label}</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0" step="0.01" value="${target.amount || ''}"></div></div><button class="btn btn-p" onclick="submitSavingsOnly('${period}')">Save Amount Target</button>${clearBtn}<button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+    }
     function openAddBgtCat(catId) { openModal(`<div class="modal-title">Set Category Budget</div><div class="fg"><label class="fl">Category</label><select class="fi" id="b-cat">${getExpCats().map(c => `<option value="${c.id}" ${c.id === catId ? 'selected' : ''}>${c.label}</option>`).join('')}</select></div><div class="fg"><label class="fl">Amount - ${fmtMY(S.month)}</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="b-amt" placeholder="0.00" min="0"></div></div><button class="btn btn-p" onclick="submitBgtCat()">Save</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`); }
     function openEditBgt(bgtId) {
       const b = S.budgets.find(x => x.id === bgtId); if (!b) return;
@@ -5369,7 +5597,12 @@
       if (isNaN(result) || !isFinite(result) || result < 0) return alert('Invalid result.'); mainEl.value = parseFloat(result.toFixed(2)); valEl.value = '';
     }
     function submitBudgetOnly(period) { const amt = parseFloat(document.getElementById('b-amt').value); if (!amt || amt <= 0) return alert('Enter a valid amount.'); const yr = curYear(); if (period === 'monthly') { const idx = S.budgets.findIndex(b => b.category === 'overall' && b.month === S.month && b.period !== 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'overall', amount: amt, month: S.month, period: 'monthly' }); } else { const idx = S.budgets.findIndex(b => b.category === 'overall' && b.year === yr && b.period === 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'overall', amount: amt, year: yr, period: 'yearly' }); } save(); closeModal(); renderMain(); }
-    function submitSavingsOnly(period) { const amt = parseFloat(document.getElementById('b-amt').value); if (!amt || amt <= 0) return alert('Enter a valid amount.'); const yr = curYear(); if (period === 'monthly') { const idx = S.budgets.findIndex(b => b.category === 'savings' && b.month === S.month && b.period === 'monthly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'savings', amount: amt, month: S.month, period: 'monthly' }); } else { const idx = S.budgets.findIndex(b => b.category === 'savings' && b.year === yr && b.period === 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'savings', amount: amt, year: yr, period: 'yearly' }); } save(); closeModal(); renderMain(); }
+    function submitSavingsOnly(period) { const amt = parseFloat(document.getElementById('b-amt').value); if (!amt || amt <= 0) return alert('Enter a valid amount.'); const yr = curYear(); if (period === 'monthly') { const idx = S.budgets.findIndex(b => b.category === 'savings' && b.month === S.month && b.period === 'monthly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'savings', amount: amt, month: S.month, period: 'monthly' }); } else { const idx = S.budgets.findIndex(b => b.category === 'savings' && b.year === yr && b.period === 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'savings', amount: amt, year: yr, period: 'yearly' }); } save(); closeModal(); renderMain(); setTimeout(() => showBgtTab(period), 0); }
+    function clearSavingsAmountOverride(period) {
+      const yr = curYear();
+      S.budgets = S.budgets.filter(b => !(b.category === 'savings' && ((period === 'monthly' && b.month === S.month && b.period === 'monthly') || (period === 'yearly' && b.year === yr && b.period === 'yearly'))));
+      save(); closeModal(); renderMain(); setTimeout(() => showBgtTab(period), 0);
+    }
     function submitEditBgt(bgtId) {
       const amt = parseFloat(document.getElementById('b-edit-amt').value);
       if (!amt || amt <= 0) return alert('Enter a valid amount.');
