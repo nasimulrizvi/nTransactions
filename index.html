@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>nTransactions</title>
   <meta name="application-name" content="nTransactions">
   <meta name="description" content="Personal finance tracker - expenses, income, loans and budgets">
@@ -599,6 +599,37 @@
 
       .modal-handle {
         display: none;
+      }
+    }
+
+    @media(min-width:768px) and (max-width:1180px) and (orientation:landscape) {
+      #app {
+        max-width: none;
+        width: 100%;
+      }
+
+      .main {
+        padding-bottom: calc(var(--nav) + 18px) !important;
+      }
+
+      .main-inner {
+        max-width: 960px;
+        padding: 0 24px;
+      }
+
+      .bottom-nav {
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: calc(100% - 32px) !important;
+        max-width: 780px !important;
+      }
+
+      .fab {
+        right: 24px;
+      }
+
+      .modal {
+        max-height: 88dvh;
       }
     }
 
@@ -2526,6 +2557,21 @@
       background: var(--border);
     }
 
+    .auth-link-btn {
+      background: none;
+      border: 0;
+      color: var(--blue);
+      font-size: 12px;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .auth-link-btn:hover {
+      color: var(--green);
+    }
+
     .auth-user-card {
       background: var(--bg3);
       border: 1px solid var(--border);
@@ -3241,6 +3287,30 @@
       color: #4d9fff;
     }
 
+    .dtp-field-btn {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: border-color .15s, background .15s, color .15s;
+    }
+
+    .dtp-field-btn:hover {
+      border-color: rgba(77, 159, 255, .45);
+      background: rgba(77, 159, 255, .08);
+    }
+
     /* light theme */
     body.theme-light .dtpicker-panel {
       background: #eef1f8;
@@ -3588,13 +3658,14 @@
   <script>
     // ============ FIREBASE INIT ============
     const firebaseConfig = {
-      apiKey: "AIzaSyCxUZ1srOG2QsuOZ0mN9mko0U9rdLYKp14",
-      authDomain: "n-transactions.firebaseapp.com",
-      databaseURL: "https://n-transactions-default-rtdb.asia-southeast1.firebasedatabase.app",
-      projectId: "n-transactions",
-      storageBucket: "n-transactions.firebasestorage.app",
-      messagingSenderId: "501379725276",
-      appId: "1:501379725276:web:58df1f7c83c91007858119"
+      apiKey: "AIzaSyAc8XTvYXDVVjH7xih564tK_VFbJ44Vsgw",
+      authDomain: "ntransactions.firebaseapp.com",
+      databaseURL: "https://ntransactions-default-rtdb.firebaseio.com",
+      projectId: "ntransactions",
+      storageBucket: "ntransactions.firebasestorage.app",
+      messagingSenderId: "1014134005291",
+      appId: "1:1014134005291:web:6ad9f92ec329fe0ca4d46e",
+      measurementId: "G-EKSSK3KY23"
     };
     firebase.initializeApp(firebaseConfig);
     const fbAuth = firebase.auth();
@@ -4041,7 +4112,7 @@
 
     // ============ STATE ============
     const SAVINGS_TARGET_DEFAULTS = { monthlyPct: 5, yearlyPct: 2, monthlyOverrides: {}, yearlyOverrides: {} };
-    let S = { transactions: [], wallets: [], budgets: [], loans: [], customExpCats: [], customIncCats: [], subcategories: { expense: {}, income: {} }, expCatOrder: [], incCatOrder: [], hiddenExpCats: [], hiddenIncCats: [], savingsTargetSettings: { ...SAVINGS_TARGET_DEFAULTS, monthlyOverrides: {}, yearlyOverrides: {} }, username: '', currency: 'BDT', view: 'dashboard', month: todayYM(), lastSync: null };
+    let S = { transactions: [], wallets: [], budgets: [], loans: [], customExpCats: [], customIncCats: [], subcategories: { expense: {}, income: {} }, expCatOrder: [], incCatOrder: [], hiddenExpCats: [], hiddenIncCats: [], savingsTargetSettings: { ...SAVINGS_TARGET_DEFAULTS, monthlyOverrides: {}, yearlyOverrides: {} }, username: '', currency: 'BDT', view: 'dashboard', month: todayYM(), lastSync: null, syncProject: firebaseConfig.projectId };
     let _currencySetupNeeded = false;
     let txF = 'all', txQ = '', txDuration = 'all', loanF = 'all', txType = 'expense', editWltId = '', selColor = COLORS[0];
     let txAdvancedFilters = defaultTxFilters();
@@ -4171,10 +4242,14 @@
         if (!S.wltHistory) S.wltHistory = [];
         if (!S.username) S.username = '';
         if (!S.currency) S.currency = 'BDT';
+        if (S.syncProject !== firebaseConfig.projectId) {
+          S.lastSync = null;
+          S.syncProject = firebaseConfig.projectId;
+        }
       } catch (e) { }
     }
     function saveLocal() {
-      try { localStorage.setItem('ntx4', JSON.stringify({ transactions: S.transactions, wallets: S.wallets, budgets: S.budgets, loans: S.loans, customExpCats: S.customExpCats, customIncCats: S.customIncCats, subcategories: normalizeSubcategories(S.subcategories), expCatOrder: S.expCatOrder, incCatOrder: S.incCatOrder, hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [], savingsHistory: S.savingsHistory || [], savingsTargetSettings: normalizeSavingsTargetSettings(S.savingsTargetSettings), wltHistory: S.wltHistory || [], username: S.username || '', currency: S.currency || 'BDT', month: S.month, lastSync: S.lastSync })); } catch (e) { }
+      try { localStorage.setItem('ntx4', JSON.stringify({ transactions: S.transactions, wallets: S.wallets, budgets: S.budgets, loans: S.loans, customExpCats: S.customExpCats, customIncCats: S.customIncCats, subcategories: normalizeSubcategories(S.subcategories), expCatOrder: S.expCatOrder, incCatOrder: S.incCatOrder, hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [], savingsHistory: S.savingsHistory || [], savingsTargetSettings: normalizeSavingsTargetSettings(S.savingsTargetSettings), wltHistory: S.wltHistory || [], username: S.username || '', currency: S.currency || 'BDT', month: S.month, lastSync: S.lastSync, syncProject: S.syncProject || firebaseConfig.projectId })); } catch (e) { }
     }
     function normalizeLoan(l) {
       if (!l.payments) l.payments = [];
@@ -4182,6 +4257,13 @@
       return l;
     }
     function normalizeLoans(arr) { return (arr || []).map(normalizeLoan); }
+    function hasLocalUserData() {
+      if ((S.transactions || []).length || (S.budgets || []).length || (S.loans || []).length) return true;
+      if ((S.savingsHistory || []).length || (S.customExpCats || []).length || (S.customIncCats || []).length) return true;
+      if ((S.wallets || []).some(w => (parseFloat(w.balance) || 0) !== 0 || (w.name && w.name !== 'Cash'))) return true;
+      const subs = normalizeSubcategories(S.subcategories);
+      return Object.values(subs.expense || {}).some(arr => (arr || []).length) || Object.values(subs.income || {}).some(arr => (arr || []).length);
+    }
     function save() { saveLocal(); scheduleSync(); }
     function scheduleSync() { if (!fbUser) return; clearTimeout(syncTimeout); syncTimeout = setTimeout(pushSync, 600); }
     async function pushSync() {
@@ -4194,7 +4276,7 @@
           subcategories: normalizeSubcategories(S.subcategories),
           expCatOrder: S.expCatOrder || [], incCatOrder: S.incCatOrder || [],
           hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [],
-          savingsHistory: S.savingsHistory || [], savingsTargetSettings: normalizeSavingsTargetSettings(S.savingsTargetSettings), username: S.username || '', currency: S.currency || 'BDT', ts
+          savingsHistory: S.savingsHistory || [], savingsTargetSettings: normalizeSavingsTargetSettings(S.savingsTargetSettings), username: S.username || '', currency: S.currency || 'BDT', syncProject: firebaseConfig.projectId, ts
         };
         S.lastSync = ts;
         await fbDb.ref('users/' + fbUser.uid + '/data').set(payload);
@@ -4250,43 +4332,81 @@
     async function pullSync() {
       if (!fbUser) return; setSyncDot('busy');
       try {
-        const tsSnap = await fbDb.ref('users/' + fbUser.uid + '/data/ts').get();
-        const serverTs = tsSnap.val() || 0;
+        const snap = await fbDb.ref('users/' + fbUser.uid + '/data').get();
+        const d = snap.val();
+        const serverTs = d && d.ts ? d.ts : 0;
         const localTs = S.lastSync || 0;
-        if (serverTs > localTs) {
-          const snap = await fbDb.ref('users/' + fbUser.uid + '/data').get();
-          const d = snap.val();
-          if (d) {
-            S.transactions = d.transactions || S.transactions;
-            S.wallets = d.wallets || S.wallets;
-            S.budgets = d.budgets || S.budgets;
-            S.loans = normalizeLoans(d.loans || S.loans);
-            S.customExpCats = d.customExpCats || S.customExpCats || [];
-            S.customIncCats = d.customIncCats || S.customIncCats || [];
-            S.subcategories = normalizeSubcategories(d.subcategories || S.subcategories);
-            S.expCatOrder = d.expCatOrder || S.expCatOrder || [];
-            S.incCatOrder = d.incCatOrder || S.incCatOrder || [];
-            S.hiddenExpCats = d.hiddenExpCats || S.hiddenExpCats || [];
-            S.hiddenIncCats = d.hiddenIncCats || S.hiddenIncCats || [];
-            S.savingsHistory = d.savingsHistory || S.savingsHistory || [];
-            S.savingsTargetSettings = normalizeSavingsTargetSettings(d.savingsTargetSettings || S.savingsTargetSettings);
-            S.currency = d.currency || S.currency || 'BDT';
-            if (d.currency) markCurrencyConfigured();
-            S.username = d.username || S.username || '';
-            S.lastSync = serverTs; saveLocal();
-          }
+        if (d && serverTs > localTs) {
+          S.transactions = d.transactions || S.transactions;
+          S.wallets = d.wallets || S.wallets;
+          S.budgets = d.budgets || S.budgets;
+          S.loans = normalizeLoans(d.loans || S.loans);
+          S.customExpCats = d.customExpCats || S.customExpCats || [];
+          S.customIncCats = d.customIncCats || S.customIncCats || [];
+          S.subcategories = normalizeSubcategories(d.subcategories || S.subcategories);
+          S.expCatOrder = d.expCatOrder || S.expCatOrder || [];
+          S.incCatOrder = d.incCatOrder || S.incCatOrder || [];
+          S.hiddenExpCats = d.hiddenExpCats || S.hiddenExpCats || [];
+          S.hiddenIncCats = d.hiddenIncCats || S.hiddenIncCats || [];
+          S.savingsHistory = d.savingsHistory || S.savingsHistory || [];
+          S.savingsTargetSettings = normalizeSavingsTargetSettings(d.savingsTargetSettings || S.savingsTargetSettings);
+          S.currency = d.currency || S.currency || 'BDT';
+          if (d.currency) markCurrencyConfigured();
+          S.username = d.username || S.username || '';
+          S.lastSync = serverTs;
+          S.syncProject = firebaseConfig.projectId;
+          saveLocal();
         }
         setSyncDot('ok');
-      } catch (e) { setSyncDot('err'); }
+        return { found: !!d, pulled: !!(d && serverTs > localTs), serverTs };
+      } catch (e) { setSyncDot('err'); return { found: true, pulled: false, error: e }; }
     }
 
     // ============ FIREBASE AUTH ============
+    let _authEmailFlowActive = false;
+    function authIsPasswordUser(user) {
+      return !!(user && user.providerData && user.providerData.some(p => p.providerId === 'password'));
+    }
+    function authNeedsEmailVerification(user) {
+      return authIsPasswordUser(user) && !user.emailVerified;
+    }
+    function setAuthMessage(msg, type = 'error') {
+      const el = document.getElementById('auth-err');
+      if (!el) return;
+      const colors = {
+        ok: ['var(--green-d)', 'rgba(12,233,127,.32)', 'var(--green)'],
+        info: ['var(--blue-d)', 'rgba(77,159,255,.32)', 'var(--blue)'],
+        error: ['var(--red-d)', 'rgba(255,61,90,.3)', 'var(--red)']
+      };
+      const c = colors[type] || colors.error;
+      el.style.display = 'block';
+      el.style.background = c[0];
+      el.style.borderColor = c[1];
+      el.style.color = c[2];
+      el.textContent = msg;
+    }
+    function clearAuthMessage() {
+      const el = document.getElementById('auth-err');
+      if (el) el.style.display = 'none';
+    }
     function initAuth() {
       fbAuth.onAuthStateChanged(async (user) => {
         if (user) {
+          if (authNeedsEmailVerification(user)) {
+            if (_authEmailFlowActive) return;
+            fbUser = null;
+            setSyncDot('');
+            if (document.getElementById('modal-overlay').classList.contains('open')) {
+              setAuthMessage('Please verify your email address before signing in. Check your inbox for the verification link.', 'info');
+            }
+            await fbAuth.signOut();
+            renderMain();
+            return;
+          }
           fbUser = user;
           setSyncDot('busy');
-          await pullSync();
+          const syncState = await pullSync();
+          if (syncState && !syncState.found && hasLocalUserData()) await pushSync();
           // On fresh load, if user has set a username during previous session
           if (!S.username) {
             const uSnap = await fbDb.ref('users/' + fbUser.uid + '/username').get();
@@ -4481,6 +4601,40 @@
         });
       }, { passive: true });
       window.addEventListener('resize', () => { if (window.innerWidth >= 1024) setHeaderVisible(true); }, { passive: true });
+    }
+    let _viewportRefreshTimer = null;
+    function adaptDtpToViewport() {
+      const overlay = document.getElementById('dtpicker-overlay');
+      if (!overlay || !overlay.classList.contains('open')) return;
+      const cal = document.getElementById('dtp-cal');
+      const clk = document.getElementById('dtp-clock-pnl');
+      const bd = document.getElementById('dtp-vb-d');
+      const bt = document.getElementById('dtp-vb-t');
+      if (!cal || !clk) return;
+      if (window.innerWidth <= 600) {
+        dtpMobileView(clk.classList.contains('ms') ? 'time' : 'date');
+      } else {
+        cal.classList.remove('mh');
+        clk.classList.remove('ms');
+        if (bd) bd.classList.add('a');
+        if (bt) bt.classList.remove('a');
+      }
+      _dtpRenderClock();
+    }
+    function refreshForViewportChange() {
+      clearTimeout(_viewportRefreshTimer);
+      _viewportRefreshTimer = setTimeout(() => {
+        setHeaderVisible(true);
+        adaptDtpToViewport();
+        if (typeof S !== 'undefined' && S.view === 'dashboard') {
+          destroyAllCharts();
+          setTimeout(() => drawDashCharts(), 40);
+        }
+      }, 160);
+    }
+    function initViewportRotationSupport() {
+      window.addEventListener('orientationchange', refreshForViewportChange, { passive: true });
+      window.addEventListener('resize', refreshForViewportChange, { passive: true });
     }
 
     // ============ NAV ============
@@ -5074,7 +5228,6 @@
       const groups = {}; txs.forEach(t => { const k = (t.date || '').slice(0, 10); if (!k) return; const label = new Date(k + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }); if (!groups[label]) groups[label] = []; groups[label].push(t); });
       const activeCount = txFilterCount();
       return `<div class="section" style="padding-top:16px;">
-    <div class="records-head"><div class="records-title-block"><div class="records-title">Records</div><div class="records-subtitle">${txs.length} matching record${txs.length === 1 ? '' : 's'}</div></div></div>
     ${txFilterChips()}
     <div class="filter-bar" style="margin-bottom:10px;align-items:center;"><button class="fc ${txDuration === 'all' ? 'active' : ''}" onclick="setTxDur('all')">Lifetime</button><button class="fc ${txDuration === 'yearly' ? 'active' : ''}" onclick="setTxDur('yearly')">Year ${curYear()}</button><button class="fc ${txDuration === 'monthly' ? 'active' : ''}" onclick="setTxDur('monthly')">${fmtMY(S.month)}</button><button class="record-filter-btn mini ${activeCount ? 'active' : ''}" onclick="openTxFilter()" aria-label="Filter records" title="Filter records"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5h18"/><path d="M6 12h12"/><path d="M10 19h4"/></svg>${activeCount ? `<span class="filter-badge">${activeCount}</span>` : ''}</button></div>
     <div class="filter-bar"><button class="fc ${txF === 'all' ? 'active' : ''}" onclick="setTxF('all')">All</button><button class="fc ${txF === 'expense' ? 'active' : ''}" onclick="setTxF('expense')">Expense</button><button class="fc ${txF === 'income' ? 'active' : ''}" onclick="setTxF('income')">Income</button><button class="fc ${txF === 'transfer' ? 'active' : ''}" onclick="setTxF('transfer')">Transfer</button><button class="fc ${txF === 'loan' ? 'active' : ''}" onclick="setTxF('loan')">Loans</button></div>
@@ -5575,6 +5728,7 @@
     <div id="auth-form">
       <div class="fg"><label class="fl">Email</label><input type="email" class="fi" id="auth-email" placeholder="your@email.com"></div>
       <div class="fg"><label class="fl">Password</label><input type="password" class="fi" id="auth-pass" placeholder="Password"></div>
+      <div id="auth-forgot-row" style="display:flex;justify-content:flex-end;margin:-8px 0 12px;"><button type="button" class="auth-link-btn" id="auth-forgot-btn" onclick="doPasswordReset()">Forgot Password?</button></div>
       <button class="btn btn-p" id="auth-submit-btn" onclick="doEmailAuth()">Sign In</button>
     </div>
     <div class="auth-divider">or</div>
@@ -5689,31 +5843,81 @@
     function switchAuthTab(tab) {
       const inT = document.getElementById('atab-in'), upT = document.getElementById('atab-up');
       const btn = document.getElementById('auth-submit-btn');
-      if (tab === 'in') { inT.classList.add('active'); upT.classList.remove('active'); if (btn) btn.textContent = 'Sign In'; btn.onclick = doEmailAuth; }
-      else { upT.classList.add('active'); inT.classList.remove('active'); if (btn) btn.textContent = 'Create Account'; btn.onclick = doSignUp; }
+      const forgot = document.getElementById('auth-forgot-row');
+      clearAuthMessage();
+      if (tab === 'in') {
+        inT.classList.add('active'); upT.classList.remove('active');
+        if (btn) { btn.textContent = 'Sign In'; btn.onclick = doEmailAuth; }
+        if (forgot) forgot.style.display = 'flex';
+      } else {
+        upT.classList.add('active'); inT.classList.remove('active');
+        if (btn) { btn.textContent = 'Create Account'; btn.onclick = doSignUp; }
+        if (forgot) forgot.style.display = 'none';
+      }
+    }
+    async function doPasswordReset() {
+      const emailEl = document.getElementById('auth-email');
+      const email = emailEl ? emailEl.value.trim() : '';
+      const btn = document.getElementById('auth-forgot-btn');
+      if (!email) {
+        setAuthMessage('Enter your email address first, then tap Forgot Password.', 'info');
+        if (emailEl) emailEl.focus();
+        return;
+      }
+      if (btn) { btn.textContent = 'Sending...'; btn.disabled = true; }
+      try {
+        await fbAuth.sendPasswordResetEmail(email);
+        setAuthMessage('Password reset link sent to ' + email + '.', 'ok');
+      } catch (e) {
+        setAuthMessage(e.message, 'error');
+      } finally {
+        if (btn) { btn.textContent = 'Forgot Password?'; btn.disabled = false; }
+      }
     }
     async function doEmailAuth() {
       const email = document.getElementById('auth-email').value.trim();
       const pass = document.getElementById('auth-pass').value;
-      const errEl = document.getElementById('auth-err');
-      if (!email || !pass) { if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Please enter email and password.'; } return; }
-      if (errEl) errEl.style.display = 'none';
+      if (!email || !pass) { setAuthMessage('Please enter email and password.', 'error'); return; }
+      clearAuthMessage();
       const btn = document.getElementById('auth-submit-btn'); if (btn) { btn.textContent = 'Signing in...'; btn.disabled = true; }
+      _authEmailFlowActive = true;
       try {
-        await fbAuth.signInWithEmailAndPassword(email, pass);
-      } catch (e) { if (errEl) { errEl.style.display = 'block'; errEl.textContent = e.message; } if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; } }
+        const cred = await fbAuth.signInWithEmailAndPassword(email, pass);
+        if (cred.user && authNeedsEmailVerification(cred.user)) {
+          let msg = 'Please verify your email address before signing in.';
+          try {
+            await cred.user.sendEmailVerification();
+            msg = 'Email not verified yet. A fresh verification link was sent to ' + email + '.';
+          } catch (mailErr) { }
+          await fbAuth.signOut();
+          setAuthMessage(msg, 'info');
+          if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
+        }
+      } catch (e) { setAuthMessage(e.message, 'error'); if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; } }
+      finally { _authEmailFlowActive = false; }
     }
     async function doSignUp() {
       const email = document.getElementById('auth-email').value.trim();
       const pass = document.getElementById('auth-pass').value;
-      const errEl = document.getElementById('auth-err');
-      if (!email || !pass) { if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Please enter email and password.'; } return; }
-      if (pass.length < 6) { if (errEl) { errEl.style.display = 'block'; errEl.textContent = 'Password must be at least 6 characters.'; } return; }
-      if (errEl) errEl.style.display = 'none';
+      if (!email || !pass) { setAuthMessage('Please enter email and password.', 'error'); return; }
+      if (pass.length < 6) { setAuthMessage('Password must be at least 6 characters.', 'error'); return; }
+      clearAuthMessage();
       const btn = document.getElementById('auth-submit-btn'); if (btn) { btn.textContent = 'Creating...'; btn.disabled = true; }
+      _authEmailFlowActive = true;
       try {
-        await fbAuth.createUserWithEmailAndPassword(email, pass);
-      } catch (e) { if (errEl) { errEl.style.display = 'block'; errEl.textContent = e.message; } if (btn) { btn.textContent = 'Create Account'; btn.disabled = false; } }
+        const cred = await fbAuth.createUserWithEmailAndPassword(email, pass);
+        let msg = 'Account created. Verification link sent to ' + email + '. Verify your email, then sign in.';
+        try {
+          if (cred.user) await cred.user.sendEmailVerification();
+        } catch (mailErr) {
+          msg = 'Account created, but the verification email could not be sent: ' + mailErr.message;
+        }
+        await fbAuth.signOut();
+        switchAuthTab('in');
+        setAuthMessage(msg, msg.indexOf('could not') === -1 ? 'ok' : 'error');
+        if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
+      } catch (e) { setAuthMessage(e.message, 'error'); if (btn) { btn.textContent = 'Create Account'; btn.disabled = false; } }
+      finally { _authEmailFlowActive = false; }
     }
     async function doGoogleAuth() {
       try {
@@ -5723,8 +5927,7 @@
         if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
           await fbAuth.signInWithRedirect(googleProvider);
         } else {
-          const errEl = document.getElementById('auth-err');
-          if (errEl) { errEl.style.display = 'block'; errEl.textContent = e.message; }
+          setAuthMessage(e.message, 'error');
         }
       }
     }
@@ -5746,7 +5949,7 @@
     function txSubcatInner(type, catId, selected = '', selectId = 'tx-subcat') {
       const subs = catId ? getSubcats(type, catId) : [];
       if (!catId || !subs.length) return '';
-      const opts = '<option value="">No subcategory</option>' + subs.map(s => `<option value="${s.id}" ${s.id === selected ? 'selected' : ''}>${esc(s.label)}</option>`).join('');
+      const opts = '<option value="">Select a subcategory</option>' + subs.map(s => `<option value="${s.id}" ${s.id === selected ? 'selected' : ''}>${esc(s.label)}</option>`).join('');
       return `<label class="fl">Subcategory</label><select class="fi" id="${selectId}">${opts}</select>`;
     }
     function txSubcatField(type, catId = '', selected = '', selectId = 'tx-subcat') {
@@ -5911,7 +6114,11 @@
         : `<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01" inputmode="decimal" onpointerdown="amountCalcPrepareInput('tx-amt')" ontouchstart="amountCalcPrepareInput('tx-amt')" onfocus="openAmountCalc('tx-amt')" onclick="openAmountCalc('tx-amt')" oninput="amountCalcSync('tx-amt')" autocomplete="off"></div>${amountCalcHTML('tx-amt')}</div><div class="fg"><label class="fl">Transfer Fee <span style="color:var(--text3);font-weight:400;">(optional — deducted from sender)</span></label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-fee" placeholder="0.00" min="0" step="0.01" value="0"></div></div><div class="fg" style="position:relative;"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason" autocomplete="off" oninput="showNoteSugg(this,'transfer')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div>`;
       return `<div class="modal-title">Add Transaction</div><div class="tab-grp"><button class="tab-btn te ${txType === 'expense' ? 'active' : ''}" onclick="swTxT('expense')">Expense</button><button class="tab-btn ti ${txType === 'income' ? 'active' : ''}" onclick="swTxT('income')">Cash In</button><button class="tab-btn tt ${txType === 'transfer' ? 'active' : ''}" onclick="swTxT('transfer')">Transfer</button></div>${body}<button class="btn btn-p" onclick="submitTx()">Save Transaction</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`;
     }
-    function swTxT(t) { txType = t; document.getElementById('mc').innerHTML = txModalHTML(); }
+    function swTxT(t) {
+      txType = t;
+      document.getElementById('mc').innerHTML = txModalHTML();
+      bindModalDateTimePickers();
+    }
     function submitTx() {
       if (window._submitting) return; window._submitting = true; setTimeout(() => window._submitting = false, 2000);
       const amt = parseFloat(document.getElementById('tx-amt').value); const wEl = document.getElementById('tx-w'); const w = wEl ? wEl.value : ''; const dtRaw = document.getElementById('tx-dt').value; const note = document.getElementById('tx-note').value.trim(); const catEl = document.getElementById('tx-cat'); const catVal = catEl ? catEl.value : ''; const subEl = document.getElementById('tx-subcat'); const subVal = subEl && !subEl.disabled ? subEl.value : '';
@@ -7558,21 +7765,26 @@
     // Helper: inject DTP trigger button replacing a datetime-local input by ID
     function dtpBind(inputId) {
       const inp = document.getElementById(inputId); if (!inp) return;
+      if (inp.dataset.dtpBound === '1') return;
       const val = inp.value || '';
       const fmt = val ? (() => { const d = new Date(val.length === 10 ? val + 'T12:00:00' : val); return isNaN(d) ? val : `${_MONS3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${((d.getHours() % 12) || 12)}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`; })() : 'Set date & time';
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.style.cssText = 'width:100%;padding:11px 14px;border-radius:12px;background:var(--bg3);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:600;font-family:Outfit,sans-serif;cursor:pointer;text-align:left;display:flex;align-items:center;transition:border-color .15s;';
+      btn.className = 'dtp-field-btn';
       btn.innerHTML = `<span id="${inputId}-dtpfmt">${fmt}</span>`;
-      btn.onmouseenter = () => btn.style.borderColor = 'var(--blue)';
-      btn.onmouseleave = () => btn.style.borderColor = 'var(--border)';
       btn.onclick = () => openDTP(inp.value, v => {
         inp.value = v;
         const s = document.getElementById(inputId + '-dtpfmt');
         if (s) { const d = new Date(v); s.textContent = isNaN(d) ? v : `${_MONS3[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}  ${((d.getHours() % 12) || 12)}:${String(d.getMinutes()).padStart(2, '0')} ${d.getHours() >= 12 ? 'PM' : 'AM'}`; }
       });
       inp.style.display = 'none';
+      inp.dataset.dtpBound = '1';
       inp.parentNode.insertBefore(btn, inp.nextSibling);
+    }
+    function bindModalDateTimePickers() {
+      setTimeout(() => {
+        document.querySelectorAll('#mc input[type="datetime-local"]').forEach(inp => dtpBind(inp.id));
+      }, 0);
     }
     // Patch openAddTx, txModalHTML, loan modals to bind DTP after rendering
     const _origOpenModal = openModal;
@@ -7580,7 +7792,7 @@
       _origOpenModal(html, modalClass);
       if (typeof ensureBackTrap === 'function') ensureBackTrap();
       // Bind DTP to all datetime-local inputs inside modal
-      setTimeout(() => { document.querySelectorAll('#mc input[type="datetime-local"]').forEach(inp => { if (!inp.nextSibling || inp.nextSibling.tagName !== 'BUTTON') dtpBind(inp.id); }); }, 0);
+      bindModalDateTimePickers();
     };
 
     if (!handleSharedAppInit()) {
@@ -7592,6 +7804,7 @@
       updateHeaderAvatar();
       _initSwipe();
       initHeaderAutoHide();
+      initViewportRotationSupport();
       if (typeof ensureBackTrap === 'function') ensureBackTrap();
       promptCurrencySetup();
     }
