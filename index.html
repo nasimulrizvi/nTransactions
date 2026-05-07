@@ -76,20 +76,6 @@
       --r: 16px;
     }
 
-    /* THEME: Slate */
-    body.theme-slate {
-      --bg: #0a0a0e;
-      --bg2: #121218;
-      --bg3: #1a1a22;
-      --card: rgba(255, 255, 255, 0.04);
-      --card-solid: #141420;
-      --border: rgba(255, 255, 255, 0.08);
-      --borderl: rgba(255, 255, 255, 0.04);
-      --text: #e2e2f0;
-      --text2: #7a7a9a;
-      --text3: #44445a;
-    }
-
     /* THEME: Light */
     body.theme-light {
       --bg: #f0f2f7;
@@ -1507,6 +1493,168 @@
       -webkit-appearance: none;
       -moz-appearance: none;
       appearance: none;
+    }
+
+    .tx-cat-trigger {
+      width: 100%;
+      min-height: 45px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 13px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg3);
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      text-align: left;
+      transition: border-color .2s, background .2s;
+    }
+
+    .tx-cat-trigger:hover,
+    .tx-cat-trigger:focus {
+      border-color: var(--green);
+      outline: none;
+    }
+
+    .tx-cat-trigger-ico {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--green);
+      opacity: .95;
+      flex-shrink: 0;
+      width: 22px;
+      height: 22px;
+    }
+
+    .tx-cat-trigger-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .tx-cat-trigger-label {
+      display: block;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .tx-cat-trigger-sub {
+      display: none;
+    }
+
+    .tx-cat-picker {
+      display: none;
+      margin-top: 8px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--bg3);
+    }
+
+    .tx-cat-picker.open {
+      display: block;
+    }
+
+    .tx-cat-picker-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .tx-cat-picker-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .9px;
+    }
+
+    .tx-cat-picker-close {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg2);
+      color: var(--text2);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .tx-cat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(86px, 86px));
+      gap: 7px;
+      justify-content: center;
+      max-height: min(46dvh, 360px);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      padding: 2px;
+    }
+
+    .tx-cat-card {
+      min-height: 66px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 5px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: transparent;
+      color: var(--text2);
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: border-color .16s, background .16s, color .16s;
+    }
+
+    .tx-cat-card:hover,
+    .tx-cat-card.active {
+      border-color: var(--green);
+      background: var(--green-d);
+      color: var(--text);
+    }
+
+    .tx-cat-card-ico {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--green);
+      flex-shrink: 0;
+    }
+
+    .tx-cat-card-label {
+      width: 100%;
+      min-height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: 10px;
+      line-height: 1.2;
+      font-weight: 700;
+      overflow-wrap: anywhere;
+    }
+
+    @media(max-width:900px) {
+      .tx-cat-grid {
+        grid-template-columns: repeat(auto-fit, minmax(88px, 88px));
+        max-height: min(50dvh, 390px);
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
     }
 
     .amt-wrap {
@@ -3711,8 +3859,8 @@
     // ============ CONSTANTS ============
     const DEFAULT_EXP_CATS = [
       { id: 'education', label: 'Education' }, { id: 'entertainment', label: 'Entertainment' },
-      { id: 'transportation', label: 'Transportation' }, { id: 'food', label: 'Food & Drinks' },
-      { id: 'health', label: 'Health & Care' }, { id: 'accommodation', label: 'Accommodation' },
+      { id: 'transportation', label: 'Transportation' }, { id: 'food', label: 'Food & Dining' },
+      { id: 'health', label: 'Health & Medical' }, { id: 'accommodation', label: 'Accommodation' },
       { id: 'mobile', label: 'Mobile Recharge' }, { id: 'misc', label: 'Miscellaneous Expenses' },
       { id: 'clothing', label: 'Clothing & Accessories' }, { id: 'tech', label: 'Technology & Electronics' },
       { id: 'travel', label: 'Travel' }, { id: 'donation', label: 'Donation' },
@@ -3987,6 +4135,20 @@
       salary: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M12 12v.01"/>',
       business: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
       // Expense category icons
+      groceries: '<path d="M6 2l1.5 4"/><path d="M18 2l-1.5 4"/><path d="M3 6h18l-2 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L3 6z"/><path d="M8 11h8"/><path d="M10 16h4"/>',
+      snacks_drinks: '<path d="M5 3h14l-2 18H7L5 3z"/><path d="M8 7h8"/><path d="M10 3l2 18"/><path d="M15 3l-1 18"/><path d="M3 12h18"/>',
+      fuel: '<path d="M4 3h10v18H4z"/><path d="M8 7h4"/><path d="M14 8h3l3 3v7a2 2 0 0 1-4 0v-4a2 2 0 0 0-2-2"/><path d="M18 11v2"/>',
+      bills_utilities: '<path d="M7 2h10a2 2 0 0 1 2 2v18l-3-2-2 2-2-2-2 2-2-2-3 2V4a2 2 0 0 1 2-2z"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h3"/>',
+      repair_maintenance: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+      cleaning: '<path d="M14 3l7 7"/><path d="M5 21l9-9"/><path d="M13 4l7 7-7 7-7-7z"/><path d="M2 22l5-1-4-4-1 5z"/>',
+      laundry: '<rect x="4" y="2" width="16" height="20" rx="2"/><circle cx="12" cy="14" r="5"/><path d="M8 14c1.5-1.5 3-1.5 4 0s2.5 1.5 4 0"/><path d="M8 6h.01"/><path d="M12 6h4"/>',
+      beauty_personal: '<path d="M12 2v7"/><path d="M8 6h8"/><path d="M7 9h10l-1 11a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2L7 9z"/><path d="M10 14h4"/>',
+      medicine: '<rect x="3" y="8" width="18" height="12" rx="3"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/><path d="M12 11v6"/><path d="M9 14h6"/>',
+      course_training: '<path d="M22 10L12 4 2 10l10 6 10-6z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/><path d="M22 10v6"/>',
+      subscription: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9l5 3-5 3V9z"/><path d="M7 22h10"/>',
+      shopping: '<path d="M6 2l2 4h8l2-4"/><path d="M3 6h18l-2 15H5L3 6z"/><path d="M9 10a3 3 0 0 0 6 0"/>',
+      bank_charges: '<line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/><path d="M8 4h8"/>',
+      business_expense: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><path d="M2 12h20"/><path d="M12 12v3"/>',
       utilities: '<path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>',
       insurance: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
       investments_exp: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/>',
@@ -4030,11 +4192,19 @@
     };
     // SVG icon choices for the Add Custom Category picker
     const CUSTOM_EXP_ICON_OPTIONS = [
-      { id: 'utilities', label: 'Utilities' }, { id: 'insurance', label: 'Insurance' },
+      { id: 'groceries', label: 'Groceries' }, { id: 'snacks_drinks', label: 'Snacks & Drinks' },
+      { id: 'fuel', label: 'Fuel' }, { id: 'bills_utilities', label: 'Bills & Utilities' },
+      { id: 'repair_maintenance', label: 'Repair & Maintenance' }, { id: 'cleaning', label: 'Cleaning' },
+      { id: 'laundry', label: 'Laundry' }, { id: 'beauty_personal', label: 'Beauty & Personal' },
+      { id: 'medicine', label: 'Medicine' }, { id: 'course_training', label: 'Course & Training' },
+      { id: 'subscription', label: 'Subscription' }, { id: 'shopping', label: 'Shopping' },
+      { id: 'bank_charges', label: 'Bank Charges' }, { id: 'business_expense', label: 'Business Expense' },
+      { id: 'insurance', label: 'Insurance' },
+      { id: 'utilities', label: 'Utilities' },
       { id: 'savings_exp', label: 'Savings' }, { id: 'investments_exp', label: 'Investments' },
       { id: 'personal_care', label: 'Personal Care' }, { id: 'grooming', label: 'Grooming' },
       { id: 'household_maintenance', label: 'Household' }, { id: 'vehicle_service', label: 'Vehicle' },
-      { id: 'gifts', label: 'Gifts' }, { id: 'social_obligations', label: 'Social' },
+      { id: 'gifts', label: 'Gifts & Celebrations' }, { id: 'social_obligations', label: 'Social' },
       { id: 'subscriptions', label: 'Subscriptions' }, { id: 'memberships', label: 'Memberships' },
       { id: 'pet_care', label: 'Pet Care' }, { id: 'legal_fees', label: 'Legal Fees' },
       { id: 'taxes', label: 'Taxes' }, { id: 'stationery', label: 'Stationery' },
@@ -4055,7 +4225,7 @@
     ];
     function customCatIconPicker(type) {
       const opts = type === 'expense' ? CUSTOM_EXP_ICON_OPTIONS : CUSTOM_INC_ICON_OPTIONS;
-      return `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;">Select Icon</div><div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:12px;max-height:180px;overflow-y:auto;padding:2px;" id="nc-icon-grid">${opts.map((o,i) => `<div onclick="pickCustomCatIcon('${o.id}')" data-icon-id="${o.id}" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;border-radius:10px;border:1px solid ${i===0?'var(--green)':'var(--border)'};background:${i===0?'var(--green-d)':'transparent'};cursor:pointer;transition:all .15s;" class="nc-icon-opt${i===0?' sel':''}">${ico(o.id,18)}<span style="font-size:8px;color:var(--text3);text-align:center;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%;">${o.label}</span></div>`).join('')}</div><input type="hidden" id="nc-icon" value="${opts[0].id}">`;
+      return `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;">Select Icon</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:7px;margin-bottom:12px;max-height:260px;overflow-y:auto;padding:2px;" id="nc-icon-grid">${opts.map((o,i) => `<div onclick="pickCustomCatIcon('${o.id}')" data-icon-id="${o.id}" style="min-height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 5px;border-radius:11px;border:1px solid ${i===0?'var(--green)':'var(--border)'};background:${i===0?'var(--green-d)':'transparent'};cursor:pointer;transition:all .15s;" class="nc-icon-opt${i===0?' sel':''}">${ico(o.id,18)}<span style="font-size:9px;font-weight:700;color:var(--text3);text-align:center;line-height:1.2;overflow-wrap:anywhere;width:100%;">${o.label}</span></div>`).join('')}</div><input type="hidden" id="nc-icon" value="${opts[0].id}">`;
     }
     function pickCustomCatIcon(iconId) {
       document.querySelectorAll('.nc-icon-opt').forEach(el => {
@@ -5716,7 +5886,7 @@
     </div>
 
     <button class="btn btn-s" onclick="closeModal()" style="margin-top:2px;">Close</button>`);
-        setTimeout(() => { const tp = document.getElementById('theme-picker'); if (tp) applyTheme(localStorage.getItem('ntx_theme') || 'dark'); }, 0);
+        setTimeout(() => { const tp = document.getElementById('theme-picker'); if (tp) applyTheme(savedThemeChoice()); }, 0);
       } else {
         openModal(`<div class="modal-title">Sign In</div>
     <div style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.7;">Sign in to sync your data across all devices securely.</div>
@@ -5946,6 +6116,63 @@
       const cats = type === 'expense' ? getExpCats() : getIncCats();
       return '<option value="">Select a category</option>' + cats.map(c => `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}>${esc(c.label)}</option>`).join('');
     }
+    function txCatChoice(type, selected = '') {
+      const cats = type === 'expense' ? getExpCats() : getIncCats();
+      return cats.find(c => c.id === selected) || null;
+    }
+    function txCategoryControl(type, selected = '') {
+      const cat = txCatChoice(type, selected);
+      return `<input type="hidden" id="tx-cat" value="${cat ? cat.id : ''}">
+        <button type="button" class="tx-cat-trigger" id="tx-cat-trigger" onclick="openTxCategoryPicker('${type}')" aria-haspopup="dialog">
+          <span class="tx-cat-trigger-ico" id="tx-cat-trigger-ico">${cat ? catIco(cat.id, 18) : ico('misc', 18)}</span>
+          <span class="tx-cat-trigger-main">
+            <span class="tx-cat-trigger-label" id="tx-cat-trigger-label">${cat ? esc(cat.label) : 'Select a Category'}</span>
+            <span class="tx-cat-trigger-sub" id="tx-cat-trigger-sub">${cat ? 'Tap to change category' : 'Tap to browse icons and labels'}</span>
+          </span>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        ${txCategoryPickerHTML(type, selected)}`;
+    }
+    function txCategoryPickerHTML(type, selected = '') {
+      const cats = type === 'expense' ? getExpCats() : getIncCats();
+      const cards = cats.map(c => `<button type="button" class="tx-cat-card${c.id === selected ? ' active' : ''}" data-cat-id="${c.id}" onclick="chooseTxCategory('${type}','${c.id}')">
+        <span class="tx-cat-card-ico">${catIco(c.id, 18)}</span>
+        <span class="tx-cat-card-label">${esc(c.label)}</span>
+      </button>`).join('');
+      return `<div class="tx-cat-picker" id="tx-cat-picker" role="dialog" aria-label="Select a Category">
+        <div class="tx-cat-picker-head">
+          <div class="tx-cat-picker-title">Select a Category</div>
+          <button type="button" class="tx-cat-picker-close" onclick="closeTxCategoryPicker()" aria-label="Close category picker">&times;</button>
+        </div>
+        <div class="tx-cat-grid" id="tx-cat-grid">${cards}</div>
+      </div>`;
+    }
+    function openTxCategoryPicker(type) {
+      const picker = document.getElementById('tx-cat-picker');
+      if (!picker) return;
+      picker.classList.add('open');
+      const active = picker.querySelector('.tx-cat-card.active');
+      if (active) setTimeout(() => active.scrollIntoView({ block: 'nearest', inline: 'nearest' }), 20);
+    }
+    function closeTxCategoryPicker() {
+      const picker = document.getElementById('tx-cat-picker');
+      if (picker) picker.classList.remove('open');
+    }
+    function chooseTxCategory(type, catId) {
+      const cat = txCatChoice(type, catId);
+      const input = document.getElementById('tx-cat');
+      if (!cat || !input) return;
+      input.value = cat.id;
+      const label = document.getElementById('tx-cat-trigger-label');
+      const sub = document.getElementById('tx-cat-trigger-sub');
+      const icon = document.getElementById('tx-cat-trigger-ico');
+      if (label) label.textContent = cat.label;
+      if (sub) sub.textContent = 'Tap to change category';
+      if (icon) icon.innerHTML = catIco(cat.id, 18);
+      document.querySelectorAll('.tx-cat-card').forEach(el => el.classList.toggle('active', el.getAttribute('data-cat-id') === cat.id));
+      txCatChanged(type);
+      closeTxCategoryPicker();
+    }
     function txSubcatInner(type, catId, selected = '', selectId = 'tx-subcat') {
       const subs = catId ? getSubcats(type, catId) : [];
       if (!catId || !subs.length) return '';
@@ -6110,7 +6337,7 @@
         : `<select class="fi" id="tx-w">${wOpts}</select>`;
       const photoSection = `<div id="tx-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="tx-photo-img" style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)" title="Tap to view full size"/><button onclick="clearTxPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="tx-photo-input" accept="image/*" style="display:none;" onchange="handleTxPhoto(this)"><input type="file" id="tx-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleTxCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('tx-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('tx-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div>`;
       let body = txType !== 'transfer'
-        ? `<div class="fg"><label class="fl">Wallet</label>${wSelect}</div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label><select class="fi" id="tx-cat" onchange="txCatChanged('${txType}')">${txCatOpts(txType)}</select></div>${txSubcatField(txType)}<div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01" inputmode="decimal" onpointerdown="amountCalcPrepareInput('tx-amt')" ontouchstart="amountCalcPrepareInput('tx-amt')" onfocus="openAmountCalc('tx-amt')" onclick="openAmountCalc('tx-amt')" oninput="amountCalcSync('tx-amt')" autocomplete="off"></div>${amountCalcHTML('tx-amt')}</div><div class="fg" style="position:relative;"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?" autocomplete="off" oninput="showNoteSugg(this,'${txType}')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div><div class="fg"><label class="fl">Photo (optional)</label>${photoSection}</div>`
+        ? `<div class="fg"><label class="fl">Wallet</label>${wSelect}</div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label>${txCategoryControl(txType)}</div>${txSubcatField(txType)}<div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01" inputmode="decimal" onpointerdown="amountCalcPrepareInput('tx-amt')" ontouchstart="amountCalcPrepareInput('tx-amt')" onfocus="openAmountCalc('tx-amt')" onclick="openAmountCalc('tx-amt')" oninput="amountCalcSync('tx-amt')" autocomplete="off"></div>${amountCalcHTML('tx-amt')}</div><div class="fg" style="position:relative;"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?" autocomplete="off" oninput="showNoteSugg(this,'${txType}')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div><div class="fg"><label class="fl">Photo (optional)</label>${photoSection}</div>`
         : `<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01" inputmode="decimal" onpointerdown="amountCalcPrepareInput('tx-amt')" ontouchstart="amountCalcPrepareInput('tx-amt')" onfocus="openAmountCalc('tx-amt')" onclick="openAmountCalc('tx-amt')" oninput="amountCalcSync('tx-amt')" autocomplete="off"></div>${amountCalcHTML('tx-amt')}</div><div class="fg"><label class="fl">Transfer Fee <span style="color:var(--text3);font-weight:400;">(optional — deducted from sender)</span></label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-fee" placeholder="0.00" min="0" step="0.01" value="0"></div></div><div class="fg" style="position:relative;"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason" autocomplete="off" oninput="showNoteSugg(this,'transfer')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div>`;
       return `<div class="modal-title">Add Transaction</div><div class="tab-grp"><button class="tab-btn te ${txType === 'expense' ? 'active' : ''}" onclick="swTxT('expense')">Expense</button><button class="tab-btn ti ${txType === 'income' ? 'active' : ''}" onclick="swTxT('income')">Cash In</button><button class="tab-btn tt ${txType === 'transfer' ? 'active' : ''}" onclick="swTxT('transfer')">Transfer</button></div>${body}<button class="btn btn-p" onclick="submitTx()">Save Transaction</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`;
     }
@@ -6719,34 +6946,55 @@
 
     // ============ THEME ============
     const THEMES = {
-      dark: { label: 'Default Dark', bg: '#07090f', accent: '#0ce97f' },
-      slate: { label: 'Slate', bg: '#0a0a0e', accent: '#9d6fff' },
+      system: { label: 'System Default', bg: 'linear-gradient(135deg,#07090f 0 50%,#f0f2f7 50% 100%)', accent: '#0d6961' },
       light: { label: 'Light', bg: '#f0f2f7', accent: '#2a7de1' },
+      dark: { label: 'Dark', bg: '#07090f', accent: '#0d6961' },
     };
+    let _themeMediaBound = false;
+    function savedThemeChoice() {
+      const saved = localStorage.getItem('ntx_theme') || 'system';
+      return THEMES[saved] ? saved : 'system';
+    }
+    function systemThemeChoice() {
+      return window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
+    function activeThemeChoice(t) {
+      return t === 'system' ? systemThemeChoice() : t;
+    }
     function applyTheme(t) {
+      t = THEMES[t] ? t : 'system';
+      const active = activeThemeChoice(t);
       const b = document.body;
       Object.keys(THEMES).forEach(k => b.classList.remove('theme-' + k));
-      if (t && t !== 'dark') b.classList.add('theme-' + t);
-      localStorage.setItem('ntx_theme', t || 'dark');
+      b.classList.remove('theme-slate');
+      if (active === 'light') b.classList.add('theme-light');
+      localStorage.setItem('ntx_theme', t);
       // Update meta theme-color
       const mc = document.querySelector('meta[name="theme-color"]');
-      if (mc) mc.content = THEMES[t] ? THEMES[t].bg : '#07090f';
+      if (mc) mc.content = active === 'light' ? '#f0f2f7' : '#07090f';
       // Light theme: add body class for text overrides
-      if (t === 'light') document.body.style.setProperty('color-scheme', 'light');
+      if (active === 'light') document.body.style.setProperty('color-scheme', 'light');
       else document.body.style.removeProperty('color-scheme');
       // Re-render theme picker if modal is open
       const tp = document.getElementById('theme-picker');
       if (tp) {
-        const labels = { dark: 'Default Dark', slate: 'Slate', light: 'Light' };
-        const previews = { dark: '#07090f', slate: '#0a0a0e', light: '#f0f2f7' };
-        const accents = { dark: '#0ce97f', slate: '#9d6fff', light: '#2a7de1' };
         tp.innerHTML = Object.keys(THEMES).map(k => {
           const isActive = (t === k);
-          return `<button onclick="applyTheme('${k}')" style="padding:9px 6px;border-radius:10px;border:1.5px solid ${isActive ? accents[k] : 'var(--border)'};background:${isActive ? 'rgba(255,255,255,0.06)' : 'var(--bg)'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s;font-family:'Outfit',sans-serif;"><span style="width:22px;height:22px;border-radius:7px;background:${previews[k]};border:1px solid rgba(255,255,255,.12);display:inline-block;box-shadow:inset 0 0 0 5px ${accents[k]}22;"></span><span style="font-size:9px;font-weight:700;color:${isActive ? accents[k] : 'var(--text3)'};text-align:center;line-height:1.2;">${labels[k]}</span></button>`;
+          const cfg = THEMES[k];
+          return `<button onclick="applyTheme('${k}')" style="padding:9px 6px;border-radius:10px;border:1.5px solid ${isActive ? cfg.accent : 'var(--border)'};background:${isActive ? 'rgba(255,255,255,0.06)' : 'var(--bg)'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s;font-family:'Outfit',sans-serif;"><span style="width:22px;height:22px;border-radius:7px;background:${cfg.bg};border:1px solid rgba(255,255,255,.12);display:inline-block;box-shadow:inset 0 0 0 5px ${cfg.accent}22;"></span><span style="font-size:9px;font-weight:700;color:${isActive ? cfg.accent : 'var(--text3)'};text-align:center;line-height:1.2;">${cfg.label}</span></button>`;
         }).join('');
       }
     }
-    function loadSavedTheme() { const t = localStorage.getItem('ntx_theme') || 'dark'; applyTheme(t); }
+    function loadSavedTheme() {
+      applyTheme(savedThemeChoice());
+      if (!_themeMediaBound && window.matchMedia) {
+        const mq = window.matchMedia('(prefers-color-scheme: light)');
+        const syncSystemTheme = () => { if (savedThemeChoice() === 'system') applyTheme('system'); };
+        if (mq.addEventListener) mq.addEventListener('change', syncSystemTheme);
+        else if (mq.addListener) mq.addListener(syncSystemTheme);
+        _themeMediaBound = true;
+      }
+    }
 
 
     // ============ PROFILE PHOTO ============
