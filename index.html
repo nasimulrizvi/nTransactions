@@ -17,7 +17,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
-    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
     rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -1432,6 +1432,35 @@
       transform: translateY(0);
     }
 
+    .modal.tx-modal {
+      width: calc(100% - 32px);
+      max-width: 580px;
+      max-height: 88dvh;
+      margin-block: auto;
+      border-radius: 22px;
+      padding: 22px 24px 30px;
+      box-shadow: 0 20px 70px rgba(0, 0, 0, .32);
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .modal.tx-modal .modal-handle {
+      display: none;
+    }
+
+    @media(max-width:600px) {
+      .modal.tx-modal {
+        width: 100%;
+        height: 100dvh;
+        max-width: none;
+        max-height: 100dvh;
+        margin: 0;
+        border-width: 0;
+        border-radius: 0;
+        padding: calc(14px + env(safe-area-inset-top)) 16px calc(20px + env(safe-area-inset-bottom));
+      }
+    }
+
     .modal-handle {
       width: 38px;
       height: 4px;
@@ -1460,19 +1489,36 @@
       margin-bottom: 7px;
     }
 
+    .tx-cat-label-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
     .fi {
       width: 100%;
+      height: 44px;
       background: var(--bg3);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 11px 13px;
+      padding: 0 13px;
       font-size: 15px;
+      font-weight: 500;
       color: var(--text);
       font-family: 'Outfit', sans-serif;
+      line-height: 1.2;
       outline: none;
       transition: border-color .2s;
       -webkit-appearance: none;
       appearance: none;
+    }
+
+    textarea.fi {
+      height: auto;
+      min-height: 44px;
+      padding: 11px 13px;
+      line-height: 1.5;
     }
 
     .fi:focus {
@@ -1497,16 +1543,19 @@
 
     .tx-cat-trigger {
       width: 100%;
-      min-height: 45px;
+      height: 44px;
+      min-height: 44px;
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 11px 13px;
+      padding: 0 13px;
       border: 1px solid var(--border);
       border-radius: 12px;
       background: var(--bg3);
       color: var(--text);
       font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 500;
       cursor: pointer;
       text-align: left;
       transition: border-color .2s, background .2s;
@@ -1516,6 +1565,48 @@
     .tx-cat-trigger:focus {
       border-color: var(--green);
       outline: none;
+    }
+
+    .tx-cat-trigger.cat-expense:hover,
+    .tx-cat-trigger.cat-expense:focus {
+      border-color: var(--red);
+    }
+
+    .tx-cat-manage-btn {
+      margin-left: auto;
+      padding: 3px 8px;
+      border: 1px solid rgba(167, 202, 198, .16);
+      border-radius: 999px;
+      background: rgba(13, 105, 97, .12);
+      color: #9ec5c1;
+      font-family: 'Outfit', sans-serif;
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: .15px;
+      cursor: pointer;
+      transition: background .16s ease, border-color .16s ease, color .16s ease;
+    }
+
+    .tx-cat-manage-btn:hover,
+    .tx-cat-manage-btn:focus {
+      background: rgba(13, 105, 97, .20);
+      border-color: rgba(167, 202, 198, .28);
+      color: #d6efec;
+      outline: none;
+    }
+
+    body.theme-light .tx-cat-manage-btn {
+      background: rgba(13, 105, 97, .08);
+      border-color: rgba(13, 105, 97, .16);
+      color: #0d6961;
+    }
+
+    body.theme-light .tx-cat-manage-btn:hover,
+    body.theme-light .tx-cat-manage-btn:focus {
+      background: rgba(13, 105, 97, .13);
+      border-color: rgba(13, 105, 97, .25);
+      color: #0a554f;
     }
 
     .tx-cat-trigger-ico {
@@ -1529,6 +1620,14 @@
       height: 22px;
     }
 
+    .tx-cat-trigger.cat-expense .tx-cat-trigger-ico {
+      color: var(--red);
+    }
+
+    .tx-cat-trigger.cat-income .tx-cat-trigger-ico {
+      color: var(--green);
+    }
+
     .tx-cat-trigger-main {
       min-width: 0;
       flex: 1;
@@ -1537,7 +1636,7 @@
     .tx-cat-trigger-label {
       display: block;
       font-size: 15px;
-      font-weight: 600;
+      font-weight: 500;
       color: var(--text);
       overflow: hidden;
       text-overflow: ellipsis;
@@ -1625,6 +1724,18 @@
       color: var(--text);
     }
 
+    .tx-cat-card.cat-expense:hover,
+    .tx-cat-card.cat-expense.active {
+      border-color: var(--red);
+      background: var(--red-d);
+    }
+
+    .tx-cat-card.cat-income:hover,
+    .tx-cat-card.cat-income.active {
+      border-color: var(--green);
+      background: var(--green-d);
+    }
+
     .tx-cat-card-ico {
       width: 28px;
       height: 28px;
@@ -1633,6 +1744,14 @@
       justify-content: center;
       color: var(--green);
       flex-shrink: 0;
+    }
+
+    .tx-cat-card.cat-expense .tx-cat-card-ico {
+      color: var(--red);
+    }
+
+    .tx-cat-card.cat-income .tx-cat-card-ico {
+      color: var(--green);
     }
 
     .tx-cat-card-label {
@@ -1675,8 +1794,9 @@
 
     .amt-fi {
       padding-left: 34px !important;
+      padding-right: 13px !important;
       font-family: 'Space Mono', monospace !important;
-      font-size: 18px !important;
+      font-size: 15px !important;
       font-weight: 700 !important;
     }
 
@@ -2415,50 +2535,132 @@
       background: rgba(0, 0, 0, .18);
     }
 
+    .cat-reorder-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .cat-reorder-list.card {
+      padding: 7px;
+    }
+
     .cat-list-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid var(--borderl);
+      gap: 10px;
+      min-height: 46px;
+      padding: 9px 10px;
+      border: 1px solid transparent;
+      border-radius: 11px;
+      background: transparent;
+      transition: transform .2s cubic-bezier(.2, .8, .2, 1), background .18s, border-color .18s, box-shadow .18s, opacity .18s;
     }
 
     .cat-list-item:last-child {
       border-bottom: none;
     }
 
-    .cat-order-btns {
+    .cat-list-item.is-draggable {
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .cat-list-item.is-draggable:hover {
+      background: rgba(255, 255, 255, .035);
+      border-color: var(--border);
+    }
+
+    body.theme-light .cat-list-item.is-draggable:hover {
+      background: rgba(0, 0, 0, .025);
+    }
+
+    .cat-list-item.drag-pressing {
+      background: rgba(255, 255, 255, .045);
+      border-color: var(--border);
+    }
+
+    .cat-list-item.dragging {
+      cursor: grabbing;
+      background: var(--bg3);
+      border-color: rgba(12, 233, 127, .26);
+      box-shadow: 0 18px 42px rgba(0, 0, 0, .36);
+      opacity: .98 !important;
+      transform: scale(1.015);
+      pointer-events: none;
+    }
+
+    body.theme-light .cat-list-item.dragging {
+      box-shadow: 0 18px 38px rgba(15, 23, 42, .16);
+    }
+
+    .cat-drag-placeholder {
+      min-height: 46px;
+      border: 1px dashed rgba(12, 233, 127, .35);
+      border-radius: 11px;
+      background: var(--green-d);
+      transition: min-height .16s, background .16s, border-color .16s;
+    }
+
+    .cat-drag-grip {
+      width: 24px;
+      height: 28px;
       display: flex;
-      flex-direction: column;
-      gap: 2px;
-      margin-right: 8px;
-    }
-
-    .cat-order-btn {
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 4px;
+      align-items: center;
+      justify-content: center;
       color: var(--text3);
-      cursor: pointer;
-      font-size: 10px;
-      padding: 1px 6px;
-      line-height: 1.5;
-      font-family: 'Outfit', sans-serif;
-      transition: all .15s;
+      flex-shrink: 0;
+      opacity: .78;
     }
 
-    .cat-order-btn:hover:not(:disabled) {
-      border-color: rgba(255, 255, 255, .2);
+    .cat-list-item:hover .cat-drag-grip,
+    .cat-list-item.dragging .cat-drag-grip {
+      color: var(--green);
+      opacity: 1;
+    }
+
+    .cat-row-main {
+      min-width: 0;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .cat-row-title {
+      font-size: 13px;
+      font-weight: 700;
       color: var(--text);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    body.theme-light .cat-order-btn:hover:not(:disabled) {
-      border-color: rgba(0, 0, 0, .25);
+    .cat-row-badge {
+      font-size: 9px;
+      color: var(--text3);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1px 5px;
+      flex-shrink: 0;
     }
 
-    .cat-order-btn:disabled {
-      opacity: .22;
-      cursor: not-allowed;
+    .cat-row-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      touch-action: manipulation;
+    }
+
+    body.cat-drag-active {
+      cursor: grabbing;
+      user-select: none;
+      -webkit-user-select: none;
     }
 
     .wlt-card {
@@ -2688,6 +2890,381 @@
     }
 
     /* Auth styles */
+    .modal-overlay.auth-overlay {
+      align-items: center;
+      padding: 14px;
+    }
+
+    .modal-overlay.auth-overlay .modal.auth-modal {
+      width: min(100%, 462px);
+      max-height: min(92dvh, 720px);
+      margin: auto;
+      border-radius: 24px;
+      padding: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      background:
+        linear-gradient(180deg, rgba(14, 18, 27, .98), rgba(7, 9, 15, .98)),
+        radial-gradient(circle at 50% 0%, rgba(13, 105, 97, .14), transparent 42%);
+      border: 1px solid var(--border);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, .58), inset 0 1px 0 rgba(255, 255, 255, .055);
+      transform: translateY(18px) scale(.97);
+      font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+    }
+
+    .modal-overlay.auth-overlay.open .modal.auth-modal {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal.auth-modal .modal-handle {
+      display: none;
+    }
+
+    .auth-shell {
+      position: relative;
+      padding: 28px 26px 24px;
+      color: var(--text);
+    }
+
+    .auth-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(255, 255, 255, .04);
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .18s ease;
+    }
+
+    .auth-close:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, .075);
+      border-color: rgba(13, 105, 97, .25);
+    }
+
+    .auth-title {
+      font-size: 25px;
+      line-height: 1.15;
+      font-weight: 800;
+      letter-spacing: 0;
+      margin: 2px 42px 9px 0;
+    }
+
+    .auth-subtitle {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text2);
+      margin-bottom: 18px;
+      max-width: 360px;
+    }
+
+    .auth-message {
+      display: none;
+      border-radius: 14px;
+      padding: 11px 13px;
+      font-size: 12px;
+      line-height: 1.45;
+      font-weight: 700;
+      margin-bottom: 14px;
+      animation: authMsgIn .18s ease;
+    }
+
+    @keyframes authMsgIn {
+      from {
+        opacity: 0;
+        transform: translateY(-4px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .auth-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+      background: rgba(255, 255, 255, .032);
+      border: 1px solid var(--border);
+      padding: 5px;
+      border-radius: 15px;
+      margin-bottom: 16px;
+    }
+
+    .auth-tab {
+      min-height: 42px;
+      border: 0;
+      border-radius: 11px;
+      background: transparent;
+      color: var(--text3);
+      font-size: 13px;
+      font-weight: 800;
+      font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: all .2s ease;
+    }
+
+    .auth-tab.active {
+      background: linear-gradient(135deg, rgba(13, 105, 97, .24), rgba(13, 105, 97, .11));
+      color: #d6efec;
+      box-shadow: inset 0 0 0 1px rgba(13, 105, 97, .24), 0 10px 22px rgba(0, 0, 0, .22);
+    }
+
+    .auth-form {
+      animation: authFormIn .2s ease;
+    }
+
+    @keyframes authFormIn {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .auth-field {
+      margin-bottom: 13px;
+    }
+
+    .auth-field .fl {
+      color: var(--text3);
+      letter-spacing: .7px;
+      margin-bottom: 7px;
+    }
+
+    .auth-input-wrap {
+      position: relative;
+    }
+
+    .auth-input {
+      min-height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(19, 23, 32, .88), rgba(13, 16, 24, .88));
+      border: 1px solid rgba(255, 255, 255, .075);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .035), 0 10px 24px rgba(0, 0, 0, .14);
+      transition: border-color .18s ease, box-shadow .18s ease, background .18s ease, transform .18s ease;
+    }
+
+    .auth-input:hover {
+      border-color: rgba(13, 105, 97, .24);
+      background: linear-gradient(180deg, rgba(22, 27, 38, .92), rgba(14, 18, 26, .92));
+    }
+
+    .auth-input:focus {
+      border-color: rgba(13, 105, 97, .72);
+      box-shadow: 0 0 0 4px rgba(13, 105, 97, .14), inset 0 1px 0 rgba(255, 255, 255, .05), 0 14px 28px rgba(0, 0, 0, .18);
+    }
+
+    .auth-input.invalid {
+      border-color: rgba(255, 61, 90, .68);
+      box-shadow: 0 0 0 4px rgba(255, 61, 90, .12);
+    }
+
+    .auth-input.has-toggle {
+      padding-right: 48px;
+    }
+
+    .auth-pass-toggle {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      border: 0;
+      background: transparent;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .18s ease;
+    }
+
+    .auth-pass-toggle:hover {
+      color: #a7cac6;
+      background: rgba(255, 255, 255, .06);
+    }
+
+    .auth-pass-toggle svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .auth-field-error {
+      min-height: 15px;
+      margin-top: 5px;
+      font-size: 11px;
+      line-height: 1.35;
+      color: var(--red);
+      font-weight: 700;
+    }
+
+    .auth-form-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: -2px 0 12px;
+    }
+
+    .auth-link-btn,
+    .auth-policy-link {
+      background: none;
+      border: 0;
+      color: #9ec5c1;
+      font-size: 12px;
+      font-weight: 800;
+      font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: none;
+    }
+
+    .auth-link-btn:hover,
+    .auth-policy-link:hover {
+      color: #dff8f5;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .auth-agree {
+      position: relative;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, .075);
+      background: linear-gradient(180deg, rgba(19, 23, 32, .68), rgba(13, 16, 24, .72));
+      color: var(--text2);
+      font-size: 12px;
+      line-height: 1.5;
+      cursor: pointer;
+      margin-bottom: 5px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .028), 0 10px 22px rgba(0, 0, 0, .10);
+      transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+    }
+
+    .auth-agree:hover {
+      border-color: rgba(13, 105, 97, .24);
+      background: linear-gradient(180deg, rgba(22, 27, 38, .78), rgba(14, 18, 26, .78));
+    }
+
+    .auth-agree input {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      margin-top: 1px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, .16);
+      background: rgba(255, 255, 255, .04);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+      flex-shrink: 0;
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: all .18s ease;
+    }
+
+    .auth-agree input::before {
+      content: '';
+      width: 9px;
+      height: 5px;
+      border-left: 2px solid #f4fffd;
+      border-bottom: 2px solid #f4fffd;
+      transform: rotate(-45deg) scale(0);
+      margin-top: -2px;
+      transition: transform .16s ease;
+    }
+
+    .auth-agree input:checked {
+      background: linear-gradient(135deg, #0d6961, #167a71);
+      border-color: rgba(167, 202, 198, .36);
+      box-shadow: 0 8px 18px rgba(13, 105, 97, .26), inset 0 1px 0 rgba(255, 255, 255, .18);
+    }
+
+    .auth-agree input:checked::before {
+      transform: rotate(-45deg) scale(1);
+    }
+
+    .auth-agree input:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(13, 105, 97, .14), inset 0 1px 0 rgba(255, 255, 255, .06);
+    }
+
+    .auth-primary-btn,
+    .auth-google-btn {
+      min-height: 48px;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      font-family: 'Plus Jakarta Sans', 'Outfit', sans-serif;
+    }
+
+    .auth-primary-btn {
+      background: linear-gradient(135deg, rgba(13, 105, 97, .96), rgba(22, 122, 113, .92));
+      color: #f4fffd;
+      border: 1px solid rgba(167, 202, 198, .18);
+      box-shadow: 0 14px 32px rgba(13, 105, 97, .20);
+    }
+
+    .auth-primary-btn:hover {
+      background: linear-gradient(135deg, rgba(22, 122, 113, .98), rgba(31, 131, 122, .96));
+      border-color: rgba(167, 202, 198, .28);
+    }
+
+    .auth-primary-btn:disabled,
+    .auth-google-btn:disabled {
+      cursor: wait;
+      opacity: .72;
+      transform: none;
+    }
+
+    .auth-spinner {
+      display: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, .38);
+      border-top-color: #fff;
+      animation: authSpin .75s linear infinite;
+    }
+
+    .auth-primary-btn.loading .auth-spinner,
+    .auth-google-btn.loading .auth-spinner {
+      display: inline-block;
+    }
+
+    .auth-google-btn .auth-spinner {
+      border-color: rgba(31, 41, 55, .24);
+      border-top-color: #1f2937;
+    }
+
+    @keyframes authSpin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     .auth-divider {
       display: flex;
       align-items: center;
@@ -2695,6 +3272,7 @@
       margin: 16px 0;
       color: var(--text3);
       font-size: 12px;
+      font-weight: 800;
     }
 
     .auth-divider::before,
@@ -2705,19 +3283,588 @@
       background: var(--border);
     }
 
-    .auth-link-btn {
-      background: none;
-      border: 0;
-      color: var(--blue);
-      font-size: 12px;
-      font-weight: 800;
-      font-family: 'Outfit', sans-serif;
-      cursor: pointer;
-      padding: 0;
+    .auth-google-btn {
+      background: rgba(255, 255, 255, .95);
+      color: #1f2937;
+      border: 1px solid rgba(255, 255, 255, .16);
+      margin-top: 0;
     }
 
-    .auth-link-btn:hover {
+    .auth-bottom-link {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+      color: var(--text3);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .auth-legal-body {
+      color: var(--text2);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .auth-legal-body p {
+      margin-bottom: 12px;
+    }
+
+    @media(max-width:480px) {
+      .modal-overlay.auth-overlay {
+        padding: 10px;
+      }
+
+      .auth-shell {
+        padding: 22px 18px 20px;
+      }
+
+      .auth-title {
+        font-size: 22px;
+      }
+
+      .auth-subtitle {
+        font-size: 12px;
+      }
+
+      .auth-tabs {
+        margin-bottom: 14px;
+      }
+    }
+
+    body.theme-light .modal-overlay.auth-overlay .modal.auth-modal {
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(238, 240, 247, .98)),
+        radial-gradient(circle at 50% 0%, rgba(13, 105, 97, .09), transparent 42%);
+      border-color: rgba(13, 105, 97, .16);
+      box-shadow: 0 22px 70px rgba(17, 24, 39, .18), inset 0 1px 0 rgba(255, 255, 255, .8);
+    }
+
+    body.theme-light .auth-tab {
+      color: #6b7280;
+    }
+
+    body.theme-light .auth-tab.active {
+      color: #0d6961;
+      background: rgba(13, 105, 97, .12);
+      box-shadow: inset 0 0 0 1px rgba(13, 105, 97, .18);
+    }
+
+    body.theme-light .auth-input {
+      background: linear-gradient(180deg, rgba(255, 255, 255, .94), rgba(246, 248, 252, .94));
+      border-color: rgba(13, 105, 97, .13);
+      color: #131720;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 10px 22px rgba(17, 24, 39, .06);
+    }
+
+    body.theme-light .auth-agree,
+    body.theme-light .auth-tabs {
+      background: rgba(13, 105, 97, .045);
+      border-color: rgba(13, 105, 97, .12);
+    }
+
+    body.theme-light .auth-agree input {
+      border-color: rgba(13, 105, 97, .22);
+      background: rgba(255, 255, 255, .86);
+    }
+
+    /* Auth V0.1 visual sync */
+    .modal-overlay.auth-overlay .modal.auth-modal {
+      width: min(100% - 26px, 540px);
+      max-width: 540px;
+      max-height: calc(100dvh - 32px);
+      border-radius: 28px;
+      padding: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(12, 233, 127, .15), transparent 32%),
+        radial-gradient(circle at top right, rgba(77, 159, 255, .14), transparent 34%),
+        linear-gradient(180deg, rgba(19, 23, 32, .98), rgba(7, 9, 15, .98));
+      border: 1px solid rgba(255, 255, 255, .10);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, .56), inset 0 1px 0 rgba(255, 255, 255, .06);
+      font-family: 'Outfit', sans-serif;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+    }
+
+    .auth-shell {
+      position: relative;
+      padding: 22px;
+      color: var(--text);
+    }
+
+    .auth-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .auth-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .auth-brand-mark {
+      width: 46px;
+      height: 46px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, rgba(12, 233, 127, .18), rgba(77, 159, 255, .13));
+      border: 1px solid rgba(255, 255, 255, .10);
       color: var(--green);
+      box-shadow: 0 12px 34px rgba(12, 233, 127, .10);
+      flex-shrink: 0;
+    }
+
+    .auth-brand-mark .auth-input-icon {
+      width: 22px;
+      height: 22px;
+      color: inherit;
+    }
+
+    .auth-kicker {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 1.05px;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 4px;
+    }
+
+    .auth-title {
+      font-size: 21px;
+      line-height: 1.15;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: 0;
+      margin: 0;
+    }
+
+    .auth-subtitle {
+      color: var(--text2);
+      font-size: 12px;
+      line-height: 1.55;
+      margin: 8px 0 0;
+      max-width: none;
+    }
+
+    .auth-close {
+      position: static;
+      width: 36px;
+      height: 36px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(255, 255, 255, .04);
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform .18s, background .18s, color .18s;
+      flex-shrink: 0;
+    }
+
+    .auth-close:hover {
+      background: rgba(255, 255, 255, .08);
+      color: var(--text);
+      transform: translateY(-1px);
+    }
+
+    .auth-tabs {
+      gap: 4px;
+      background: rgba(255, 255, 255, .045);
+      border: 1px solid rgba(255, 255, 255, .07);
+      padding: 4px;
+      border-radius: 16px;
+      margin-bottom: 16px;
+    }
+
+    .auth-tab {
+      min-height: 42px;
+      border-radius: 12px;
+      color: var(--text2);
+      font-family: 'Outfit', sans-serif;
+      transition: background .2s, color .2s, box-shadow .2s, transform .2s;
+    }
+
+    .auth-tab.active {
+      color: var(--text);
+      background: linear-gradient(135deg, rgba(12, 233, 127, .16), rgba(77, 159, 255, .10));
+      box-shadow: inset 0 0 0 1px rgba(12, 233, 127, .18), 0 8px 26px rgba(0, 0, 0, .26);
+    }
+
+    .auth-form {
+      display: grid;
+      gap: 12px;
+      animation: authSoftIn .22s ease both;
+    }
+
+    .auth-field {
+      display: grid;
+      gap: 7px;
+      margin-bottom: 0;
+    }
+
+    .auth-field .fl,
+    .auth-field-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .85px;
+      margin: 0;
+    }
+
+    .auth-input-wrap {
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      padding: 0 12px;
+      border-radius: 15px;
+      background: rgba(255, 255, 255, .045);
+      border: 1px solid rgba(255, 255, 255, .08);
+      transition: border-color .18s, background .18s, box-shadow .18s;
+    }
+
+    .auth-input-wrap:focus-within {
+      border-color: rgba(12, 233, 127, .45);
+      background: rgba(255, 255, 255, .065);
+      box-shadow: 0 0 0 4px rgba(12, 233, 127, .08);
+    }
+
+    .auth-field.invalid .auth-input-wrap,
+    .auth-input-wrap:has(.auth-input.invalid) {
+      border-color: rgba(255, 61, 90, .48);
+      box-shadow: 0 0 0 4px rgba(255, 61, 90, .08);
+    }
+
+    .auth-input-icon {
+      width: 18px;
+      height: 18px;
+      color: var(--text3);
+      flex-shrink: 0;
+    }
+
+    .auth-input {
+      width: 100%;
+      min-width: 0;
+      min-height: auto;
+      border: 0;
+      outline: none;
+      background: transparent;
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Outfit', sans-serif;
+      padding: 13px 0;
+      box-shadow: none;
+      border-radius: 0;
+    }
+
+    .auth-input:hover,
+    .auth-input:focus,
+    .auth-input.invalid {
+      background: transparent;
+      border-color: transparent;
+      box-shadow: none;
+    }
+
+    .auth-input::placeholder {
+      color: rgba(136, 146, 164, .72);
+      font-weight: 500;
+    }
+
+    .auth-input.has-toggle {
+      padding-right: 0;
+    }
+
+    .auth-pass-toggle {
+      position: static;
+      transform: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 11px;
+      flex-shrink: 0;
+      transition: color .18s, background .18s;
+    }
+
+    .auth-pass-toggle:hover {
+      color: var(--green);
+      background: rgba(12, 233, 127, .08);
+    }
+
+    .auth-field-error {
+      min-height: 0;
+      margin-top: 0;
+      color: var(--red);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.35;
+      opacity: 0;
+      transform: translateY(-2px);
+      transition: opacity .16s, transform .16s;
+    }
+
+    .auth-field.invalid .auth-field-error,
+    .auth-field-error:not(:empty) {
+      min-height: 15px;
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .auth-message {
+      border: 1px solid transparent;
+      font-weight: 750;
+      animation: authSoftIn .18s ease both;
+    }
+
+    .auth-form-row {
+      justify-content: flex-end;
+      min-height: 20px;
+      margin: -2px 0 0;
+    }
+
+    .auth-link-btn,
+    .auth-policy-link {
+      color: var(--blue);
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .auth-link-btn:hover,
+    .auth-policy-link:hover {
+      color: var(--green);
+      text-decoration: none;
+    }
+
+    .auth-agree {
+      padding: 11px 12px;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(255, 255, 255, .035);
+      border-radius: 14px;
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 650;
+      line-height: 1.45;
+      margin-bottom: 0;
+      box-shadow: none;
+    }
+
+    .auth-agree:hover,
+    .auth-terms-field.invalid .auth-agree {
+      background: rgba(255, 255, 255, .06);
+      border-color: rgba(255, 255, 255, .10);
+    }
+
+    .auth-agree input {
+      appearance: auto;
+      -webkit-appearance: checkbox;
+      width: 18px;
+      height: 18px;
+      margin-top: 1px;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+      accent-color: var(--green);
+      display: block;
+    }
+
+    .auth-agree input::before {
+      content: none;
+    }
+
+    .auth-agree input:checked {
+      background: initial;
+      border-color: initial;
+      box-shadow: none;
+    }
+
+    .auth-primary-btn {
+      min-height: 48px;
+      margin-top: 2px;
+      border-radius: 15px;
+      background: rgba(12, 233, 127, 0.15);
+      color: var(--green);
+      border: 1px solid rgba(12, 233, 127, 0.35);
+      font-family: 'Outfit', sans-serif;
+      box-shadow: 0 12px 30px rgba(12, 233, 127, .10);
+    }
+
+    .auth-primary-btn:hover {
+      background: rgba(12, 233, 127, 0.22);
+      border-color: rgba(12, 233, 127, 0.55);
+    }
+
+    .auth-primary-btn:disabled,
+    .auth-google-btn:disabled {
+      cursor: not-allowed;
+    }
+
+    .auth-spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-top-color: currentColor;
+    }
+
+    .auth-google-btn .auth-spinner {
+      border-color: currentColor;
+      border-right-color: transparent;
+      border-top-color: currentColor;
+    }
+
+    .auth-divider {
+      margin: 16px 0;
+      color: var(--text3);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .9px;
+    }
+
+    .auth-divider::before,
+    .auth-divider::after {
+      background: rgba(255, 255, 255, .08);
+    }
+
+    .auth-google-btn {
+      min-height: 47px;
+      margin: 0;
+      border-radius: 15px;
+      background: #ffffff;
+      color: #131720;
+      border: 1px solid rgba(218, 220, 224, .95);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      box-shadow: 0 10px 24px rgba(0, 0, 0, .20);
+      transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+
+    .auth-google-btn:hover {
+      background: #f8f9fa;
+      border-color: rgba(189, 193, 198, .95);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, .24);
+      transform: translateY(-1px);
+    }
+
+    .auth-bottom-link {
+      margin-top: 15px;
+      text-align: center;
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 650;
+    }
+
+    .auth-legal-body {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .auth-legal-body p {
+      margin-bottom: 0;
+    }
+
+    @keyframes authSoftIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @media(max-width:520px) {
+      .modal-overlay.auth-overlay {
+        padding: 9px;
+      }
+
+      .modal-overlay.auth-overlay .modal.auth-modal {
+        width: calc(100% - 18px);
+        max-height: calc(100dvh - 18px);
+        border-radius: 24px;
+      }
+
+      .auth-shell {
+        padding: 18px;
+      }
+
+      .auth-title {
+        font-size: 19px;
+      }
+
+      .auth-input-wrap,
+      .auth-primary-btn,
+      .auth-google-btn {
+        min-height: 50px;
+      }
+    }
+
+    body.theme-light .modal-overlay.auth-overlay .modal.auth-modal {
+      background:
+        radial-gradient(circle at top left, rgba(0, 184, 92, .14), transparent 34%),
+        radial-gradient(circle at top right, rgba(42, 125, 225, .13), transparent 36%),
+        linear-gradient(180deg, rgba(255, 255, 255, .98), rgba(238, 240, 247, .98));
+      border-color: rgba(0, 0, 0, .08);
+      box-shadow: 0 24px 70px rgba(19, 23, 32, .18), inset 0 1px 0 rgba(255, 255, 255, .72);
+    }
+
+    body.theme-light .auth-brand-mark {
+      background: linear-gradient(135deg, rgba(0, 184, 92, .14), rgba(42, 125, 225, .12));
+      border-color: rgba(0, 0, 0, .08);
+      box-shadow: 0 10px 28px rgba(0, 184, 92, .08);
+    }
+
+    body.theme-light .auth-input-wrap,
+    body.theme-light .auth-tabs,
+    body.theme-light .auth-agree {
+      background: rgba(255, 255, 255, .68);
+      border-color: rgba(0, 0, 0, .08);
+    }
+
+    body.theme-light .auth-input-wrap:focus-within {
+      background: rgba(255, 255, 255, .92);
+      border-color: rgba(0, 184, 92, .45);
+    }
+
+    body.theme-light .auth-input {
+      background: transparent;
+      color: #131720;
+      box-shadow: none;
+    }
+
+    body.theme-light .auth-google-btn {
+      background: #ffffff;
+      color: #131720;
+      border: 1px solid rgba(218, 220, 224, .95);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    body.theme-light .auth-google-btn:hover {
+      background: #f8f9fa;
+      border-color: rgba(189, 193, 198, .95);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    body.theme-light .auth-divider::before,
+    body.theme-light .auth-divider::after {
+      background: rgba(0, 0, 0, .08);
     }
 
     .auth-user-card {
@@ -3437,13 +4584,15 @@
 
     .dtp-field-btn {
       width: 100%;
-      padding: 11px 14px;
+      height: 44px;
+      min-height: 44px;
+      padding: 0 13px;
       border-radius: 12px;
       background: var(--bg3);
       border: 1px solid var(--border);
       color: var(--text);
-      font-size: 13px;
-      font-weight: 700;
+      font-size: 15px;
+      font-weight: 500;
       font-family: 'Outfit', sans-serif;
       cursor: pointer;
       text-align: left;
@@ -3841,6 +4990,7 @@
         S.savingsTargetSettings = normalizeSavingsTargetSettings(d.savingsTargetSettings || S.savingsTargetSettings);
         S.currency = d.currency || S.currency || 'BDT';
         if (d.currency) markCurrencyConfigured();
+        S.fullName = d.fullName || S.fullName || '';
         S.username = d.username || S.username || '';
         S.lastSync = d.ts;
         saveLocal(); setSyncDot('ok'); renderMain();
@@ -3859,7 +5009,7 @@
     // ============ CONSTANTS ============
     const DEFAULT_EXP_CATS = [
       { id: 'education', label: 'Education' }, { id: 'entertainment', label: 'Entertainment' },
-      { id: 'transportation', label: 'Transportation' }, { id: 'food', label: 'Food & Dining' },
+      { id: 'transportation', label: 'Transport' }, { id: 'food', label: 'Food & Dining' },
       { id: 'health', label: 'Health & Medical' }, { id: 'accommodation', label: 'Accommodation' },
       { id: 'mobile', label: 'Mobile Recharge' }, { id: 'misc', label: 'Miscellaneous Expenses' },
       { id: 'clothing', label: 'Clothing & Accessories' }, { id: 'tech', label: 'Technology & Electronics' },
@@ -4095,7 +5245,7 @@
     const ICON_PATHS = {
       education: '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
       entertainment: '<rect x="2" y="7" width="20" height="15" rx="2"/><polyline points="17 2 12 7 7 2"/>',
-      transportation: '<rect x="1" y="3" width="15" height="13" rx="1"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>',
+      transportation: '<path d="M4 6 2 7"/><path d="m22 7-2-1"/><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M10 6h4"/><path d="M4 11h16"/><path d="M8 15h.01"/><path d="M16 15h.01"/><path d="M6 19v2"/><path d="M18 21v-2"/>',
       food: '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>',
       health: '<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>',
       accommodation: '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>',
@@ -4200,7 +5350,7 @@
       { id: 'subscription', label: 'Subscription' }, { id: 'shopping', label: 'Shopping' },
       { id: 'bank_charges', label: 'Bank Charges' }, { id: 'business_expense', label: 'Business Expense' },
       { id: 'insurance', label: 'Insurance' },
-      { id: 'utilities', label: 'Utilities' },
+      { id: 'utilities', label: 'Electricity Bill' },
       { id: 'savings_exp', label: 'Savings' }, { id: 'investments_exp', label: 'Investments' },
       { id: 'personal_care', label: 'Personal Care' }, { id: 'grooming', label: 'Grooming' },
       { id: 'household_maintenance', label: 'Household' }, { id: 'vehicle_service', label: 'Vehicle' },
@@ -4225,20 +5375,39 @@
     ];
     function customCatIconPicker(type) {
       const opts = type === 'expense' ? CUSTOM_EXP_ICON_OPTIONS : CUSTOM_INC_ICON_OPTIONS;
-      return `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;">Select Icon</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:7px;margin-bottom:12px;max-height:260px;overflow-y:auto;padding:2px;" id="nc-icon-grid">${opts.map((o,i) => `<div onclick="pickCustomCatIcon('${o.id}')" data-icon-id="${o.id}" style="min-height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 5px;border-radius:11px;border:1px solid ${i===0?'var(--green)':'var(--border)'};background:${i===0?'var(--green-d)':'transparent'};cursor:pointer;transition:all .15s;" class="nc-icon-opt${i===0?' sel':''}">${ico(o.id,18)}<span style="font-size:9px;font-weight:700;color:var(--text3);text-align:center;line-height:1.2;overflow-wrap:anywhere;width:100%;">${o.label}</span></div>`).join('')}</div><input type="hidden" id="nc-icon" value="${opts[0].id}">`;
+      return `<div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:7px;">Select Icon</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(76px,1fr));gap:7px;margin-bottom:12px;max-height:260px;overflow-y:auto;padding:2px;" id="nc-icon-grid">${opts.map((o,i) => `<div onclick="pickCustomCatIcon('${o.id}')" data-icon-id="${o.id}" data-icon-label="${esc(o.label)}" style="min-height:66px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 5px;border-radius:11px;border:1px solid ${i===0?'var(--green)':'var(--border)'};background:${i===0?'var(--green-d)':'transparent'};cursor:pointer;transition:all .15s;" class="nc-icon-opt${i===0?' sel':''}">${ico(o.id,18)}<span style="font-size:9px;font-weight:700;color:var(--text3);text-align:center;line-height:1.2;overflow-wrap:anywhere;width:100%;">${o.label}</span></div>`).join('')}</div><input type="hidden" id="nc-icon" value="${opts[0].id}">`;
+    }
+    function customCatDefaultLabel(type) {
+      const opts = type === 'expense' ? CUSTOM_EXP_ICON_OPTIONS : CUSTOM_INC_ICON_OPTIONS;
+      return opts[0] ? opts[0].label : '';
     }
     function pickCustomCatIcon(iconId) {
+      let selected = null;
       document.querySelectorAll('.nc-icon-opt').forEach(el => {
         const isActive = el.getAttribute('data-icon-id') === iconId;
         el.style.borderColor = isActive ? 'var(--green)' : 'var(--border)';
         el.style.background = isActive ? 'var(--green-d)' : 'transparent';
         if (isActive) el.classList.add('sel'); else el.classList.remove('sel');
+        if (isActive) selected = el;
       });
       const inp = document.getElementById('nc-icon');
       if (inp) inp.value = iconId;
+      const labelInput = document.getElementById('nc-name');
+      const defaultLabel = selected?.getAttribute('data-icon-label') || '';
+      if (labelInput && defaultLabel) {
+        const current = labelInput.value.trim();
+        const previousAuto = labelInput.getAttribute('data-auto-label') || '';
+        const wasManual = labelInput.getAttribute('data-user-edited') === '1' && current && current !== previousAuto;
+        if (!wasManual || !current) {
+          labelInput.value = defaultLabel;
+          labelInput.setAttribute('data-auto-label', defaultLabel);
+          labelInput.setAttribute('data-user-edited', '0');
+        }
+      }
     }
     const TRASH_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ff3d5a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
     const EDIT_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+    const DRAG_HANDLE_SVG = `<svg width="14" height="18" viewBox="0 0 14 18" fill="none" aria-hidden="true"><circle cx="4" cy="4" r="1.4" fill="currentColor"/><circle cx="10" cy="4" r="1.4" fill="currentColor"/><circle cx="4" cy="9" r="1.4" fill="currentColor"/><circle cx="10" cy="9" r="1.4" fill="currentColor"/><circle cx="4" cy="14" r="1.4" fill="currentColor"/><circle cx="10" cy="14" r="1.4" fill="currentColor"/></svg>`;
     const CAL_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`;
     const WAL_SVG = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4z"/></svg>`;
     const EXPORT_SVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>`;
@@ -4282,7 +5451,7 @@
 
     // ============ STATE ============
     const SAVINGS_TARGET_DEFAULTS = { monthlyPct: 5, yearlyPct: 2, monthlyOverrides: {}, yearlyOverrides: {} };
-    let S = { transactions: [], wallets: [], budgets: [], loans: [], customExpCats: [], customIncCats: [], subcategories: { expense: {}, income: {} }, expCatOrder: [], incCatOrder: [], hiddenExpCats: [], hiddenIncCats: [], savingsTargetSettings: { ...SAVINGS_TARGET_DEFAULTS, monthlyOverrides: {}, yearlyOverrides: {} }, username: '', currency: 'BDT', view: 'dashboard', month: todayYM(), lastSync: null, syncProject: firebaseConfig.projectId };
+    let S = { transactions: [], wallets: [], budgets: [], loans: [], customExpCats: [], customIncCats: [], subcategories: { expense: {}, income: {} }, expCatOrder: [], incCatOrder: [], hiddenExpCats: [], hiddenIncCats: [], savingsTargetSettings: { ...SAVINGS_TARGET_DEFAULTS, monthlyOverrides: {}, yearlyOverrides: {} }, fullName: '', username: '', currency: 'BDT', view: 'dashboard', month: todayYM(), lastSync: null, syncProject: firebaseConfig.projectId };
     let _currencySetupNeeded = false;
     let txF = 'all', txQ = '', txDuration = 'all', loanF = 'all', txType = 'expense', editWltId = '', selColor = COLORS[0];
     let txAdvancedFilters = defaultTxFilters();
@@ -4367,16 +5536,6 @@
       const s = getSubcat(type, catId, subId);
       return s ? s.label : '';
     }
-    function moveCat(type, id, dir) {
-      const key = type === 'expense' ? 'expCatOrder' : 'incCatOrder';
-      const cats = type === 'expense' ? getExpCats(true) : getIncCats(true);
-      if (!S[key] || !S[key].length) S[key] = cats.map(c => c.id);
-      const order = S[key]; let idx = order.indexOf(id);
-      if (idx === -1) { S[key] = cats.map(c => c.id); idx = S[key].indexOf(id); }
-      const ni = idx + dir; if (ni < 0 || ni >= order.length) return;
-      [order[idx], order[ni]] = [order[ni], order[idx]];
-      save(); openManageCats(type);
-    }
     function toggleHideCat(type, id) {
       const key = type === 'expense' ? 'hiddenExpCats' : 'hiddenIncCats';
       if (!S[key]) S[key] = [];
@@ -4384,6 +5543,157 @@
       if (idx >= 0) S[key].splice(idx, 1);
       else S[key].push(id);
       save(); openManageCats(type);
+    }
+    let _catDrag = null;
+    function catDragPressStart(e, mode, type, catId = '', backTarget = 'cats') {
+      if (e.button !== undefined && e.button !== 0) return;
+      if (e.target.closest('button,input,select,textarea,a')) return;
+      const row = e.currentTarget;
+      const list = row.closest('.cat-reorder-list');
+      if (!row || !list) return;
+      catDragCleanup(false);
+      const modal = document.getElementById('modal');
+      _catDrag = {
+        mode, type, catId, backTarget, row, list,
+        startX: e.clientX, startY: e.clientY, lastY: e.clientY,
+        pointerId: e.pointerId, pointerType: e.pointerType || 'mouse',
+        active: false, moved: false, scrolling: false,
+        modal, scrollStart: modal ? modal.scrollTop : 0,
+        placeholder: null, holdTimer: null
+      };
+      row.classList.add('drag-pressing');
+      try { row.setPointerCapture(e.pointerId); } catch (err) { }
+      if (_catDrag.pointerType === 'touch') {
+        e.preventDefault();
+        _catDrag.holdTimer = setTimeout(() => catDragBegin(_catDrag), 320);
+      }
+      document.addEventListener('pointermove', catDragMove, { passive: false });
+      document.addEventListener('pointerup', catDragEnd);
+      document.addEventListener('pointercancel', catDragCancel);
+    }
+    function catDragBegin(state) {
+      if (!state || state.active || state.scrolling || !_catDrag || _catDrag !== state) return;
+      const rect = state.row.getBoundingClientRect();
+      state.active = true;
+      state.offsetY = state.startY - rect.top;
+      state.placeholder = document.createElement('div');
+      state.placeholder.className = 'cat-drag-placeholder';
+      state.placeholder.style.minHeight = rect.height + 'px';
+      state.row.parentNode.insertBefore(state.placeholder, state.row);
+      state.row.classList.remove('drag-pressing');
+      state.row.classList.add('dragging');
+      state.row.style.position = 'fixed';
+      state.row.style.left = rect.left + 'px';
+      state.row.style.top = rect.top + 'px';
+      state.row.style.width = rect.width + 'px';
+      state.row.style.zIndex = '900';
+      document.body.classList.add('cat-drag-active');
+    }
+    function catDragMove(e) {
+      const state = _catDrag;
+      if (!state || (state.pointerId !== undefined && e.pointerId !== state.pointerId)) return;
+      const dx = Math.abs(e.clientX - state.startX);
+      const dy = Math.abs(e.clientY - state.startY);
+      state.lastY = e.clientY;
+      if (!state.active) {
+        if (state.pointerType === 'touch') {
+          if (state.scrolling) {
+            e.preventDefault();
+            if (state.modal) state.modal.scrollTop = state.scrollStart + state.startY - e.clientY;
+            return;
+          }
+          if (dy > 8 && dy > dx) {
+            clearTimeout(state.holdTimer);
+            state.scrolling = true;
+            state.row.classList.remove('drag-pressing');
+            e.preventDefault();
+            if (state.modal) state.modal.scrollTop = state.scrollStart + state.startY - e.clientY;
+            return;
+          }
+          if (dx > 12 && dx > dy) catDragCleanup(false);
+          return;
+        }
+        if (dx > 3 || dy > 3) {
+          e.preventDefault();
+          catDragBegin(state);
+        } else {
+          return;
+        }
+        if (!state.active) return;
+      }
+      e.preventDefault();
+      state.moved = true;
+      state.row.style.top = (e.clientY - state.offsetY) + 'px';
+      catDragAutoScroll(e.clientY);
+      catDragMovePlaceholder(state, e.clientY);
+    }
+    function catDragMovePlaceholder(state, y) {
+      const rows = Array.from(state.list.querySelectorAll('.cat-list-item[data-drag-id]')).filter(el => el !== state.row);
+      let placed = false;
+      rows.forEach(row => {
+        if (placed) return;
+        const rect = row.getBoundingClientRect();
+        if (y < rect.top + rect.height / 2) {
+          state.list.insertBefore(state.placeholder, row);
+          placed = true;
+        }
+      });
+      if (!placed) state.list.appendChild(state.placeholder);
+    }
+    function catDragAutoScroll(y) {
+      const modal = document.getElementById('modal');
+      if (!modal) return;
+      const rect = modal.getBoundingClientRect();
+      const zone = 70;
+      if (y < rect.top + zone) modal.scrollTop -= Math.max(5, (rect.top + zone - y) / 5);
+      else if (y > rect.bottom - zone) modal.scrollTop += Math.max(5, (y - (rect.bottom - zone)) / 5);
+    }
+    function catDragEnd(e) {
+      const state = _catDrag;
+      if (!state || (state.pointerId !== undefined && e.pointerId !== state.pointerId)) return;
+      if (state.scrolling) { catDragCleanup(false); return; }
+      if (!state.active) { catDragCleanup(false); return; }
+      e.preventDefault();
+      if (state.placeholder && state.placeholder.parentNode) {
+        state.placeholder.parentNode.insertBefore(state.row, state.placeholder);
+      }
+      catDragCleanup(true);
+    }
+    function catDragCancel() {
+      catDragCleanup(false);
+    }
+    function catDragCleanup(commit) {
+      const state = _catDrag;
+      if (state) {
+        clearTimeout(state.holdTimer);
+        state.row.classList.remove('drag-pressing', 'dragging');
+        state.row.style.position = '';
+        state.row.style.left = '';
+        state.row.style.top = '';
+        state.row.style.width = '';
+        state.row.style.zIndex = '';
+        try { state.row.releasePointerCapture(state.pointerId); } catch (err) { }
+        if (commit) catDragSave(state);
+        if (state.placeholder && state.placeholder.parentNode) state.placeholder.parentNode.removeChild(state.placeholder);
+      }
+      document.body.classList.remove('cat-drag-active');
+      document.removeEventListener('pointermove', catDragMove);
+      document.removeEventListener('pointerup', catDragEnd);
+      document.removeEventListener('pointercancel', catDragCancel);
+      _catDrag = null;
+    }
+    function catDragSave(state) {
+      const ids = Array.from(state.list.querySelectorAll('.cat-list-item[data-drag-id]')).map(el => el.getAttribute('data-drag-id')).filter(Boolean);
+      if (ids.length < 2) return;
+      if (state.mode === 'cat') {
+        const key = state.type === 'expense' ? 'expCatOrder' : 'incCatOrder';
+        S[key] = ids;
+      } else if (state.mode === 'subcat') {
+        S.subcategories = normalizeSubcategories(S.subcategories);
+        const current = getSubcats(state.type, state.catId);
+        S.subcategories[state.type][state.catId] = ids.map(id => current.find(s => s.id === id)).filter(Boolean);
+      }
+      save();
     }
 
     // ============ PERSIST ============
@@ -4410,6 +5720,7 @@
         if (!S.savingsHistory) S.savingsHistory = [];
         S.savingsTargetSettings = normalizeSavingsTargetSettings(S.savingsTargetSettings);
         if (!S.wltHistory) S.wltHistory = [];
+        if (!S.fullName) S.fullName = '';
         if (!S.username) S.username = '';
         if (!S.currency) S.currency = 'BDT';
         if (S.syncProject !== firebaseConfig.projectId) {
@@ -4419,7 +5730,7 @@
       } catch (e) { }
     }
     function saveLocal() {
-      try { localStorage.setItem('ntx4', JSON.stringify({ transactions: S.transactions, wallets: S.wallets, budgets: S.budgets, loans: S.loans, customExpCats: S.customExpCats, customIncCats: S.customIncCats, subcategories: normalizeSubcategories(S.subcategories), expCatOrder: S.expCatOrder, incCatOrder: S.incCatOrder, hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [], savingsHistory: S.savingsHistory || [], savingsTargetSettings: normalizeSavingsTargetSettings(S.savingsTargetSettings), wltHistory: S.wltHistory || [], username: S.username || '', currency: S.currency || 'BDT', month: S.month, lastSync: S.lastSync, syncProject: S.syncProject || firebaseConfig.projectId })); } catch (e) { }
+      try { localStorage.setItem('ntx4', JSON.stringify({ transactions: S.transactions, wallets: S.wallets, budgets: S.budgets, loans: S.loans, customExpCats: S.customExpCats, customIncCats: S.customIncCats, subcategories: normalizeSubcategories(S.subcategories), expCatOrder: S.expCatOrder, incCatOrder: S.incCatOrder, hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [], savingsHistory: S.savingsHistory || [], savingsTargetSettings: normalizeSavingsTargetSettings(S.savingsTargetSettings), wltHistory: S.wltHistory || [], fullName: S.fullName || '', username: S.username || '', currency: S.currency || 'BDT', month: S.month, lastSync: S.lastSync, syncProject: S.syncProject || firebaseConfig.projectId })); } catch (e) { }
     }
     function normalizeLoan(l) {
       if (!l.payments) l.payments = [];
@@ -4446,7 +5757,7 @@
           subcategories: normalizeSubcategories(S.subcategories),
           expCatOrder: S.expCatOrder || [], incCatOrder: S.incCatOrder || [],
           hiddenExpCats: S.hiddenExpCats || [], hiddenIncCats: S.hiddenIncCats || [],
-          savingsHistory: S.savingsHistory || [], savingsTargetSettings: normalizeSavingsTargetSettings(S.savingsTargetSettings), username: S.username || '', currency: S.currency || 'BDT', syncProject: firebaseConfig.projectId, ts
+          savingsHistory: S.savingsHistory || [], savingsTargetSettings: normalizeSavingsTargetSettings(S.savingsTargetSettings), fullName: S.fullName || '', username: S.username || '', currency: S.currency || 'BDT', syncProject: firebaseConfig.projectId, ts
         };
         S.lastSync = ts;
         await fbDb.ref('users/' + fbUser.uid + '/data').set(payload);
@@ -4491,6 +5802,7 @@
         S.savingsTargetSettings = normalizeSavingsTargetSettings(d.savingsTargetSettings || S.savingsTargetSettings);
         S.currency = d.currency || S.currency || 'BDT';
         if (d.currency) markCurrencyConfigured();
+        S.fullName = d.fullName || S.fullName || '';
         S.username = d.username || S.username || '';
         S.lastSync = serverTs;
         saveLocal(); setSyncDot('ok'); renderMain();
@@ -4522,6 +5834,7 @@
           S.savingsTargetSettings = normalizeSavingsTargetSettings(d.savingsTargetSettings || S.savingsTargetSettings);
           S.currency = d.currency || S.currency || 'BDT';
           if (d.currency) markCurrencyConfigured();
+          S.fullName = d.fullName || S.fullName || '';
           S.username = d.username || S.username || '';
           S.lastSync = serverTs;
           S.syncProject = firebaseConfig.projectId;
@@ -4534,17 +5847,38 @@
 
     // ============ FIREBASE AUTH ============
     let _authEmailFlowActive = false;
+    let _authPendingSuccessMessage = '';
+    let _authSessionHandling = false;
+    let _authLastHandledUid = '';
+    let _authLastHandledAt = 0;
     function authIsPasswordUser(user) {
       return !!(user && user.providerData && user.providerData.some(p => p.providerId === 'password'));
     }
     function authNeedsEmailVerification(user) {
       return authIsPasswordUser(user) && !user.emailVerified;
     }
+    function queueAuthSuccessMessage(msg) {
+      _authPendingSuccessMessage = msg || '';
+      try { if (msg) sessionStorage.setItem('ntx_auth_success', msg); } catch (e) { }
+    }
+    function consumeAuthSuccessMessage() {
+      let msg = _authPendingSuccessMessage;
+      try {
+        msg = msg || sessionStorage.getItem('ntx_auth_success') || '';
+        sessionStorage.removeItem('ntx_auth_success');
+      } catch (e) { }
+      _authPendingSuccessMessage = '';
+      return msg;
+    }
+    function isAuthModalOpen() {
+      const overlay = document.getElementById('modal-overlay');
+      return !!(overlay && overlay.classList.contains('open') && document.getElementById('auth-card'));
+    }
     function setAuthMessage(msg, type = 'error') {
       const el = document.getElementById('auth-err');
       if (!el) return;
       const colors = {
-        ok: ['var(--green-d)', 'rgba(12,233,127,.32)', 'var(--green)'],
+        ok: ['rgba(13,105,97,.16)', 'rgba(13,105,97,.34)', '#a7cac6'],
         info: ['var(--blue-d)', 'rgba(77,159,255,.32)', 'var(--blue)'],
         error: ['var(--red-d)', 'rgba(255,61,90,.3)', 'var(--red)']
       };
@@ -4558,6 +5892,89 @@
     function clearAuthMessage() {
       const el = document.getElementById('auth-err');
       if (el) el.style.display = 'none';
+    }
+    function authFriendlyError(e) {
+      const code = e && e.code ? e.code : '';
+      const map = {
+        'auth/email-already-in-use': 'Email already exists',
+        'auth/invalid-email': 'Invalid email',
+        'auth/wrong-password': 'Wrong password',
+        'auth/invalid-credential': 'Wrong password or email address',
+        'auth/user-not-found': 'No account found with this email address',
+        'auth/weak-password': 'Password is too weak',
+        'auth/network-request-failed': 'Network error',
+        'auth/too-many-requests': 'Too many attempts. Please try again later',
+        'auth/popup-closed-by-user': 'Google sign in was cancelled',
+        'auth/cancelled-popup-request': 'Google sign in was cancelled'
+      };
+      return map[code] || (e && e.message) || 'Authentication failed. Please try again';
+    }
+    async function persistAuthProfile(user, fullName = '') {
+      if (!user) return;
+      const cleanName = (fullName || user.displayName || S.fullName || '').trim();
+      const provider = (user.providerData || []).map(p => p.providerId).join(',') || 'password';
+      if (cleanName && user.displayName !== cleanName) {
+        try { await user.updateProfile({ displayName: cleanName }); } catch (e) { }
+      }
+      if (cleanName) S.fullName = cleanName;
+      try {
+        await fbDb.ref('users/' + user.uid + '/profile').update({
+          fullName: cleanName || '',
+          email: user.email || '',
+          photoURL: user.photoURL || '',
+          provider,
+          updatedAt: Date.now()
+        });
+      } catch (e) { }
+      saveLocal();
+    }
+    async function hydrateUserIdentity(user) {
+      if (!user) return;
+      if (user.displayName && !S.fullName) S.fullName = user.displayName;
+      try {
+        const profileSnap = await fbDb.ref('users/' + user.uid + '/profile').get();
+        if (profileSnap.exists()) {
+          const profile = profileSnap.val() || {};
+          if (profile.fullName && !S.fullName) S.fullName = profile.fullName;
+        } else if (user.displayName || user.photoURL || user.email) {
+          await persistAuthProfile(user);
+        }
+      } catch (e) { }
+      if (!S.username) {
+        try {
+          const uSnap = await fbDb.ref('users/' + user.uid + '/username').get();
+          if (uSnap.exists()) S.username = uSnap.val();
+        } catch (e) { }
+      }
+      saveLocal();
+    }
+    async function finishAuthenticatedSession(user) {
+      if (!user || _authSessionHandling) return;
+      const now = Date.now();
+      if (_authLastHandledUid === user.uid && now - _authLastHandledAt < 1200) return;
+      _authSessionHandling = true;
+      const successMsg = consumeAuthSuccessMessage();
+      try {
+        fbUser = user;
+        setSyncDot('busy');
+        await hydrateUserIdentity(user);
+        const syncState = await pullSync();
+        if (syncState && !syncState.found && hasLocalUserData()) await pushSync();
+        await hydrateUserIdentity(user);
+        renderMain();
+        startRealtimeSync();
+        startSmsPendingListener();
+        startPendingLoansListener();
+        if (successMsg || isAuthModalOpen()) {
+          closeModal();
+          go('dashboard');
+          showToast(successMsg || 'Signed in successfully');
+        }
+      } finally {
+        _authLastHandledUid = user.uid;
+        _authLastHandledAt = Date.now();
+        _authSessionHandling = false;
+      }
     }
     function initAuth() {
       fbAuth.onAuthStateChanged(async (user) => {
@@ -4573,22 +5990,7 @@
             renderMain();
             return;
           }
-          fbUser = user;
-          setSyncDot('busy');
-          const syncState = await pullSync();
-          if (syncState && !syncState.found && hasLocalUserData()) await pushSync();
-          // On fresh load, if user has set a username during previous session
-          if (!S.username) {
-            const uSnap = await fbDb.ref('users/' + fbUser.uid + '/username').get();
-            if (uSnap.exists()) {
-              S.username = uSnap.val();
-              saveLocal();
-            }
-          }
-          renderMain();
-          startRealtimeSync();
-          startSmsPendingListener();
-          startPendingLoansListener();
+          await finishAuthenticatedSession(user);
         } else {
           fbUser = null;
           stopRealtimeSync();
@@ -5733,7 +7135,7 @@
       const amtRows = [{ lb: 'Initial Amount', v: fmt(l.amount), col: '#374151', bold: false }, ...extras.map((e, i) => ({ lb: 'Additional Entry ' + (i + 1) + (e.note ? ' - ' + e.note : ''), v: fmt(e.amount), col: '#374151', bold: false })), ...(extras.length ? [{ lb: 'Total Amount', v: fmt(total), col: '#1a1a2e', bold: true }] : []), { lb: 'Total Paid / Settled', v: fmt(paid), col: '#059669', bold: false }, { lb: 'Remaining Balance', v: fmt(remain), col: remain <= 0 ? '#059669' : '#dc2626', bold: true }];
       const pRows = payments.map((p, i) => `<tr style="${i % 2 === 0 ? 'background:#f9fafb;' : ''}"><td style="padding:9px 14px;color:#6b7280;">${i + 1}</td><td style="padding:9px 14px;">${fmtD(p.date)}</td><td style="padding:9px 14px;font-weight:700;color:#059669;font-family:'Outfit',sans-serif;">${fmt(p.amount)}</td><td style="padding:9px 14px;color:#6b7280;">${p.note || '-'}</td></tr>`).join('');
       const eRows = extras.map((e, i) => `<tr style="${i % 2 === 0 ? 'background:#f9fafb;' : ''}"><td style="padding:9px 14px;color:#6b7280;">${i + 1}</td><td style="padding:9px 14px;">${fmtD(e.date)}</td><td style="padding:9px 14px;font-weight:700;color:#374151;font-family:'Outfit',sans-serif;">${fmt(e.amount)}</td><td style="padding:9px 14px;color:#6b7280;">${e.note || '-'}</td></tr>`).join('');
-      const issuedByName = fbUser ? (fbUser.displayName || S.username || fbUser.email.split('@')[0]) : '';
+      const issuedByName = fbUser ? (fbUser.displayName || S.fullName || S.username || fbUser.email.split('@')[0]) : '';
       const issuedByPart = issuedByName ? ' &bull; Issued By - ' + issuedByName : '';
       return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>Receipt ${rid} - nTransactions</title><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:'Outfit',sans-serif;background:#f1f5f9;color:#1a1a2e;padding:32px 16px;}.container{max-width:680px;margin:0 auto;background:#fff;border-radius:24px;box-shadow:0 12px 48px rgba(0,0,0,.12);overflow:hidden;}.hdr{background:linear-gradient(135deg,#07090f,#0d1420);padding:30px 36px;display:flex;align-items:flex-start;justify-content:space-between;}.logo{font-size:26px;font-weight:900;color:#e8edf5;}.logo span{color:#0ce97f;}.logo-sub{font-size:11px;color:#4a5568;margin-top:3px;}.hdr-r{text-align:right;}.r-lbl{font-size:10px;color:#4a5568;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;}.r-id{font-size:16px;color:#e8edf5;font-weight:800;margin-top:4px;}.type-badge{display:inline-block;padding:5px 12px;border-radius:9px;font-size:11px;font-weight:700;text-transform:uppercase;margin-top:7px;background:${tb};color:${tc};border:1px solid ${tbd};}.body{padding:30px 36px;}.sec-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:#9ca3af;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid #f3f4f6;}.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px 22px;margin-bottom:26px;}.di label{font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:.8px;font-weight:600;display:block;margin-bottom:3px;}.di .val{font-size:14px;font-weight:700;}.abox{background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;padding:18px;margin-bottom:22px;}.arow{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f1f5f9;}.arow:last-child{border-bottom:none;}.arow .al{color:#6b7280;font-size:13px;}.arow .av{font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;}.arow.tot .al{color:#374151;font-weight:700;font-size:14px;}.arow.tot .av{font-size:15px;}.settled{display:block;text-align:center;margin-top:10px;padding:7px;background:#d1fae5;border-radius:9px;font-size:13px;font-weight:700;color:#059669;}table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:22px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;}thead{background:#f8fafc;}th{padding:9px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:#6b7280;font-weight:700;border-bottom:1px solid #e2e8f0;}td{border-bottom:1px solid #f1f5f9;}tr:last-child td{border-bottom:none;}.footer{background:#f8fafc;border-top:2px solid #e2e8f0;padding:22px 36px;}.disc{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:15px 17px;margin-bottom:16px;}.disc-t{font-size:11px;font-weight:800;color:#92400e;text-transform:uppercase;margin-bottom:5px;}.disc-b{font-size:12px;color:#78350f;line-height:1.75;}.fmeta{font-size:11px;color:#9ca3af;text-align:center;line-height:1.7;}.prbtn{display:block;width:100%;padding:13px;background:#07090f;color:#0ce97f;border:none;border-radius:11px;font-size:15px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;margin-top:16px;}@media print{body{background:#fff;padding:0;}.container{box-shadow:none;border-radius:0;max-width:100%;}.prbtn{display:none;}}</style></head><body><div class="container"><div class="hdr"><div><div class="logo">n<span>Transactions</span></div><div class="logo-sub">Personal Finance Tracker</div><div class="type-badge">${receiptLabel}</div></div><div class="hdr-r"><div class="r-lbl">Receipt</div><div class="r-id">${rid}</div><div style="font-size:11px;color:#4a5568;margin-top:5px;">${now}</div></div></div><div class="body"><div class="sec-lbl">Transaction Details</div><div class="dgrid">${dr.map(([lb, v]) => `<div class="di"><label>${lb}</label><div class="val">${v}</div></div>`).join('')}</div>${fr.length ? `<div style="display:flex;flex-direction:column;gap:16px;margin-bottom:26px;">${fr.map(([lb, v]) => `<div class="di"><label>${lb}</label><div class="val" style="line-height:1.5;">${v}</div></div>`).join('')}</div>` : ''}<div class="sec-lbl">Amount Breakdown</div><div class="abox">${amtRows.map(r => `<div class="arow${r.bold ? ' tot' : ''}"><span class="al">${r.lb}</span><span class="av" style="color:${r.col};">${r.v}</span></div>`).join('')}${remain <= 0 ? '<div class="settled">Fully Settled - No Outstanding Balance</div>' : ''}</div>${extras.length ? `<div class="sec-lbl">Additional Entries</div><table><thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Note</th></tr></thead><tbody>${eRows}</tbody></table>` : ''}${payments.length ? `<div class="sec-lbl">Payment History</div><table><thead><tr><th>#</th><th>Date</th><th>Amount</th><th>Note</th></tr></thead><tbody>${pRows}</tbody></table>` : ''}</div><div class="footer"><div class="disc"><div class="disc-t">Important Notice</div><div class="disc-b">This document has been automatically generated by <strong>nTransactions</strong> and serves as a digital financial record for reference purposes only. It does not constitute a legally binding financial instrument.</div></div><div class="fmeta">Generated by nTransactions - ${now}<br>Receipt ${rid} - ${l.person}${issuedByPart}</div><button class="prbtn" onclick="window.print()">Print / Save as PDF</button></div></div></body></html>`;
     }
@@ -5743,9 +7145,17 @@
       const modal = document.getElementById('modal');
       if (modal) modal.className = 'modal' + (modalClass ? ' ' + modalClass : '');
       document.getElementById('mc').innerHTML = html;
-      document.getElementById('modal-overlay').classList.add('open');
+      const overlay = document.getElementById('modal-overlay');
+      if (overlay) {
+        overlay.classList.toggle('auth-overlay', String(modalClass).split(/\s+/).includes('auth-modal'));
+        overlay.classList.add('open');
+      }
     }
-    function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); window._submitting = false; }
+    function closeModal() {
+      const overlay = document.getElementById('modal-overlay');
+      if (overlay) overlay.classList.remove('open', 'auth-overlay');
+      window._submitting = false;
+    }
     function handleOvClick(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
     function toggleBal() { balHidden = !balHidden; renderMain(); }
     function toggleNet() { netHidden = !netHidden; renderMain(); }
@@ -5754,12 +7164,13 @@
     function openSyncModal() {
       if (fbUser) {
         const email = fbUser.email || '';
-        const displayName = fbUser.displayName || email.split('@')[0] || 'User';
+        const displayName = fbUser.displayName || S.fullName || email.split('@')[0] || 'User';
         const initials = displayName.slice(0, 2).toUpperCase();
         const lastSync = S.lastSync ? new Date(S.lastSync).toLocaleString() : 'Never';
-        const avatarHTML = _profilePhoto
-          ? `<div class="profile-avatar-wrap" onclick="document.getElementById('avatar-upload').click()" style="flex-shrink:0;"><img src="${_profilePhoto}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border);display:block;"><div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`
-          : `<div class="profile-avatar-wrap auth-avatar" onclick="document.getElementById('avatar-upload').click()" style="width:52px;height:52px;font-size:20px;">${initials}<div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`;
+        const accountPhoto = _profilePhoto || fbUser.photoURL || '';
+        const avatarHTML = accountPhoto
+          ? `<div class="profile-avatar-wrap" onclick="document.getElementById('avatar-upload').click()" style="flex-shrink:0;"><img src="${esc(accountPhoto)}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;border:2px solid var(--border);display:block;"><div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`
+          : `<div class="profile-avatar-wrap auth-avatar" onclick="document.getElementById('avatar-upload').click()" style="width:52px;height:52px;font-size:20px;">${esc(initials)}<div class="avatar-overlay"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div></div>`;
         const remNotif = _remindersEnabled ? 'On' : 'Off';
         const remColor = _remindersEnabled ? 'var(--green)' : 'var(--text3)';
         const stCfg = savingsTargetSettings();
@@ -5771,9 +7182,9 @@
     <div class="auth-user-card" style="margin-bottom:12px;position:relative;">
       ${avatarHTML}
       <div style="flex:1;min-width:0;">
-        <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px;">${displayName}</div>
+        <div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:5px;">${esc(displayName)}</div>
         <div style="font-size:11px;color:var(--blue);margin-top:1px;font-weight:700;">${S.username ? '@' + S.username : ''}</div>
-        <div style="font-size:11px;color:var(--text3);margin-top:2px;">${email}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;">${esc(email)}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:1px;display:flex;align-items:center;gap:4px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;"></span>Last synced: ${lastSync}</div>
       </div>
       <button onclick="promptUsername()" style="position:absolute;top:14px;right:14px;background:var(--blue-d);color:var(--blue);border:1px solid rgba(77,159,255,0.3);padding:4px 8px;border-radius:6px;font-size:10px;font-weight:700;font-family:'Outfit',sans-serif;cursor:pointer;">${S.username ? 'Edit @' : 'Set @username'}</button>
@@ -5888,25 +7299,8 @@
     <button class="btn btn-s" onclick="closeModal()" style="margin-top:2px;">Close</button>`);
         setTimeout(() => { const tp = document.getElementById('theme-picker'); if (tp) applyTheme(savedThemeChoice()); }, 0);
       } else {
-        openModal(`<div class="modal-title">Sign In</div>
-    <div style="font-size:13px;color:var(--text2);margin-bottom:18px;line-height:1.7;">Sign in to sync your data across all devices securely.</div>
-    <div id="auth-err" style="display:none;background:var(--red-d);border:1px solid rgba(255,61,90,.3);border-radius:10px;padding:10px 13px;font-size:13px;color:var(--red);margin-bottom:14px;"></div>
-    <div id="auth-tabs" style="display:flex;gap:5px;background:var(--bg3);padding:4px;border-radius:12px;margin-bottom:16px;">
-      <button class="tab-btn active" id="atab-in" onclick="switchAuthTab('in')">Sign In</button>
-      <button class="tab-btn" id="atab-up" onclick="switchAuthTab('up')">Sign Up</button>
-    </div>
-    <div id="auth-form">
-      <div class="fg"><label class="fl">Email</label><input type="email" class="fi" id="auth-email" placeholder="your@email.com"></div>
-      <div class="fg"><label class="fl">Password</label><input type="password" class="fi" id="auth-pass" placeholder="Password"></div>
-      <div id="auth-forgot-row" style="display:flex;justify-content:flex-end;margin:-8px 0 12px;"><button type="button" class="auth-link-btn" id="auth-forgot-btn" onclick="doPasswordReset()">Forgot Password?</button></div>
-      <button class="btn btn-p" id="auth-submit-btn" onclick="doEmailAuth()">Sign In</button>
-    </div>
-    <div class="auth-divider">or</div>
-    <button class="btn btn-google" onclick="doGoogleAuth()">
-      <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-      Continue with Google
-    </button>
-    <button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
+        openModal(authModalHTML('in'), 'auth-modal');
+        setTimeout(() => document.getElementById('auth-email')?.focus(), 80);
       }
     }
     function saveCurrencySetting() {
@@ -6010,27 +7404,219 @@
         }
       } catch (e) { setSyncDot('err'); alert('Error checking username: ' + e.message); }
     }
+    function authGoogleSVG() {
+      return `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>`;
+    }
+    function authEyeIcon(isVisible) {
+      return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${isVisible ? ICON_PATHS.eye_off : ICON_PATHS.eye}</svg>`;
+    }
+    function authIconSvg(name) {
+      const paths = {
+        shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-5"/>',
+        user: '<path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/>',
+        mail: '<path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><path d="m22 6-10 7L2 6"/>',
+        lock: '<rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>'
+      };
+      return `<svg class="auth-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.shield}</svg>`;
+    }
+    function authFieldHTML(id, label, type, placeholder, autocomplete, withToggle = false, iconName = 'mail') {
+      return `<div class="auth-field">
+        <label class="auth-field-label" for="${id}">${label}</label>
+        <div class="auth-input-wrap">
+          ${authIconSvg(iconName)}
+          <input type="${type}" class="auth-input${withToggle ? ' has-toggle' : ''}" id="${id}" placeholder="${placeholder}" autocomplete="${autocomplete}" oninput="authFieldChanged(this)">
+          ${withToggle ? `<button type="button" class="auth-pass-toggle" onclick="toggleAuthPassword('${id}', this)" aria-label="Show password">${authEyeIcon(false)}</button>` : ''}
+        </div>
+        <div class="auth-field-error" id="${id}-err"></div>
+      </div>`;
+    }
+    function authFieldsHTML(mode = 'in') {
+      const isUp = mode === 'up';
+      return `<form class="auth-form" id="auth-form" onsubmit="event.preventDefault(); submitAuthForm();">
+        ${isUp ? authFieldHTML('auth-name', 'Full Name', 'text', 'Your full name', 'name', false, 'user') : ''}
+        ${authFieldHTML('auth-email', 'Email Address', 'email', 'you@example.com', 'email', false, 'mail')}
+        ${authFieldHTML('auth-pass', 'Password', 'password', 'Password', isUp ? 'new-password' : 'current-password', true, 'lock')}
+        ${isUp ? `${authFieldHTML('auth-pass2', 'Confirm Password', 'password', 'Confirm password', 'new-password', true, 'lock')}
+        <div class="auth-field auth-terms-field">
+          <label class="auth-agree" for="auth-terms">
+            <input type="checkbox" id="auth-terms" onchange="authFieldChanged(this)">
+            <span>I agree to the <a href="#" class="auth-policy-link" onclick="event.preventDefault(); event.stopPropagation(); openAuthLegal('privacy','${mode}')">Privacy Policy</a> and <a href="#" class="auth-policy-link" onclick="event.preventDefault(); event.stopPropagation(); openAuthLegal('terms','${mode}')">Terms of Service</a></span>
+          </label>
+          <div class="auth-field-error" id="auth-terms-err"></div>
+        </div>` : `<div class="auth-form-row"><span></span><button type="button" class="auth-link-btn" id="auth-forgot-btn" onclick="doPasswordReset()">Forgot Password?</button></div>`}
+        <button type="submit" class="btn btn-p auth-primary-btn" id="auth-submit-btn">
+          <span id="auth-submit-label">${isUp ? 'Create Account' : 'Sign In'}</span>
+          <span class="auth-spinner"></span>
+        </button>
+        <div class="auth-divider">or</div>
+        <button type="button" class="btn btn-google auth-google-btn" id="auth-google-btn" onclick="doGoogleAuth()">
+          ${authGoogleSVG()}
+          <span id="auth-google-label">Continue with Google</span>
+          <span class="auth-spinner"></span>
+        </button>
+        <div class="auth-bottom-link">
+          <span>${isUp ? 'Already have an account?' : 'New here?'}</span>
+          <button type="button" class="auth-link-btn" onclick="switchAuthTab('${isUp ? 'in' : 'up'}')">${isUp ? 'Sign In' : 'Create an account'}</button>
+        </div>
+      </form>`;
+    }
+    function authModalHTML(mode = 'in') {
+      const isUp = mode === 'up';
+      return `<div class="auth-shell" id="auth-card" data-mode="${mode}">
+        <div class="auth-top">
+          <div class="auth-brand">
+            <div class="auth-brand-mark">${authIconSvg('shield')}</div>
+            <div>
+              <div class="auth-kicker">Secure account sync</div>
+              <h2 class="auth-title">${isUp ? 'Create your account' : 'Welcome back'}</h2>
+              <p class="auth-subtitle">${isUp ? 'Set up your secure sync profile for budgets, wallets, loans, receipts and device backup.' : 'Sign in to keep your transactions, wallets, budgets and loans synced safely across devices.'}</p>
+            </div>
+          </div>
+          <button type="button" class="auth-close" onclick="closeModal()" aria-label="Close authentication window">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        <div id="auth-err" class="auth-message" role="alert"></div>
+        <div class="auth-tabs" id="auth-tabs">
+          <button type="button" class="auth-tab${!isUp ? ' active' : ''}" id="atab-in" onclick="switchAuthTab('in')">Sign In</button>
+          <button type="button" class="auth-tab${isUp ? ' active' : ''}" id="atab-up" onclick="switchAuthTab('up')">Sign Up</button>
+        </div>
+        <div id="auth-dynamic">${authFieldsHTML(mode)}</div>
+      </div>`;
+    }
     function switchAuthTab(tab) {
-      const inT = document.getElementById('atab-in'), upT = document.getElementById('atab-up');
-      const btn = document.getElementById('auth-submit-btn');
-      const forgot = document.getElementById('auth-forgot-row');
+      const mode = tab === 'up' ? 'up' : 'in';
+      const mc = document.getElementById('mc');
+      if (!mc) return;
+      mc.innerHTML = authModalHTML(mode);
       clearAuthMessage();
-      if (tab === 'in') {
-        inT.classList.add('active'); upT.classList.remove('active');
-        if (btn) { btn.textContent = 'Sign In'; btn.onclick = doEmailAuth; }
-        if (forgot) forgot.style.display = 'flex';
-      } else {
-        upT.classList.add('active'); inT.classList.remove('active');
-        if (btn) { btn.textContent = 'Create Account'; btn.onclick = doSignUp; }
-        if (forgot) forgot.style.display = 'none';
+      setTimeout(() => document.getElementById(mode === 'up' ? 'auth-name' : 'auth-email')?.focus(), 50);
+    }
+    function openAuthLegal(type, mode = 'up') {
+      const isPrivacy = type === 'privacy';
+      const title = isPrivacy ? 'Privacy Policy' : 'Terms of Service';
+      const body = isPrivacy
+        ? `<p>This placeholder policy is prepared for a personal finance PWA. nTransactions stores your transaction, wallet, budget, loan, savings and profile data only to support secure sync and account recovery.</p><p>Authentication is handled through Firebase. Financial data should be treated as private user data and should not be sold or shared with third parties.</p><p>The final legal content will be added later.</p>`
+        : `<p>These placeholder terms cover use of nTransactions as a personal finance tracking tool. The app helps record and organize user-entered financial activity, but it does not provide banking, tax, legal or investment advice.</p><p>Users are responsible for the accuracy of the data they enter and for protecting their account credentials.</p><p>The final legal content will be added later.</p>`;
+      openModal(`<div class="auth-shell" id="auth-card" data-mode="${mode}">
+        <div class="auth-top">
+          <div class="auth-brand">
+            <div class="auth-brand-mark">${authIconSvg('shield')}</div>
+            <div>
+              <div class="auth-kicker">Account agreement</div>
+              <h2 class="auth-title">${title}</h2>
+              <p class="auth-subtitle">Placeholder copy for the transaction tracker PWA.</p>
+            </div>
+          </div>
+          <button type="button" class="auth-close" onclick="switchAuthTab('${mode}')" aria-label="Back to authentication"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg></button>
+        </div>
+        <div class="auth-legal-body">${body}</div>
+        <button class="btn btn-p auth-primary-btn" onclick="switchAuthTab('${mode}')">Back to ${mode === 'up' ? 'Sign Up' : 'Sign In'}</button>
+      </div>`, 'auth-modal auth-legal-modal');
+    }
+    function validAuthEmail(email) {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+    }
+    function authPasswordChecks(pass) {
+      return {
+        len: String(pass || '').length >= 8,
+        num: /\d/.test(pass || ''),
+        special: /[^A-Za-z0-9]/.test(pass || '')
+      };
+    }
+    function updatePasswordRules() {
+      // Password strength is validated on submit without showing helper chips.
+    }
+    function authSetFieldError(id, msg = '') {
+      const input = document.getElementById(id);
+      const err = document.getElementById(id + '-err');
+      if (input) {
+        input.classList.toggle('invalid', !!msg);
+        const field = input.closest('.auth-field');
+        if (field) field.classList.toggle('invalid', !!msg);
       }
+      if (err) err.textContent = msg;
+    }
+    function authFieldChanged(el) {
+      if (!el) return;
+      authSetFieldError(el.id, '');
+      if (el.id === 'auth-terms') authSetFieldError('auth-terms', '');
+      if (el.id === 'auth-pass') updatePasswordRules();
+      clearAuthMessage();
+    }
+    function authValidate(mode) {
+      const isUp = mode === 'up';
+      const values = {
+        name: document.getElementById('auth-name')?.value.trim() || '',
+        email: document.getElementById('auth-email')?.value.trim() || '',
+        pass: document.getElementById('auth-pass')?.value || '',
+        pass2: document.getElementById('auth-pass2')?.value || '',
+        terms: !!document.getElementById('auth-terms')?.checked
+      };
+      ['auth-name', 'auth-email', 'auth-pass', 'auth-pass2', 'auth-terms'].forEach(id => authSetFieldError(id, ''));
+      let ok = true;
+      if (isUp && !values.name) { authSetFieldError('auth-name', 'Please enter your full name.'); ok = false; }
+      if (!values.email) { authSetFieldError('auth-email', 'Please enter your email address.'); ok = false; }
+      else if (!validAuthEmail(values.email)) { authSetFieldError('auth-email', 'Invalid email'); ok = false; }
+      if (!values.pass) { authSetFieldError('auth-pass', 'Please enter your password.'); ok = false; }
+      if (isUp) {
+        const checks = authPasswordChecks(values.pass);
+        if (values.pass && (!checks.len || !checks.num || !checks.special)) {
+          authSetFieldError('auth-pass', 'Use at least 8 characters with one number and one special character.');
+          ok = false;
+        }
+        if (!values.pass2) { authSetFieldError('auth-pass2', 'Please confirm your password.'); ok = false; }
+        else if (values.pass !== values.pass2) { authSetFieldError('auth-pass2', 'Passwords do not match'); ok = false; }
+        if (!values.terms) { authSetFieldError('auth-terms', 'Please agree before creating your account.'); ok = false; }
+      }
+      updatePasswordRules();
+      return { ok, values };
+    }
+    function setAuthLoading(isLoading, label = '') {
+      const card = document.getElementById('auth-card');
+      const mode = card?.dataset.mode === 'up' ? 'up' : 'in';
+      const submit = document.getElementById('auth-submit-btn');
+      const submitLabel = document.getElementById('auth-submit-label');
+      const google = document.getElementById('auth-google-btn');
+      if (submit) {
+        submit.disabled = isLoading;
+        submit.classList.toggle('loading', isLoading);
+      }
+      if (google) google.disabled = isLoading;
+      if (submitLabel) submitLabel.textContent = isLoading ? label : (mode === 'up' ? 'Create Account' : 'Sign In');
+    }
+    function setGoogleLoading(isLoading) {
+      const submit = document.getElementById('auth-submit-btn');
+      const google = document.getElementById('auth-google-btn');
+      const label = document.getElementById('auth-google-label');
+      if (submit) submit.disabled = isLoading;
+      if (google) {
+        google.disabled = isLoading;
+        google.classList.toggle('loading', isLoading);
+      }
+      if (label) label.textContent = isLoading ? 'Connecting...' : 'Continue with Google';
+    }
+    function toggleAuthPassword(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (!input || !btn) return;
+      const show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      btn.innerHTML = authEyeIcon(show);
+      btn.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+      input.focus();
+    }
+    function submitAuthForm() {
+      const mode = document.getElementById('auth-card')?.dataset.mode === 'up' ? 'up' : 'in';
+      if (mode === 'up') doSignUp();
+      else doEmailAuth();
     }
     async function doPasswordReset() {
       const emailEl = document.getElementById('auth-email');
       const email = emailEl ? emailEl.value.trim() : '';
       const btn = document.getElementById('auth-forgot-btn');
-      if (!email) {
-        setAuthMessage('Enter your email address first, then tap Forgot Password.', 'info');
+      if (!email || !validAuthEmail(email)) {
+        authSetFieldError('auth-email', email ? 'Invalid email' : 'Please enter your email address.');
+        setAuthMessage('Enter a valid email address first, then tap Forgot Password.', 'info');
         if (emailEl) emailEl.focus();
         return;
       }
@@ -6039,65 +7625,93 @@
         await fbAuth.sendPasswordResetEmail(email);
         setAuthMessage('Password reset link sent to ' + email + '.', 'ok');
       } catch (e) {
-        setAuthMessage(e.message, 'error');
+        setAuthMessage(authFriendlyError(e), 'error');
       } finally {
         if (btn) { btn.textContent = 'Forgot Password?'; btn.disabled = false; }
       }
     }
     async function doEmailAuth() {
-      const email = document.getElementById('auth-email').value.trim();
-      const pass = document.getElementById('auth-pass').value;
-      if (!email || !pass) { setAuthMessage('Please enter email and password.', 'error'); return; }
+      const { ok, values } = authValidate('in');
+      if (!ok) { setAuthMessage('Please fix the highlighted fields.', 'error'); return; }
       clearAuthMessage();
-      const btn = document.getElementById('auth-submit-btn'); if (btn) { btn.textContent = 'Signing in...'; btn.disabled = true; }
+      setAuthLoading(true, 'Signing in...');
       _authEmailFlowActive = true;
       try {
-        const cred = await fbAuth.signInWithEmailAndPassword(email, pass);
+        queueAuthSuccessMessage('Signed in successfully');
+        const cred = await fbAuth.signInWithEmailAndPassword(values.email, values.pass);
         if (cred.user && authNeedsEmailVerification(cred.user)) {
+          _authPendingSuccessMessage = '';
+          try { sessionStorage.removeItem('ntx_auth_success'); } catch (e) { }
           let msg = 'Please verify your email address before signing in.';
           try {
             await cred.user.sendEmailVerification();
-            msg = 'Email not verified yet. A fresh verification link was sent to ' + email + '.';
+            msg = 'Email not verified yet. A fresh verification link was sent to ' + values.email + '.';
           } catch (mailErr) { }
           await fbAuth.signOut();
           setAuthMessage(msg, 'info');
-          if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
+          setAuthLoading(false);
+        } else if (cred.user) {
+          await finishAuthenticatedSession(cred.user);
         }
-      } catch (e) { setAuthMessage(e.message, 'error'); if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; } }
+      } catch (e) {
+        _authPendingSuccessMessage = '';
+        try { sessionStorage.removeItem('ntx_auth_success'); } catch (storeErr) { }
+        setAuthMessage(authFriendlyError(e), 'error');
+        setAuthLoading(false);
+      }
       finally { _authEmailFlowActive = false; }
     }
     async function doSignUp() {
-      const email = document.getElementById('auth-email').value.trim();
-      const pass = document.getElementById('auth-pass').value;
-      if (!email || !pass) { setAuthMessage('Please enter email and password.', 'error'); return; }
-      if (pass.length < 6) { setAuthMessage('Password must be at least 6 characters.', 'error'); return; }
+      const { ok, values } = authValidate('up');
+      if (!ok) { setAuthMessage('Please fix the highlighted fields.', 'error'); return; }
       clearAuthMessage();
-      const btn = document.getElementById('auth-submit-btn'); if (btn) { btn.textContent = 'Creating...'; btn.disabled = true; }
+      setAuthLoading(true, 'Creating account...');
       _authEmailFlowActive = true;
       try {
-        const cred = await fbAuth.createUserWithEmailAndPassword(email, pass);
-        let msg = 'Account created. Verification link sent to ' + email + '. Verify your email, then sign in.';
-        try {
-          if (cred.user) await cred.user.sendEmailVerification();
-        } catch (mailErr) {
-          msg = 'Account created, but the verification email could not be sent: ' + mailErr.message;
+        const cred = await fbAuth.createUserWithEmailAndPassword(values.email, values.pass);
+        if (cred.user) {
+          await persistAuthProfile(cred.user, values.name);
+          await cred.user.sendEmailVerification();
         }
         await fbAuth.signOut();
-        switchAuthTab('in');
-        setAuthMessage(msg, msg.indexOf('could not') === -1 ? 'ok' : 'error');
-        if (btn) { btn.textContent = 'Sign In'; btn.disabled = false; }
-      } catch (e) { setAuthMessage(e.message, 'error'); if (btn) { btn.textContent = 'Create Account'; btn.disabled = false; } }
+        closeModal();
+        go('dashboard');
+        showToast('Account created successfully. Verification email sent');
+      } catch (e) {
+        setAuthMessage(authFriendlyError(e), 'error');
+        setAuthLoading(false);
+        try {
+          if (fbAuth.currentUser && authNeedsEmailVerification(fbAuth.currentUser)) await fbAuth.signOut();
+        } catch (signOutErr) { }
+      }
       finally { _authEmailFlowActive = false; }
     }
     async function doGoogleAuth() {
+      setGoogleLoading(true);
       try {
-        await fbAuth.signInWithPopup(googleProvider);
+        queueAuthSuccessMessage('Signed in successfully');
+        const cred = await fbAuth.signInWithPopup(googleProvider);
+        if (cred.user) {
+          await persistAuthProfile(cred.user);
+          await finishAuthenticatedSession(cred.user);
+        }
       } catch (e) {
         // fallback to redirect if popup blocked
         if (e.code === 'auth/popup-blocked' || e.code === 'auth/popup-closed-by-user') {
-          await fbAuth.signInWithRedirect(googleProvider);
+          queueAuthSuccessMessage('Signed in successfully');
+          try {
+            await fbAuth.signInWithRedirect(googleProvider);
+          } catch (redirectErr) {
+            _authPendingSuccessMessage = '';
+            try { sessionStorage.removeItem('ntx_auth_success'); } catch (storeErr) { }
+            setAuthMessage(authFriendlyError(redirectErr), 'error');
+            setGoogleLoading(false);
+          }
         } else {
-          setAuthMessage(e.message, 'error');
+          _authPendingSuccessMessage = '';
+          try { sessionStorage.removeItem('ntx_auth_success'); } catch (storeErr) { }
+          setAuthMessage(authFriendlyError(e), 'error');
+          setGoogleLoading(false);
         }
       }
     }
@@ -6111,7 +7725,7 @@
     }
 
     // ============ ADD TRANSACTION ============
-    function openAddTx() { txType = 'expense'; openModal(txModalHTML()); }
+    function openAddTx() { txType = 'expense'; openModal(txModalHTML(), 'tx-modal'); }
     function txCatOpts(type, selected = '') {
       const cats = type === 'expense' ? getExpCats() : getIncCats();
       return '<option value="">Select a category</option>' + cats.map(c => `<option value="${c.id}" ${c.id === selected ? 'selected' : ''}>${esc(c.label)}</option>`).join('');
@@ -6123,7 +7737,7 @@
     function txCategoryControl(type, selected = '') {
       const cat = txCatChoice(type, selected);
       return `<input type="hidden" id="tx-cat" value="${cat ? cat.id : ''}">
-        <button type="button" class="tx-cat-trigger" id="tx-cat-trigger" onclick="openTxCategoryPicker('${type}')" aria-haspopup="dialog">
+        <button type="button" class="tx-cat-trigger cat-${type}" id="tx-cat-trigger" onclick="openTxCategoryPicker('${type}')" aria-haspopup="dialog">
           <span class="tx-cat-trigger-ico" id="tx-cat-trigger-ico">${cat ? catIco(cat.id, 18) : ico('misc', 18)}</span>
           <span class="tx-cat-trigger-main">
             <span class="tx-cat-trigger-label" id="tx-cat-trigger-label">${cat ? esc(cat.label) : 'Select a Category'}</span>
@@ -6135,7 +7749,7 @@
     }
     function txCategoryPickerHTML(type, selected = '') {
       const cats = type === 'expense' ? getExpCats() : getIncCats();
-      const cards = cats.map(c => `<button type="button" class="tx-cat-card${c.id === selected ? ' active' : ''}" data-cat-id="${c.id}" onclick="chooseTxCategory('${type}','${c.id}')">
+      const cards = cats.map(c => `<button type="button" class="tx-cat-card cat-${type}${c.id === selected ? ' active' : ''}" data-cat-id="${c.id}" onclick="chooseTxCategory('${type}','${c.id}')">
         <span class="tx-cat-card-ico">${catIco(c.id, 18)}</span>
         <span class="tx-cat-card-label">${esc(c.label)}</span>
       </button>`).join('');
@@ -6337,7 +7951,7 @@
         : `<select class="fi" id="tx-w">${wOpts}</select>`;
       const photoSection = `<div id="tx-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="tx-photo-img" style="width:100%;max-height:180px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)" title="Tap to view full size"/><button onclick="clearTxPhoto()" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="tx-photo-input" accept="image/*" style="display:none;" onchange="handleTxPhoto(this)"><input type="file" id="tx-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleTxCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('tx-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('tx-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Outfit',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div>`;
       let body = txType !== 'transfer'
-        ? `<div class="fg"><label class="fl">Wallet</label>${wSelect}</div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Category <button onclick="openManageCats('${txType}')" style="background:none;border:none;color:var(--blue);font-size:11px;cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;margin-left:6px;">Manage</button></label>${txCategoryControl(txType)}</div>${txSubcatField(txType)}<div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01" inputmode="decimal" onpointerdown="amountCalcPrepareInput('tx-amt')" ontouchstart="amountCalcPrepareInput('tx-amt')" onfocus="openAmountCalc('tx-amt')" onclick="openAmountCalc('tx-amt')" oninput="amountCalcSync('tx-amt')" autocomplete="off"></div>${amountCalcHTML('tx-amt')}</div><div class="fg" style="position:relative;"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?" autocomplete="off" oninput="showNoteSugg(this,'${txType}')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div><div class="fg"><label class="fl">Photo (optional)</label>${photoSection}</div>`
+        ? `<div class="fg"><label class="fl">Wallet</label>${wSelect}</div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl tx-cat-label-row"><span>Category</span><button type="button" onclick="openManageCats('${txType}')" class="tx-cat-manage-btn">Manage</button></label>${txCategoryControl(txType)}</div>${txSubcatField(txType)}<div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01" inputmode="decimal" onpointerdown="amountCalcPrepareInput('tx-amt')" ontouchstart="amountCalcPrepareInput('tx-amt')" onfocus="openAmountCalc('tx-amt')" onclick="openAmountCalc('tx-amt')" oninput="amountCalcSync('tx-amt')" autocomplete="off"></div>${amountCalcHTML('tx-amt')}</div><div class="fg" style="position:relative;"><label class="fl">Note (optional)</label><input type="text" class="fi" id="tx-note" placeholder="What was this for?" autocomplete="off" oninput="showNoteSugg(this,'${txType}')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div><div class="fg"><label class="fl">Photo (optional)</label>${photoSection}</div>`
         : `<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="tx-w">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="tx-tw">${S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('')}</select></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="tx-dt" value="${todayDT()}"></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-amt" placeholder="0.00" min="0" step="0.01" inputmode="decimal" onpointerdown="amountCalcPrepareInput('tx-amt')" ontouchstart="amountCalcPrepareInput('tx-amt')" onfocus="openAmountCalc('tx-amt')" onclick="openAmountCalc('tx-amt')" oninput="amountCalcSync('tx-amt')" autocomplete="off"></div>${amountCalcHTML('tx-amt')}</div><div class="fg"><label class="fl">Transfer Fee <span style="color:var(--text3);font-weight:400;">(optional — deducted from sender)</span></label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="tx-fee" placeholder="0.00" min="0" step="0.01" value="0"></div></div><div class="fg" style="position:relative;"><label class="fl">Note</label><input type="text" class="fi" id="tx-note" placeholder="Reason" autocomplete="off" oninput="showNoteSugg(this,'transfer')"><div id="note-sugg" style="display:none;position:absolute;left:0;right:0;top:100%;z-index:50;background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);"></div></div>`;
       return `<div class="modal-title">Add Transaction</div><div class="tab-grp"><button class="tab-btn te ${txType === 'expense' ? 'active' : ''}" onclick="swTxT('expense')">Expense</button><button class="tab-btn ti ${txType === 'income' ? 'active' : ''}" onclick="swTxT('income')">Cash In</button><button class="tab-btn tt ${txType === 'transfer' ? 'active' : ''}" onclick="swTxT('transfer')">Transfer</button></div>${body}<button class="btn btn-p" onclick="submitTx()">Save Transaction</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`;
     }
@@ -6550,19 +8164,24 @@
     // ============ MANAGE CATEGORIES ============
     function openManageCats(type) {
       const isExp = type === 'expense'; const customs = isExp ? S.customExpCats : S.customIncCats;
-      const allCats = isExp ? getExpCats(true) : getIncCats(true); const n = allCats.length;
+      const allCats = isExp ? getExpCats(true) : getIncCats(true);
       const hiddenList = isExp ? (S.hiddenExpCats || []) : (S.hiddenIncCats || []);
-      const catListHTML = allCats.map((c, i) => {
+      const catListHTML = allCats.map(c => {
         const isDef = isExp ? DEFAULT_EXP_CATS.some(d => d.id === c.id) : DEFAULT_INC_CATS.some(d => d.id === c.id);
         const custIdx = customs.findIndex(x => x.id === c.id);
         const isHidden = hiddenList.includes(c.id);
         const rightBtn = isDef
           ? `<button onclick="toggleHideCat('${type}','${c.id}')" style="font-size:10px;padding:4px 9px;border-radius:7px;border:1px solid ${isHidden ? 'rgba(12,233,127,.3)' : 'var(--border)'};background:${isHidden ? 'var(--green-d)' : 'var(--bg3)'};color:${isHidden ? 'var(--green)' : 'var(--text3)'};cursor:pointer;font-weight:700;font-family:'Outfit',sans-serif;white-space:nowrap;">${isHidden ? 'Show' : 'Hide'}</button>`
           : `<button class="del-btn" style="width:24px;height:24px;font-size:12px;" onclick="delCustomCat('${type}',${custIdx})">x</button>`;
-        return `<div class="cat-list-item" style="${isHidden ? 'opacity:.45;' : ''}"><div style="display:flex;align-items:center;gap:8px;"><div class="cat-order-btns"><button class="cat-order-btn" onclick="moveCat('${type}','${c.id}',-1)" ${i === 0 ? 'disabled' : ''}>up</button><button class="cat-order-btn" onclick="moveCat('${type}','${c.id}',1)" ${i === n - 1 ? 'disabled' : ''}>dn</button></div><span>${c.label}${isHidden ? ' <span style="font-size:9px;color:var(--text3);border:1px solid var(--border);border-radius:4px;padding:1px 5px;margin-left:4px;">hidden</span>' : ''}</span></div><div style="display:flex;align-items:center;gap:6px;">${rightBtn}</div></div>`;
+        return `<div class="cat-list-item is-draggable" data-drag-id="${c.id}" onpointerdown="catDragPressStart(event,'cat','${type}')" oncontextmenu="return false;" style="${isHidden ? 'opacity:.48;' : ''}">
+          <span class="cat-drag-grip">${DRAG_HANDLE_SVG}</span>
+          <div class="cat-row-main"><span class="cat-row-title">${esc(c.label)}</span>${isHidden ? '<span class="cat-row-badge">hidden</span>' : ''}</div>
+          <div class="cat-row-actions">${rightBtn}</div>
+        </div>`;
       }).join('');
       const subPicker = allCats.map(c => `<option value="${c.id}">${esc(c.label)}${getSubcats(type, c.id).length ? ' - ' + getSubcats(type, c.id).length + ' sub' : ''}</option>`).join('');
-      openModal(`<div class="modal-title">Manage ${isExp ? 'Expense' : 'Income'} Categories</div><div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Use up/dn to reorder. Default categories cannot be deleted.</div><div class="card" style="margin-bottom:16px;">${catListHTML}</div><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">Subcategories</div><div class="filter-panel" style="margin-bottom:16px;"><select class="fi" id="subcat-pick" onchange="renderManageCatSubOption('${type}')"><option value="">Select a category</option>${subPicker}</select><div id="subcat-action" style="margin-top:10px;font-size:12px;color:var(--text3);">Select a category to create or manage subcategories.</div></div><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">Add Custom Category</div>${customCatIconPicker(type)}<div style="margin-bottom:10px;"><input type="text" class="fi" id="nc-name" placeholder="Category name" style="width:100%;"></div><button class="btn btn-p" onclick="addCustomCat('${type}')">Add Category</button><button class="btn btn-s" onclick="txType='${type}';openModal(txModalHTML())" style="margin-top:8px;">Back</button>`);
+      const defaultCustomLabel = customCatDefaultLabel(type);
+      openModal(`<div class="modal-title">Manage ${isExp ? 'Expense' : 'Income'} Categories</div><div style="font-size:12px;color:var(--text3);margin-bottom:14px;">Press and hold a category, then drag it into place. Changes save automatically.</div><div class="card cat-reorder-list" style="margin-bottom:16px;">${catListHTML}</div><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">Subcategories</div><div class="filter-panel" style="margin-bottom:16px;"><select class="fi" id="subcat-pick" onchange="renderManageCatSubOption('${type}')"><option value="">Select a category</option>${subPicker}</select><div id="subcat-action" style="margin-top:10px;font-size:12px;color:var(--text3);">Select a category to create or manage subcategories.</div></div><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">Add Custom Category</div>${customCatIconPicker(type)}<div style="margin-bottom:10px;"><input type="text" class="fi" id="nc-name" placeholder="Category name" value="${esc(defaultCustomLabel)}" data-auto-label="${esc(defaultCustomLabel)}" data-user-edited="0" oninput="this.setAttribute('data-user-edited', this.value.trim() && this.value.trim() !== (this.getAttribute('data-auto-label') || '') ? '1' : '0')" style="width:100%;"></div><button class="btn btn-p" onclick="addCustomCat('${type}')">Add Category</button><button class="btn btn-s" onclick="txType='${type}';openModal(txModalHTML(), 'tx-modal')" style="margin-top:8px;">Back</button>`);
     }
     function renderManageCatSubOption(type) {
       const catId = document.getElementById('subcat-pick')?.value || '';
@@ -6579,11 +8198,15 @@
     function openManageSubcats(type, catId, backTarget = 'cats') {
       const cat = getCat(type, catId);
       const subs = getSubcats(type, catId);
-      const rows = subs.length ? subs.map(s => `<div class="cat-list-item"><span style="font-size:13px;font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(s.label)}</span><div style="display:flex;gap:6px;align-items:center;"><button class="sm-btn" onclick="renameSubcat('${type}','${catId}','${s.id}','${backTarget}')" style="font-size:10px;padding:5px 9px;">${EDIT_SVG}</button><button class="del-btn" style="width:26px;height:26px;" onclick="delSubcat('${type}','${catId}','${s.id}','${backTarget}')">${TRASH_SVG}</button></div></div>`).join('') : `<div class="empty" style="padding:22px;"><div class="empty-t">No subcategories yet</div><div class="empty-s">Add one for finer transaction tracking</div></div>`;
-      openModal(`<div class="modal-title">Subcategories</div><div style="font-size:12px;color:var(--text3);margin-bottom:12px;">${esc(cat.label)} - ${type === 'expense' ? 'Expense' : 'Income'}</div><div class="card" style="margin-bottom:16px;">${rows}</div><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">Add Subcategory</div><div style="display:flex;gap:8px;margin-bottom:10px;"><input type="text" class="fi" id="subcat-name" placeholder="e.g. Groceries, Coffee, Fuel" style="flex:1;"></div><button class="btn btn-p" onclick="addSubcat('${type}','${catId}','${backTarget}')">Add Subcategory</button><button class="btn btn-s" onclick="backFromSubcats('${type}','${backTarget}')" style="margin-top:8px;">Back</button>`);
+      const rows = subs.length ? subs.map(s => `<div class="cat-list-item is-draggable" data-drag-id="${s.id}" onpointerdown="catDragPressStart(event,'subcat','${type}','${catId}','${backTarget}')" oncontextmenu="return false;">
+        <span class="cat-drag-grip">${DRAG_HANDLE_SVG}</span>
+        <div class="cat-row-main"><span class="cat-row-title">${esc(s.label)}</span></div>
+        <div class="cat-row-actions"><button class="sm-btn" onclick="renameSubcat('${type}','${catId}','${s.id}','${backTarget}')" style="font-size:10px;padding:5px 9px;">${EDIT_SVG}</button><button class="del-btn" style="width:26px;height:26px;" onclick="delSubcat('${type}','${catId}','${s.id}','${backTarget}')">${TRASH_SVG}</button></div>
+      </div>`).join('') : `<div class="empty" style="padding:22px;"><div class="empty-t">No subcategories yet</div><div class="empty-s">Add one for finer transaction tracking</div></div>`;
+      openModal(`<div class="modal-title">Subcategories</div><div style="font-size:12px;color:var(--text3);margin-bottom:12px;">${esc(cat.label)} - ${type === 'expense' ? 'Expense' : 'Income'}</div>${subs.length ? '<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">Press and hold a subcategory to reorder. Changes save automatically.</div>' : ''}<div class="card cat-reorder-list" style="margin-bottom:16px;">${rows}</div><div style="font-size:12px;font-weight:700;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.8px;">Add Subcategory</div><div style="display:flex;gap:8px;margin-bottom:10px;"><input type="text" class="fi" id="subcat-name" placeholder="e.g. Groceries, Coffee, Fuel" style="flex:1;"></div><button class="btn btn-p" onclick="addSubcat('${type}','${catId}','${backTarget}')">Add Subcategory</button><button class="btn btn-s" onclick="backFromSubcats('${type}','${backTarget}')" style="margin-top:8px;">Back</button>`);
     }
     function backFromSubcats(type, backTarget = 'cats') {
-      if (backTarget === 'tx') { txType = type; openModal(txModalHTML()); return; }
+      if (backTarget === 'tx') { txType = type; openModal(txModalHTML(), 'tx-modal'); return; }
       if (backTarget === 'edit') { closeModal(); return; }
       openManageCats(type);
     }
@@ -7010,14 +8633,15 @@
     function updateHeaderAvatar() {
       const el = document.getElementById('hdr-avatar');
       if (!el) return;
-      if (_profilePhoto) {
-        el.innerHTML = `<img src="${_profilePhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+      const accountPhoto = _profilePhoto || (fbUser && fbUser.photoURL) || '';
+      if (accountPhoto) {
+        el.innerHTML = `<img src="${esc(accountPhoto)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
         el.style.background = 'none';
         el.style.border = '2px solid rgba(255,255,255,0.18)';
       } else if (fbUser) {
-        const displayName = fbUser.displayName || fbUser.email.split('@')[0] || 'U';
+        const displayName = fbUser.displayName || S.fullName || fbUser.email.split('@')[0] || 'U';
         const initials = displayName.slice(0, 2).toUpperCase();
-        el.innerHTML = `<span style="font-size:12px;font-weight:700;">${initials}</span>`;
+        el.innerHTML = `<span style="font-size:12px;font-weight:700;">${esc(initials)}</span>`;
         el.style.background = ''; el.style.border = '';
       } else {
         el.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
