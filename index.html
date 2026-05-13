@@ -1814,6 +1814,101 @@
       font-weight: 700 !important;
     }
 
+    .modal.tx-modal .fi,
+    .modal.tx-modal .dtp-field-btn,
+    .modal.tx-modal .tx-cat-trigger {
+      height: 45px;
+      min-height: 45px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .modal.tx-modal .tx-cat-trigger-label {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .modal.tx-modal .amt-pre {
+      left: 13px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .modal.tx-modal .amt-fi {
+      padding-left: 38px !important;
+      padding-right: 13px !important;
+      font-family: 'Outfit', sans-serif !important;
+      font-size: 17px !important;
+      font-weight: 700 !important;
+    }
+
+    body.theme-light .modal.tx-modal .dtp-field-btn,
+    body.theme-light .modal.tx-modal .tx-cat-trigger {
+      background: #fff;
+      border-color: rgba(0, 0, 0, .12);
+      color: #131720;
+    }
+
+    body.theme-light .modal.tx-modal .dtp-field-btn:hover,
+    body.theme-light .modal.tx-modal .dtp-field-btn:focus,
+    body.theme-light .modal.tx-modal .dtp-field-btn:active,
+    body.theme-light .modal.tx-modal .tx-cat-trigger:hover,
+    body.theme-light .modal.tx-modal .tx-cat-trigger:focus,
+    body.theme-light .modal.tx-modal .tx-cat-trigger:active {
+      background: #fff;
+    }
+
+    body.theme-light .modal.tx-modal .tx-cat-trigger-label {
+      color: #131720;
+    }
+
+    .modal.tx-modal.tx-type-expense {
+      --tx-focus-border: var(--red);
+    }
+
+    .modal.tx-modal.tx-type-income {
+      --tx-focus-border: var(--green);
+    }
+
+    .modal.tx-modal.tx-type-transfer {
+      --tx-focus-border: var(--blue);
+    }
+
+    .modal.tx-modal .fi:hover,
+    .modal.tx-modal .dtp-field-btn:hover,
+    .modal.tx-modal .tx-cat-trigger:hover,
+    .modal.tx-modal .tx-cat-manage-btn:hover,
+    .modal.tx-modal .tx-cat-card:hover,
+    .modal.tx-modal button[onclick*="tx-photo-input"]:hover,
+    .modal.tx-modal button[onclick*="tx-camera-input"]:hover,
+    .modal.tx-modal .fi:focus,
+    .modal.tx-modal .dtp-field-btn:focus,
+    .modal.tx-modal .tx-cat-trigger:focus,
+    .modal.tx-modal .tx-cat-manage-btn:focus,
+    .modal.tx-modal .tx-cat-card:focus,
+    .modal.tx-modal button[onclick*="tx-photo-input"]:focus,
+    .modal.tx-modal button[onclick*="tx-camera-input"]:focus,
+    .modal.tx-modal .fi:focus-visible,
+    .modal.tx-modal .dtp-field-btn:focus-visible,
+    .modal.tx-modal .tx-cat-trigger:focus-visible,
+    .modal.tx-modal .tx-cat-manage-btn:focus-visible,
+    .modal.tx-modal .tx-cat-card:focus-visible,
+    .modal.tx-modal button[onclick*="tx-photo-input"]:focus-visible,
+    .modal.tx-modal button[onclick*="tx-camera-input"]:focus-visible,
+    .modal.tx-modal .dtp-field-btn:active,
+    .modal.tx-modal .tx-cat-trigger:active,
+    .modal.tx-modal .tx-cat-manage-btn:active,
+    .modal.tx-modal .tx-cat-card:active,
+    .modal.tx-modal .fi:active,
+    .modal.tx-modal button[onclick*="tx-photo-input"]:active,
+    .modal.tx-modal button[onclick*="tx-camera-input"]:active {
+      border-color: var(--tx-focus-border) !important;
+      outline: none;
+    }
+
     .amount-calc {
       margin-top: 10px;
       background: linear-gradient(180deg, rgba(255, 255, 255, .055), rgba(255, 255, 255, .025));
@@ -7165,6 +7260,7 @@
         overlay.classList.toggle('tx-overlay', String(modalClass).split(/\s+/).includes('tx-modal'));
         overlay.classList.add('open');
       }
+      if (modal && String(modalClass).split(/\s+/).includes('tx-modal')) applyTxModalTypeClass();
     }
     function closeModal() {
       const overlay = document.getElementById('modal-overlay');
@@ -7740,6 +7836,13 @@
     }
 
     // ============ ADD TRANSACTION ============
+    function txTypeClass() { return 'tx-type-' + (txType === 'transfer' ? 'transfer' : txType === 'income' ? 'income' : 'expense'); }
+    function applyTxModalTypeClass() {
+      const modal = document.getElementById('modal');
+      if (!modal || !modal.classList.contains('tx-modal')) return;
+      modal.classList.remove('tx-type-expense', 'tx-type-income', 'tx-type-transfer');
+      modal.classList.add(txTypeClass());
+    }
     function openAddTx() { txType = 'expense'; openModal(txModalHTML(), 'tx-modal'); }
     function txCatOpts(type, selected = '') {
       const cats = type === 'expense' ? getExpCats() : getIncCats();
@@ -7973,6 +8076,7 @@
     function swTxT(t) {
       txType = t;
       document.getElementById('mc').innerHTML = txModalHTML();
+      applyTxModalTypeClass();
       bindModalDateTimePickers();
     }
     function submitTx() {
