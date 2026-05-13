@@ -4125,7 +4125,7 @@
       background: var(--bg2);
       border: 1px solid var(--border);
       border-radius: 24px;
-      box-shadow: 0 28px 72px rgba(0, 0, 0, .8), 0 0 0 1px rgba(77, 159, 255, .08);
+      box-shadow: 0 28px 72px rgba(0, 0, 0, .8), 0 0 0 1px var(--green-d);
       overflow: hidden;
       width: min(730px, calc(100vw - 24px));
       max-height: calc(100dvh - 40px);
@@ -4156,7 +4156,7 @@
 
     .dtp-pre {
       font-size: 10px;
-      color: rgba(77, 159, 255, .65);
+      color: var(--green);
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 1.2px;
@@ -4181,8 +4181,8 @@
 
     .dtp-val .dp:hover,
     .dtp-val .dp.a {
-      background: rgba(77, 159, 255, .18);
-      color: #4d9fff;
+      background: var(--green-d);
+      color: var(--green);
     }
 
     .dtpicker-body {
@@ -4246,9 +4246,9 @@
     }
 
     .dtp-nb:hover {
-      background: rgba(77, 159, 255, .12);
-      border-color: rgba(77, 159, 255, .3);
-      color: #4d9fff;
+      background: var(--green-d);
+      border-color: var(--green);
+      color: var(--green);
       transform: translateY(-1px);
     }
 
@@ -4297,8 +4297,8 @@
     }
 
     .dtp-d:hover:not(.ds):not(.dom) {
-      background: rgba(77, 159, 255, .14);
-      color: #4d9fff;
+      background: var(--green-d);
+      color: var(--green);
     }
 
     .dtp-d.dom {
@@ -4307,15 +4307,15 @@
     }
 
     .dtp-d.dt:not(.ds) {
-      color: #4d9fff;
+      color: var(--green);
       font-weight: 800;
     }
 
     .dtp-d.ds {
-      background: #4d9fff;
+      background: var(--green);
       color: #07090f;
       font-weight: 800;
-      box-shadow: 0 3px 10px rgba(77, 159, 255, .45);
+      box-shadow: none;
     }
 
     .dtp-clock-head {
@@ -4386,8 +4386,8 @@
     }
 
     .dtp-time-part.a {
-      background: var(--blue-d);
-      color: var(--blue);
+      background: var(--green-d);
+      color: var(--green);
     }
 
     .dtp-time-mode {
@@ -4415,9 +4415,9 @@
     }
 
     .dtp-kb:hover {
-      color: var(--blue);
-      border-color: rgba(77, 159, 255, .38);
-      background: rgba(77, 159, 255, .12);
+      color: var(--green);
+      border-color: var(--green);
+      background: var(--green-d);
       transform: translateY(-1px);
     }
 
@@ -4436,9 +4436,9 @@
     }
 
     .dtp-ab.a {
-      background: var(--blue);
+      background: var(--green);
       color: #07090f;
-      box-shadow: 0 6px 14px rgba(77, 159, 255, .25);
+      box-shadow: none;
     }
 
     .dtp-manual {
@@ -4525,7 +4525,7 @@
     }
 
     .dtp-manual-input:focus {
-      border-bottom-color: var(--blue);
+      border-bottom-color: var(--green);
       color: var(--text);
     }
 
@@ -4584,7 +4584,7 @@
     .dtp-manual-btn {
       border: 0;
       background: transparent;
-      color: #4d9fff;
+      color: var(--green);
       font-size: 14px;
       font-weight: 800;
       letter-spacing: .6px;
@@ -4617,9 +4617,9 @@
     }
 
     .dtp-qb:hover {
-      background: rgba(77, 159, 255, .1);
-      border-color: rgba(77, 159, 255, .25);
-      color: #4d9fff;
+      background: var(--green-d);
+      border-color: var(--green);
+      color: var(--green);
     }
 
     .dtp-can {
@@ -4644,9 +4644,9 @@
     .dtp-ok {
       padding: 7px 20px;
       border-radius: 10px;
-      background: rgba(77, 159, 255, .15);
-      border: 1px solid rgba(77, 159, 255, .4);
-      color: #4d9fff;
+      background: var(--green-d);
+      border: 1px solid var(--green);
+      color: var(--green);
       font-size: 13px;
       font-weight: 800;
       cursor: pointer;
@@ -4655,8 +4655,8 @@
     }
 
     .dtp-ok:hover {
-      background: rgba(77, 159, 255, .26);
-      border-color: rgba(77, 159, 255, .65);
+      background: var(--green-d);
+      border-color: var(--green);
     }
 
     .dtp-vtog {
@@ -4686,9 +4686,9 @@
     }
 
     .dtp-vb.a {
-      background: rgba(77, 159, 255, .12);
-      border-color: rgba(77, 159, 255, .3);
-      color: #4d9fff;
+      background: var(--green-d);
+      border-color: var(--green);
+      color: var(--green);
     }
 
     .dtp-field-btn {
@@ -4720,11 +4720,11 @@
     /* light theme */
     body.theme-light .dtpicker-panel {
       background: #eef1f8;
-      border-color: rgba(42, 125, 225, .18);
+      border-color: var(--green-d);
     }
 
     body.theme-light .dtpicker-hdr {
-      background: linear-gradient(135deg, #dce8f8, #cfe1f5);
+      background: #f2f5fb;
     }
 
     body.theme-light .dtp-val {
@@ -4770,7 +4770,7 @@
     }
 
     body.theme-light .dtp-manual-title {
-      background: #dfe7f5;
+      background: #f2f5fb;
       color: #131720;
     }
 
@@ -9561,20 +9561,20 @@
           const a = ((h / 12) * 360 - 90) * Math.PI / 180;
           const nx = cx + r * Math.cos(a), ny = cy + r * Math.sin(a);
           const isSel = h === _DTP.hr;
-          if (isSel) s += `<circle cx="${nx}" cy="${ny}" r="16" fill="#4d9fff"/>`;
+          if (isSel) s += `<circle cx="${nx}" cy="${ny}" r="16" fill="var(--green)"/>`;
           s += `<text x="${nx}" y="${ny + 5}" text-anchor="middle" font-size="13" font-weight="${isSel ? 800 : 600}" fill="${isSel ? '#07090f' : '#8892a4'}" font-family="Outfit,sans-serif" style="cursor:pointer" onclick="dtpHrClick(${h})">${h}</text>`;
         }
         // Needle
         const ha = (((_DTP.hr % 12) / 12) * 360 - 90) * Math.PI / 180;
         const hx = cx + (r - 18) * Math.cos(ha), hy = cy + (r - 18) * Math.sin(ha);
-        s += `<line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="#4d9fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="${hx}" cy="${hy}" r="5" fill="#4d9fff"/>`;
+        s += `<line x1="${cx}" y1="${cy}" x2="${hx}" y2="${hy}" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round"/><circle cx="${hx}" cy="${hy}" r="5" fill="var(--green)"/>`;
       } else {
         // Minute marks 0-55 at radius r
         for (let m = 0; m < 60; m += 5) {
           const a = ((m / 60) * 360 - 90) * Math.PI / 180;
           const nx = cx + r * Math.cos(a), ny = cy + r * Math.sin(a);
           const isSel = m === _DTP.mn;
-          if (isSel) s += `<circle cx="${nx}" cy="${ny}" r="16" fill="#4d9fff"/>`;
+          if (isSel) s += `<circle cx="${nx}" cy="${ny}" r="16" fill="var(--green)"/>`;
           s += `<text x="${nx}" y="${ny + 4}" text-anchor="middle" font-size="11.5" font-weight="${isSel ? 800 : 600}" fill="${isSel ? '#07090f' : '#8892a4'}" font-family="Outfit,sans-serif" style="cursor:pointer" onclick="dtpMnClick(${m})">${String(m).padStart(2, '0')}</text>`;
         }
         // Minute ticks (every minute)
@@ -9583,14 +9583,14 @@
           const a = ((m / 60) * 360 - 90) * Math.PI / 180;
           const ox = cx + (R - 4) * Math.cos(a), oy = cy + (R - 4) * Math.sin(a);
           const ix = cx + (R - 9) * Math.cos(a), iy = cy + (R - 9) * Math.sin(a);
-          s += `<line x1="${ox}" y1="${oy}" x2="${ix}" y2="${iy}" stroke="rgba(77,159,255,.2)" stroke-width="1"/>`;
+          s += `<line x1="${ox}" y1="${oy}" x2="${ix}" y2="${iy}" stroke="var(--green-d)" stroke-width="1"/>`;
         }
         // Needle
         const ma = ((_DTP.mn / 60) * 360 - 90) * Math.PI / 180;
         const mx = cx + (r - 18) * Math.cos(ma), my = cy + (r - 18) * Math.sin(ma);
-        s += `<line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="#4d9fff" stroke-width="2.5" stroke-linecap="round"/><circle cx="${mx}" cy="${my}" r="5" fill="#4d9fff"/>`;
+        s += `<line x1="${cx}" y1="${cy}" x2="${mx}" y2="${my}" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round"/><circle cx="${mx}" cy="${my}" r="5" fill="var(--green)"/>`;
       }
-      s += `<circle cx="${cx}" cy="${cy}" r="${ri}" fill="#4d9fff" opacity=".18"/><circle cx="${cx}" cy="${cy}" r="4" fill="#4d9fff"/>`;
+      s += `<circle cx="${cx}" cy="${cy}" r="${ri}" fill="var(--green-d)"/><circle cx="${cx}" cy="${cy}" r="4" fill="var(--green)"/>`;
       svg.innerHTML = s;
       const tm = document.getElementById('dtp-time-main');
       if (tm) {
