@@ -1,4 +1,4 @@
-const CACHE = 'ntx-v20';
+const CACHE = 'ntx-v24';
 const ASSETS = ['./'];
 self.addEventListener('install', e => {
   e.waitUntil(
