@@ -8,13 +8,7 @@
   <meta name="application-name" content="nTransactions">
   <meta name="description" content="Personal finance tracker - expenses, income, loans and budgets">
   <meta name="theme-color" content="#07090f">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="nTransactions">
   <link rel="icon" type="image/png" href="./favicon.png">
-  <link rel="apple-touch-icon" href="./favicon.png">
-  <link rel="manifest" href="./manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap"
@@ -356,15 +350,6 @@
 
     body.theme-light .sb-backdrop {
       background: rgba(0, 0, 0, .30);
-    }
-
-    body.theme-light #pwa-banner {
-      background: linear-gradient(135deg, #e4f3ec, #ddeef8);
-    }
-
-    body.theme-light .pwa-btn {
-      color: #fff;
-      background: var(--blue);
     }
 
     body.theme-light .nav-item.active {
@@ -4556,95 +4541,6 @@
       background: rgba(77, 159, 255, 0.06);
     }
 
-    #pwa-banner {
-      display: none;
-      position: fixed;
-      bottom: calc(var(--nav) + 10px);
-      left: 50%;
-      transform: translateX(-50%);
-      width: calc(100% - 32px);
-      max-width: 480px;
-      background: linear-gradient(135deg, #0c1e14, #081420);
-      border: 1px solid rgba(12, 233, 127, .25);
-      border-radius: 16px;
-      padding: 13px 16px;
-      z-index: 98;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, .5);
-    }
-
-    body.theme-light #pwa-banner {
-      background: linear-gradient(135deg, #e8f5ee, #dff0fb);
-      border-color: rgba(42, 125, 225, .30);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, .12);
-    }
-
-    body.theme-light .pwa-t {
-      color: #131720;
-    }
-
-    body.theme-light .pwa-s {
-      color: #6b7a99;
-    }
-
-    #pwa-banner.show {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      animation: fadeUp .3s ease;
-    }
-
-    .pwa-icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-      background: var(--green-d);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
-    }
-
-    .pwa-text {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .pwa-t {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text);
-    }
-
-    .pwa-s {
-      font-size: 11px;
-      color: var(--text3);
-      margin-top: 2px;
-    }
-
-    .pwa-btn {
-      padding: 7px 14px;
-      border-radius: 9px;
-      background: var(--green);
-      color: #07090f;
-      border: none;
-      font-size: 12px;
-      font-weight: 800;
-      font-family: 'Outfit', sans-serif;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-
-    .pwa-close {
-      background: none;
-      border: none;
-      color: var(--text3);
-      cursor: pointer;
-      font-size: 18px;
-      padding: 2px 4px;
-      flex-shrink: 0;
-    }
-
     .calc-row {
       display: flex;
       gap: 6px;
@@ -6411,21 +6307,6 @@
 
 <body>
 
-  <div id="pwa-banner">
-    <div class="pwa-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0ce97f"
-        stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-        <polyline points="7 10 12 15 17 10" />
-        <line x1="12" y1="15" x2="12" y2="3" />
-      </svg></div>
-    <div class="pwa-text">
-      <div class="pwa-t">Install nTransactions</div>
-      <div class="pwa-s">Add to Home Screen for app experience</div>
-    </div>
-    <button class="pwa-btn" id="pwa-install-btn">Install</button>
-    <button class="pwa-close" id="pwa-close-btn">&times;</button>
-  </div>
-
   <div id="update-banner" class="update-banner" role="status" aria-live="polite"></div>
 
   <div id="app">
@@ -6594,23 +6475,25 @@
     // ============ ANDROID NATIVE APP BRIDGE ============
     const _isAndroid = !!(window.__isAndroidApp || (typeof window.NativeApp !== 'undefined'));
     window.onNativeAppReady = function () {
-      const banner = document.getElementById('pwa-banner');
-      if (banner) banner.style.display = 'none';
       window._pwaInNativeApp = true;
       refreshNativeSmsPending();
       if (typeof importNativeAppNotifications === 'function') importNativeAppNotifications();
     };
 
-    // ============ PWA ============
+    // ============ PUBLIC WEB MODE ============
 
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      window.addEventListener('load', registerServiceWorkerForUpdates);
+    function disablePublicPwaInstallability() {
+      if (!('serviceWorker' in navigator) || location.protocol === 'file:' || isAndroidRuntime()) return;
+      window.addEventListener('load', async () => {
+        try {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          regs.forEach(reg => {
+            try { reg.unregister(); } catch (e) { }
+          });
+        } catch (e) { }
+      }, { once: true });
     }
-    let deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; if (!sessionStorage.getItem('pwa-dismissed') && !window._pwaInNativeApp) setTimeout(() => document.getElementById('pwa-banner').classList.add('show'), 2000); });
-    window.addEventListener('appinstalled', () => { document.getElementById('pwa-banner').classList.remove('show'); deferredPrompt = null; });
-    document.getElementById('pwa-install-btn').addEventListener('click', async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; document.getElementById('pwa-banner').classList.remove('show'); });
-    document.getElementById('pwa-close-btn').addEventListener('click', () => { document.getElementById('pwa-banner').classList.remove('show'); sessionStorage.setItem('pwa-dismissed', '1'); });
+    disablePublicPwaInstallability();
 
     // ============ CONSTANTS ============
     const DEFAULT_EXP_CATS = [
@@ -12716,17 +12599,7 @@
     }
 
     async function registerServiceWorkerForUpdates() {
-      try {
-        bindServiceWorkerNotificationMessages();
-        const reg = await navigator.serviceWorker.register('./sw.js', { scope: './' });
-        watchServiceWorkerRegistration(reg);
-        importStoredServiceWorkerNotifications();
-        if (reg.waiting && navigator.serviceWorker.controller) onServiceWorkerUpdateReady();
-        reg.update().catch(() => { });
-        navigator.serviceWorker.addEventListener('controllerchange', () => {
-          if (navigator.serviceWorker.controller) onServiceWorkerUpdateReady();
-        });
-      } catch (e) { }
+      return null;
     }
 
     function showPwaAndroidDownloadNotice() {
@@ -12768,11 +12641,6 @@
       importNativeAppNotifications();
       setTimeout(showPwaAndroidDownloadNotice, 900);
       setTimeout(() => checkForUpdates({ force: true }), 1600);
-      setTimeout(() => {
-        if (!isAndroidRuntime() && 'Notification' in window && Notification.permission === 'granted') {
-          enableWebPushNotifications({ silent: true }).catch(() => { });
-        }
-      }, 2600);
       document.addEventListener('visibilitychange', () => {
         if (!document.hidden) {
           importStoredServiceWorkerNotifications();
