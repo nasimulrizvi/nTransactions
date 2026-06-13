@@ -54,16 +54,49 @@ function rateLimit(uid) {
   recent.push(now); smsBuckets.set(uid, recent); return true;
 }
 
+// ─── Zero-dependency Firebase JWT verifier ───────────────────────────────────
+
+const crypto = require('crypto');
+const CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
+let _certCache = null, _certCacheExp = 0;
+
+async function _getCerts() {
+  const now = Date.now();
+  if (_certCache && now < _certCacheExp) return _certCache;
+  let resp;
+  try { resp = await fetch(CERTS_URL, { signal: AbortSignal.timeout(6000) }); }
+  catch (_) { throw new Error('firebase_network_error'); }
+  if (!resp.ok) throw new Error('firebase_network_error');
+  const match = (resp.headers.get('cache-control') || '').match(/max-age=(\d+)/);
+  _certCache = await resp.json();
+  _certCacheExp = now + (match ? parseInt(match[1]) * 1000 : 3_600_000);
+  return _certCache;
+}
+
 async function verifyFirebaseUser(idToken) {
-  const firebaseKey = process.env.FIREBASE_WEB_API_KEY;
-  if (!firebaseKey) throw new Error('missing_firebase_key');
-  const resp = await fetch(
-    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseKey)}`,
-    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) }
-  );
-  const data = await resp.json().catch(() => ({}));
-  if (!resp.ok || !Array.isArray(data.users) || !data.users.length) return null;
-  return data.users[0];
+  const projectId = process.env.FIREBASE_PROJECT_ID || 'ntransactions';
+  const parts = String(idToken || '').split('.');
+  if (parts.length !== 3) return null;
+  let header, payload;
+  try {
+    header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+    payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+  } catch (_) { return null; }
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp <= now)        return null;
+  if (payload.iat > now + 300)   return null;
+  if (payload.aud !== projectId) throw new Error('firebase_api_key_invalid');
+  if (payload.iss !== `https://securetoken.google.com/${projectId}`) throw new Error('firebase_api_key_invalid');
+  if (!payload.sub || header.alg !== 'RS256' || !header.kid) return null;
+  const certs = await _getCerts();
+  const pem = certs[header.kid];
+  if (!pem) return null;
+  try {
+    const v = crypto.createVerify('RSA-SHA256');
+    v.update(parts[0] + '.' + parts[1], 'utf8');
+    if (!v.verify(pem, Buffer.from(parts[2], 'base64url'))) return null;
+  } catch (_) { return null; }
+  return { localId: String(payload.sub), email: String(payload.email || '') };
 }
 
 async function fetchWithTimeout(url, options, timeoutMs) {
@@ -190,10 +223,11 @@ async function handler(req, res) {
   let user;
   try { user = await verifyFirebaseUser(idToken); }
   catch (e) {
-    if (e && e.message === 'missing_firebase_key') { sendJson(res, 500, { error: 'firebase_not_configured' }); return; }
-    sendJson(res, 500, { error: 'auth_unavailable', message: 'Could not verify session.' }); return;
+    if (e && e.message === 'firebase_api_key_invalid') { sendJson(res, 500, { error: 'firebase_misconfigured', message: 'Firebase project ID mismatch. Check FIREBASE_PROJECT_ID env var.' }); return; }
+    if (e && e.message === 'firebase_network_error') { sendJson(res, 503, { error: 'auth_unavailable', message: 'Authentication temporarily unreachable. Please try again.' }); return; }
+    sendJson(res, 500, { error: 'auth_error', message: 'Could not verify session. Please try again.' }); return;
   }
-  if (!user || !user.localId) { sendJson(res, 401, { error: 'invalid_session' }); return; }
+  if (!user || !user.localId) { sendJson(res, 401, { error: 'invalid_session', message: 'Your session has expired. Please sign in again.' }); return; }
   if (!rateLimit(user.localId)) { sendJson(res, 429, { error: 'rate_limited', message: 'Too many requests. Please wait.' }); return; }
 
   const body = requestBody(req);
