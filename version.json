@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "latestVersion": "1.0",
+  "minimumVersion": "1.0",
+  "apkUrl": "",
+  "releaseDate": "2026-05-17",
+  "forceUpdate": false,
+  "webPushVapidKey": "BGsLQIJhnCApn_GOoqbvZJ9N_wfWlR1mHBTtFu7TWsZxzzY_gfYnDzcPYUNnTSGpCkU5l6YvNPFIsFkPXFLNX9I",
+  "title": "nTransactions Android APK v1.0",
+  "message": "The official Android APK is available from the nTransactions download page.",
+  "changelog": [
+    "Cross-platform update awareness system",
+    "Service Worker update prompt support",
+    "Android APK version comparison support",
+    "Official first-time APK download page",
+    "Improved Settings profile card and detailed Profile window"
+  ],
+  "android": {
+    "latestVersion": "1.0",
+    "minimumVersion": "1.0",
+    "apkUrl": "https://github.com/nasimulrizvi/nTransactions/releases/download/V1.0.0/nTransactions-V1.0.apk",
+    "releaseDate": "2026-05-17",
+    "forceUpdate": false,
+    "title": "nTransactions APK v1.0",
+    "message": "Download the latest official nTransactions Android APK.",
+    "changelog": [
+      "Remote APK update metadata support",
+      "Soft and force update handling",
+      "Manual update checking from Settings",
+      "Official first-time APK download page",
+      "Profile editing with username availability checks"
+    ]
+  },
+  "web": {
+    "latestVersion": "3.2.1",
+    "minimumVersion": "3.2.0",
+    "webPushVapidKey": "BGsLQIJhnCApn_GOoqbvZJ9N_wfWlR1mHBTtFu7TWsZxzzY_gfYnDzcPYUNnTSGpCkU5l6YvNPFIsFkPXFLNX9I",
+    "releaseDate": "2026-05-16",
+    "forceUpdate": false,
+    "title": "What's New in nTransactions",
+    "message": "PWA users can now see release notes and reload when a fresh deployment is available.",
+    "changelog": [
+      "What's New announcement system",
+      "Service Worker update detection",
+      "Manual Check for Updates from Settings",
+      "Compact Settings profile card and Profile details modal"
+    ]
+  },
+  "messaging": {
+    "webPushVapidKey": "BGsLQIJhnCApn_GOoqbvZJ9N_wfWlR1mHBTtFu7TWsZxzzY_gfYnDzcPYUNnTSGpCkU5l6YvNPFIsFkPXFLNX9I",
+    "topics": [
+      "all_users",
+      "android_users",
+      "update_alerts",
+      "release_notes"
+    ]
+  },
+  "announcements": [
+    {
+      "id": "update-system-ready-2026-05-14",
+      "active": false,
+      "platforms": [
+        "all"
+      ],
+      "version": "3.2.1",
+      "releaseDate": "2026-05-16",
+      "title": "Update Notifications Ready",
+      "message": "nTransactions can now show lightweight release announcements and Firebase Messaging notifications.",
+      "changelog": [
+        "APK update metadata support",
+        "PWA What's New support",
+        "Firebase Messaging compatibility"
+      ],
+      "actionUrl": ""
+    }
+  ]
+}

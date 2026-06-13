@@ -2,7 +2,25 @@
   "name": "nTransactions",
   "short_name": "nTransactions",
   "description": "Personal finance tracker",
-  "display": "browser",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
   "background_color": "#07090f",
-  "theme_color": "#07090f"
+  "categories": ["finance", "productivity"],
+  "theme_color": "#07090f",
+  "gcm_sender_id": "103953800507",
+  "icons": [
+    {
+      "src": "./favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./favicon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
 }

@@ -1,0 +1,6 @@
+{
+  "name": "nTransactions-Android",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}

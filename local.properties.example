@@ -1,0 +1,10 @@
+sdk.dir=C\:\\Users\\YourName\\AppData\\Local\\Android\\Sdk
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
+GEMINI_FALLBACK_MODELS=gemini-2.5-flash-lite,gemini-2.0-flash
+
+# Optional release APK signing. Keep real values only in local.properties or CI environment variables.
+NTX_RELEASE_STORE_FILE=
+NTX_RELEASE_STORE_PASSWORD=
+NTX_RELEASE_KEY_ALIAS=
+NTX_RELEASE_KEY_PASSWORD=
