@@ -3469,7 +3469,6 @@
       font-size: 13.5px;
       line-height: 1.65;
       word-break: break-word;
-      white-space: pre-wrap;
     }
 
     @media (min-width: 768px) {
@@ -3481,6 +3480,7 @@
       border: 1px solid rgba(12,233,127,.2);
       border-radius: 16px 16px 3px 16px;
       color: var(--text);
+      white-space: pre-wrap;
     }
 
     .aic-bubble-ai {
@@ -3489,6 +3489,22 @@
       border-left: 2px solid rgba(157,111,255,.4);
       border-radius: 3px 16px 16px 16px;
       color: var(--text);
+    }
+
+    /* Markdown elements inside AI response bubbles */
+    .aic-bubble-ai p  { margin: 0 0 6px; }
+    .aic-bubble-ai p:last-child { margin-bottom: 0; }
+    .aic-bubble-ai ul { margin: 4px 0 6px; padding-left: 18px; }
+    .aic-bubble-ai li { margin: 3px 0; }
+    .aic-bubble-ai strong { color: var(--text); font-weight: 700; }
+    .aic-bubble-ai em { font-style: italic; color: var(--text2); }
+    .aic-bubble-ai code {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 0.88em;
+      font-family: 'Space Mono', monospace;
     }
 
     .aic-ai-icon {
@@ -15912,6 +15928,39 @@ ${personHtml}${walletHtml}${transferHtml}
       if (ov) ov.classList.remove('open');
     }
 
+    // Lightweight markdown renderer for AI chat bubbles.
+    // Converts **bold**, *italic*, `code`, bullet lists, and newlines to HTML.
+    // Runs on already-escaped text so XSS is not possible.
+    function _aiMd(raw) {
+      if (!raw) return '';
+      const lines = String(raw).split('\n');
+      const out = [];
+      let inUl = false;
+
+      const inline = t => esc(t)
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*\n]+?)\*/g,  '<em>$1</em>')
+        .replace(/`([^`\n]+?)`/g,    '<code>$1</code>');
+
+      for (const line of lines) {
+        const tr = line.trim();
+        if (/^[-*•]\s/.test(tr)) {
+          if (!inUl) { out.push('<ul>'); inUl = true; }
+          out.push('<li>' + inline(tr.replace(/^[-*•]\s+/, '')) + '</li>');
+        } else {
+          if (inUl) { out.push('</ul>'); inUl = false; }
+          if (tr === '') {
+            // collapse consecutive blank lines - only push a break if previous wasn't one
+            if (out.length && out[out.length - 1] !== '<br>') out.push('<br>');
+          } else {
+            out.push('<p>' + inline(tr) + '</p>');
+          }
+        }
+      }
+      if (inUl) out.push('</ul>');
+      return out.join('');
+    }
+
     function _renderAiChatMessages() {
       const container = document.getElementById('aic-messages');
       if (!container) return;
@@ -15923,7 +15972,7 @@ ${personHtml}${walletHtml}${transferHtml}
         container.innerHTML = `<div class="aic-empty">
           <div class="aic-empty-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
           <div class="aic-empty-title">Ask me about your finances</div>
-          <div class="aic-empty-hints">${AIC_HINTS.map(h=>`<button class="aic-hint-chip" data-hint="${esc(h)}" onclick="aiChatSendText(this.getAttribute('data-hint'))"><span class="aic-hint-arrow">→</span>${esc(h)}</button>`).join('')}</div>
+          <div class="aic-empty-hints">${AIC_HINTS.map(h=>`<button class="aic-hint-chip" data-hint="${esc(h)}" onclick="aiChatSendText(this.getAttribute('data-hint'))"><span class="aic-hint-arrow">&#8594;</span>${esc(h)}</button>`).join('')}</div>
         </div>`;
         return;
       }
@@ -15931,7 +15980,7 @@ ${personHtml}${walletHtml}${transferHtml}
         if (m.role==='user') return `<div class="aic-msg aic-msg-user"><div class="aic-bubble aic-bubble-user">${esc(m.content)}</div></div>`;
         const isLast=i===_aiChatMessages.length-1;
         const modelTag=isLast&&m._model?`<div class="aic-model-tag">${esc(m._model)}</div>`:'';
-        return `<div class="aic-msg aic-msg-ai"><div class="aic-ai-icon">AI</div><div><div class="aic-bubble aic-bubble-ai">${esc(m.content)}</div>${modelTag}</div></div>`;
+        return `<div class="aic-msg aic-msg-ai"><div class="aic-ai-icon">AI</div><div><div class="aic-bubble aic-bubble-ai">${_aiMd(m.content)}</div>${modelTag}</div></div>`;
       }).join('') + (_aiChatLoading ? `<div class="aic-msg aic-msg-ai"><div class="aic-ai-icon">AI</div><div class="aic-loading"><span></span><span></span><span></span></div></div>` : '');
       container.scrollTop = container.scrollHeight;
     }
