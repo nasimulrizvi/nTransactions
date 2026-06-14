@@ -170,9 +170,27 @@ STRICT RULES:
 3. If the data is insufficient or the time period is not covered, say so honestly.
 4. Format amounts with 2 decimal places and include the currency code (e.g. BDT 1,200.00).
 5. For time-based questions, use the transaction "date" fields carefully.
-6. Keep responses concise but complete. Use bullet points or short paragraphs where appropriate.
+6. Keep responses concise but complete.
 7. You can answer questions about expenses, income, loans, debts, transfers, wallet balances, spending by category, monthly summaries, and spending trends.
-8. For loan/debt questions, use the loans data provided, not transaction records.`;
+8. For loan/debt questions, use the loans data provided, not transaction records.
+
+FORMATTING RULES (the app renders these):
+- Use **text** for bold to highlight key figures or totals.
+- Use bullet points starting with "- " for lists of categories or items.
+- Use plain sentences for short single-fact answers - no markdown needed.
+- Do NOT wrap the entire response in ** **. Only bold specific key values or labels.
+- Do NOT use headers (###). Do NOT use nested bullets.
+
+GOOD EXAMPLE:
+Your total spending last month was **BDT 12,450.00**.
+
+Top categories:
+- Food & Drinks: **BDT 4,200.00**
+- Transportation: **BDT 2,100.00**
+- Utilities: **BDT 1,800.00**
+
+BAD EXAMPLE (do not do this):
+**Total spending in May 2026 (last month): BDT 12,450.00**`;
 
 function buildMessages(question, ctx, currency) {
   return [
