@@ -3264,6 +3264,69 @@
     }
     /* ── End desktop overrides ─────────────────────────────────────────────── */
 
+    /* ── Feature access gate (inside AI chat overlay) ── */
+    .aic-access-gate {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 28px;
+      flex: 1;
+      gap: 12px;
+    }
+    .aic-gate-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 64px;
+      height: 64px;
+      border-radius: 18px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      margin-bottom: 4px;
+      flex-shrink: 0;
+    }
+    .aic-gate-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--text);
+      font-family: 'Outfit', sans-serif;
+      letter-spacing: -.3px;
+    }
+    .aic-gate-desc {
+      font-size: 13px;
+      color: var(--text2);
+      line-height: 1.65;
+      max-width: 300px;
+    }
+    .aic-gate-btn {
+      margin-top: 8px;
+      padding: 11px 28px;
+      border-radius: 13px;
+      border: 1px solid var(--purple);
+      background: rgba(157,111,255,.12);
+      color: var(--purple);
+      font-size: 14px;
+      font-weight: 700;
+      font-family: 'Outfit', sans-serif;
+      cursor: pointer;
+      transition: background .15s, transform .12s;
+    }
+    .aic-gate-btn:hover  { background: rgba(157,111,255,.22); }
+    .aic-gate-btn:active { transform: scale(.96); }
+    .admin-access-badge {
+      background: var(--amber);
+      color: #000;
+      font-size: 10px;
+      font-weight: 800;
+      border-radius: 99px;
+      padding: 1px 7px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    /* ── End feature access gate ── */
+
     .aic-topbar {
       display: flex;
       align-items: center;
@@ -4324,6 +4387,37 @@
       color: #ffd36b;
       font-size: 11px;
       font-weight: 850;
+    }
+
+    .live-badge {
+      position: absolute;
+      top: 18px;
+      right: 14px;
+      border-radius: 999px;
+      padding: 4px 10px;
+      background: rgba(12,233,127,.15);
+      color: var(--green);
+      border: 1px solid rgba(12,233,127,.3);
+      font-size: 11px;
+      font-weight: 850;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .live-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      display: inline-block;
+      animation: livePulse 1.6s ease-in-out infinite;
+    }
+
+    @keyframes livePulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .45; transform: scale(.7); }
     }
 
     .policy-doc {
@@ -9581,6 +9675,8 @@
         startRealtimeSync();
         startSmsPendingListener();
         startPendingLoansListener();
+        startFeatureAccessListener();
+        if (isAdminUser()) startAdminAccessRequestListener();
         syncWebFcmTokenToUser().catch(() => { });
       } finally {
         _authCompleting = false;
@@ -11631,6 +11727,7 @@ ${summaryCard}
           chart: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
           cloud: ico('cloud_sync', 17, 'currentColor'),
           bug: aboutIconSvg('bug', 17),
+          lock: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
           download: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
         };
         const settingsRow = (title, sub, icon, color, action, right = '') => `<div class="settings-row" ${action ? `onclick="${action}" role="button" tabindex="0"` : ''}>
@@ -11659,6 +11756,13 @@ ${summaryCard}
         ${settingsRow('Export to Excel', 'Download transactions as an .xlsx backup', settingsSvg.export, 'green', 'openExportModal()')}
         ${settingsNotificationsMessagesHTML(settingsSvg.bell)}
         ${isAdminAccount() ? settingsRow('Admin Reports', 'View submitted feedback and bug reports', settingsSvg.bug, 'red', 'openAdminReports()') : ''}
+        ${isAdminAccount() ? `<div class="settings-row" onclick="openAdminAccessPanel()" role="button" tabindex="0">
+          <div class="settings-icon purple">${settingsSvg.lock}</div>
+          <div class="settings-row-main">
+            <div class="settings-row-title">Feature Access Requests <span class="admin-access-badge" style="display:${(_adminAccessRequests.filter(r=>r.status==='pending').length?'':'none')};margin-left:4px;">${_adminAccessRequests.filter(r=>r.status==='pending').length||''}</span></div>
+            <div class="settings-row-sub">Approve or deny user access to AI Chat and Voice Transaction</div>
+          </div>${settingsChevron}
+        </div>` : ''}
         ${settingsRow('Savings Targets', savingsTargetSummary + '; defaults ' + pctLabel(stCfg.monthlyPct) + ' / ' + pctLabel(stCfg.yearlyPct), settingsSvg.savings, 'green', 'openSavingsTargetSettings()')}
         <div class="settings-row" onclick="openReminderSettings()" role="button" tabindex="0"><div class="settings-icon amber">${settingsSvg.bell}</div><div class="settings-row-main"><div class="settings-row-title">Reminder Settings</div><div class="settings-row-sub">Loan due reminders, days before due date and frequency</div></div><button onclick="event.stopPropagation();toggleReminders()" class="settings-chip" style="border-color:${_remindersEnabled ? 'rgba(12,233,127,.35)' : 'var(--border)'};background:${_remindersEnabled ? 'var(--green-d)' : 'var(--bg)'};color:${remColor};">${remNotif}</button></div>
         <div class="settings-inline"><div class="settings-inline-title">Currency</div><select class="fi" id="currency-select" onchange="saveCurrencySetting()" style="font-size:13px;">${currencyOpts()}</select><div class="settings-note">Used for balances, budgets, loans, savings and records.</div></div>
@@ -11799,6 +11903,221 @@ ${summaryCard}
         _adminAccessLoading = false;
       }
       return _isAdminAccount;
+    }
+
+    // ── Feature Access Approval System ────────────────────────────────────────
+    // Admin must approve each user before they can use AI Chat and Voice Tx.
+    // Firebase path: feature_access/{uid} → { status, name, email, requestedAt, reviewedAt }
+    // Admin path (ADMIN_UID) always bypasses the gate.
+
+    let _featureAccessStatus = null; // null | 'pending' | 'approved' | 'denied'
+    let _featureAccessListenerUid = null;
+    let _adminAccessRequests = [];   // admin-only: all pending requests (real-time)
+
+    function isFeatureApproved() {
+      if (isAdminUser()) return true;
+      return _featureAccessStatus === 'approved';
+    }
+
+    function startFeatureAccessListener() {
+      if (!fbUser || !fbDb) return;
+      if (_featureAccessListenerUid) {
+        try { fbDb.ref('feature_access/' + _featureAccessListenerUid).off('value'); } catch (_) {}
+      }
+      _featureAccessListenerUid = fbUser.uid;
+      fbDb.ref('feature_access/' + fbUser.uid).on('value', snap => {
+        const d = snap.val();
+        const prev = _featureAccessStatus;
+        _featureAccessStatus = d ? (d.status || null) : null;
+        // If access was just granted while AI Chat is open, refresh it
+        if (prev !== 'approved' && _featureAccessStatus === 'approved') {
+          const ov = document.getElementById('aic-overlay');
+          if (ov && ov.classList.contains('open')) {
+            _aiChatMessages = [];
+            _aiChatLoading  = false;
+            _renderAiChatMessages();
+            setTimeout(() => document.getElementById('aic-input')?.focus(), 100);
+          }
+          showToast('Access approved. You can now use AI Chat and Voice Transaction.');
+        }
+      });
+    }
+
+    function startAdminAccessRequestListener() {
+      if (!fbUser || !fbDb || !isAdminUser()) return;
+      fbDb.ref('feature_access').on('value', snap => {
+        _adminAccessRequests = [];
+        snap.forEach(child => {
+          _adminAccessRequests.push({ uid: child.key, ...child.val() });
+        });
+        _adminAccessRequests.sort((a, b) => {
+          // pending first, then by requestedAt descending
+          if (a.status === 'pending' && b.status !== 'pending') return -1;
+          if (b.status === 'pending' && a.status !== 'pending') return  1;
+          return (b.requestedAt || 0) - (a.requestedAt || 0);
+        });
+        _updateAdminAccessBadge();
+        // Refresh admin panel if it is currently visible
+        const panel = document.getElementById('admin-access-panel-body');
+        if (panel) panel.innerHTML = _adminAccessPanelRows();
+      });
+    }
+
+    function _updateAdminAccessBadge() {
+      const count = _adminAccessRequests.filter(r => r.status === 'pending').length;
+      document.querySelectorAll('.admin-access-badge').forEach(el => {
+        el.textContent = count > 0 ? count : '';
+        el.style.display = count > 0 ? '' : 'none';
+      });
+    }
+
+    async function requestFeatureAccess() {
+      if (!fbUser || !fbDb) { showToast('Sign in first.'); return; }
+      if (_featureAccessStatus === 'pending')  { showToast('Your request is already pending.'); return; }
+      if (_featureAccessStatus === 'approved') return;
+      try {
+        await fbDb.ref('feature_access/' + fbUser.uid).set({
+          status: 'pending',
+          name: fbUser.displayName || fbUser.email || 'Unknown',
+          email: fbUser.email || '',
+          requestedAt: Date.now()
+        });
+        _featureAccessStatus = 'pending';
+        _renderAiChatMessages(); // refresh gate state inside overlay
+        showToast('Request sent. You will be notified when approved.');
+      } catch (e) {
+        showToast('Could not send request. Try again.');
+      }
+    }
+
+    async function approveFeatureAccess(uid, btnEl) {
+      if (!fbUser || !isAdminUser() || !uid) return;
+      if (btnEl) btnEl.disabled = true;
+      try {
+        await fbDb.ref('feature_access/' + uid).update({ status: 'approved', reviewedAt: Date.now() });
+      } catch (e) {
+        showToast('Error approving user.');
+        if (btnEl) btnEl.disabled = false;
+      }
+    }
+
+    async function denyFeatureAccess(uid, btnEl) {
+      if (!fbUser || !isAdminUser() || !uid) return;
+      if (btnEl) btnEl.disabled = true;
+      try {
+        await fbDb.ref('feature_access/' + uid).update({ status: 'denied', reviewedAt: Date.now() });
+      } catch (e) {
+        showToast('Error denying user.');
+        if (btnEl) btnEl.disabled = false;
+      }
+    }
+
+    async function revokeFeatureAccess(uid, btnEl) {
+      if (!fbUser || !isAdminUser() || !uid) return;
+      if (btnEl) btnEl.disabled = true;
+      try {
+        await fbDb.ref('feature_access/' + uid).update({ status: 'denied', reviewedAt: Date.now() });
+      } catch (e) {
+        showToast('Error revoking access.');
+        if (btnEl) btnEl.disabled = false;
+      }
+    }
+
+    // Returns the HTML rows for the admin access panel
+    function _adminAccessPanelRows() {
+      if (!_adminAccessRequests.length) {
+        return `<div style="color:var(--text3);font-size:13px;text-align:center;padding:18px 0;">No access requests yet.</div>`;
+      }
+      return _adminAccessRequests.map(r => {
+        const isPending  = r.status === 'pending';
+        const isApproved = r.status === 'approved';
+        const isDenied   = r.status === 'denied';
+        const statusColor = isPending ? 'var(--amber)' : isApproved ? 'var(--green)' : 'var(--red,#f87171)';
+        const statusLabel = isPending ? 'Pending' : isApproved ? 'Approved' : 'Denied';
+        const date = r.requestedAt ? new Date(r.requestedAt).toLocaleDateString('en-GB',{ day:'numeric', month:'short' }) : '';
+        const safeUid = esc(r.uid);
+        const actions = isPending
+          ? `<button class="btn btn-p" style="padding:5px 12px;font-size:12px;height:auto;" onclick="approveFeatureAccess('${safeUid}',this)">Approve</button>
+             <button class="btn" style="padding:5px 12px;font-size:12px;height:auto;background:var(--bg3);color:var(--text2);" onclick="denyFeatureAccess('${safeUid}',this)">Deny</button>`
+          : isApproved
+          ? `<button class="btn" style="padding:5px 12px;font-size:12px;height:auto;background:var(--bg3);color:var(--text2);" onclick="revokeFeatureAccess('${safeUid}',this)">Revoke</button>`
+          : `<button class="btn btn-p" style="padding:5px 12px;font-size:12px;height:auto;" onclick="approveFeatureAccess('${safeUid}',this)">Approve</button>`;
+        return `<div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:11px 13px;margin-bottom:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.name || 'Unknown')}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(r.email || r.uid)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:11px;font-weight:700;color:${statusColor};background:${statusColor}1a;border:1px solid ${statusColor}33;border-radius:6px;padding:2px 8px;">${statusLabel}</span>
+              <span style="font-size:11px;color:var(--text3);">${date}</span>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:9px;">${actions}</div>
+        </div>`;
+      }).join('');
+    }
+
+    function openAdminAccessPanel() {
+      const html = `<div class="modal-title" style="display:flex;align-items:center;gap:8px;">
+          Feature Access Requests
+          <span class="admin-access-badge" style="background:var(--amber);color:#000;font-size:10px;font-weight:800;border-radius:99px;padding:1px 7px;display:${(_adminAccessRequests.filter(r=>r.status==='pending').length?'':'none')};">${_adminAccessRequests.filter(r=>r.status==='pending').length||''}</span>
+        </div>
+        <div id="admin-access-panel-body">${_adminAccessPanelRows()}</div>`;
+      openModal(html, 'admin-access-modal');
+    }
+
+    // HTML shown inside the AI Chat overlay when user is not yet approved
+    function _aiChatAccessGateHtml() {
+      const lockSvg = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+      const clockSvg = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`;
+      const denyedSvg = `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
+      if (_featureAccessStatus === 'pending') {
+        return `<div class="aic-access-gate">
+          <div class="aic-gate-icon" style="color:var(--amber);">${clockSvg}</div>
+          <div class="aic-gate-title">Awaiting Approval</div>
+          <div class="aic-gate-desc">Your request is pending admin review. You will be notified when approved.</div>
+        </div>`;
+      }
+      if (_featureAccessStatus === 'denied') {
+        return `<div class="aic-access-gate">
+          <div class="aic-gate-icon" style="color:var(--red,#f87171);">${denyedSvg}</div>
+          <div class="aic-gate-title">Access Denied</div>
+          <div class="aic-gate-desc">Your access request was not approved. Contact the app admin for help.</div>
+        </div>`;
+      }
+      // null - not yet requested
+      return `<div class="aic-access-gate">
+        <div class="aic-gate-icon" style="color:var(--purple);">${lockSvg}</div>
+        <div class="aic-gate-title">Admin Approval Required</div>
+        <div class="aic-gate-desc">Finance Assistant and Voice Transaction require a one-time admin approval before use.</div>
+        <button class="aic-gate-btn" onclick="requestFeatureAccess()">Request Access</button>
+      </div>`;
+    }
+
+    // Modal HTML for gating voice transaction
+    function _voiceAccessGateModalHtml() {
+      if (_featureAccessStatus === 'pending') {
+        return `<div class="modal-title">Approval Pending</div>
+          <div style="text-align:center;padding:12px 0 6px;">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <p style="color:var(--text2);font-size:13.5px;text-align:center;line-height:1.6;margin:10px 0 18px;">Your request is under review. You will gain access as soon as the admin approves it.</p>
+          <button class="btn btn-s" onclick="closeModal()">Close</button>`;
+      }
+      if (_featureAccessStatus === 'denied') {
+        return `<div class="modal-title">Access Denied</div>
+          <p style="color:var(--text2);font-size:13.5px;text-align:center;line-height:1.6;margin:10px 0 18px;">Your access request was not approved. Contact the app admin for assistance.</p>
+          <button class="btn btn-s" onclick="closeModal()">Close</button>`;
+      }
+      return `<div class="modal-title">Approval Required</div>
+        <div style="text-align:center;padding:12px 0 6px;">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <p style="color:var(--text2);font-size:13.5px;text-align:center;line-height:1.6;margin:10px 0 18px;">Voice Transaction requires admin approval. Send a one-time request and the admin will grant you access.</p>
+        <button class="btn btn-p" style="margin-bottom:8px;" onclick="closeModal();requestFeatureAccess();">Request Access</button>
+        <button class="btn btn-s" onclick="closeModal()">Cancel</button>`;
     }
 
     function reportTypeLabel(type) {
@@ -12398,12 +12717,12 @@ ${summaryCard}
             <div style="font-size:18px;font-weight:900;">WhatsApp</div>
             <div style="font-size:13px;color:var(--text2);margin-top:4px;">+880 1814-321725</div>
           </button>
-          <div class="support-card disabled">
-            <span class="soon-badge">Soon</span>
+          <button type="button" class="support-card" onclick="closeModal();openAiChatWindow()">
+            <span class="live-badge">Live</span>
             <div class="support-mini-icon" style="background:#ccfbf1;color:#0f766e;">${supportIconSvg('bot')}</div>
             <div style="font-size:18px;font-weight:900;">AI Assistant</div>
-            <div style="font-size:13px;color:var(--text2);margin-top:4px;">Coming Soon</div>
-          </div>
+            <div style="font-size:13px;color:var(--text2);margin-top:4px;">Ask about your finances</div>
+          </button>
           <div class="support-card disabled">
             <span class="soon-badge">Soon</span>
             <div class="support-mini-icon" style="background:#fce7f3;color:#be185d;">${supportIconSvg('chat')}</div>
@@ -13864,6 +14183,11 @@ ${summaryCard}
       }
     }
     function openVoiceTxModal() {
+      // ── Feature access gate ──
+      if (fbUser && !isFeatureApproved()) {
+        openModal(_voiceAccessGateModalHtml(), 'voice-access-gate-modal');
+        return;
+      }
       if (!voiceTxAvailable()) {
         openModal(`<div class="modal-title">Voice Transaction Unavailable</div>
 <div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.25);border-radius:12px;padding:13px 14px;margin-bottom:14px;color:var(--amber);font-size:13px;line-height:1.6;">Voice Transaction is available in the Android app and on the official WebApp when you are signed in.</div>
@@ -13910,6 +14234,7 @@ ${summaryCard}
       if (hasSpeech) setTimeout(startVoiceTransactionListening, 250);
     }
     async function startVoiceTransactionListening() {
+      if (fbUser && !isFeatureApproved()) { openVoiceTxModal(); return; }
       if (!voiceTxAvailable() || (nativeGeminiAvailable() && !nativeGeminiConfigured())) { openVoiceTxModal(); return; }
       voiceClearPreview();
       if (window.NativeApp && typeof window.NativeApp.startVoiceRecognition === 'function') {
@@ -15913,6 +16238,12 @@ ${personHtml}${walletHtml}${transferHtml}
       return 'https://ntransactions.pro.bd/api/ai-chat';
     }
 
+    // Add Tx button inside Finance Assistant – opens the standard transaction
+    // modal on top of the AI overlay (modal z-index exceeds overlay z-index).
+    function openAiAddTransactionModal() {
+      openAddTx();
+    }
+
     function openAiChatWindow() {
       _aiChatMessages = [];
       _aiChatLoading = false;
@@ -15965,7 +16296,20 @@ ${personHtml}${walletHtml}${transferHtml}
       const container = document.getElementById('aic-messages');
       if (!container) return;
       const sendBtn = document.getElementById('aic-send-btn');
-      if (sendBtn) sendBtn.disabled = _aiChatLoading;
+      const inputEl = document.getElementById('aic-input');
+
+      // ── Access gate – show if user is signed in but not yet approved ──
+      if (fbUser && !isFeatureApproved()) {
+        container.innerHTML = _aiChatAccessGateHtml();
+        if (sendBtn)  sendBtn.disabled = true;
+        if (inputEl)  inputEl.disabled = true;
+        const clearBtn = document.getElementById('aic-clear-btn');
+        if (clearBtn) clearBtn.style.display = 'none';
+        return;
+      }
+
+      if (sendBtn)  sendBtn.disabled = _aiChatLoading;
+      if (inputEl)  inputEl.disabled = false;
       const clearBtn = document.getElementById('aic-clear-btn');
       if (clearBtn) clearBtn.style.display = _aiChatMessages.length > 0 ? '' : 'none';
       if (_aiChatMessages.length === 0 && !_aiChatLoading) {
