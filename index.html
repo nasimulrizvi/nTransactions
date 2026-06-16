@@ -1791,55 +1791,63 @@
       .modal-overlay.settings-overlay .modal {
         max-width: 780px;
         width: 88vw;
-        padding: 0;
-        overflow: hidden;
-        height: min(680px, 82dvh);
-        max-height: 82dvh;
-        display: flex;
-        flex-direction: column;
-        border-radius: 22px;
+        padding: 0 !important;
+        overflow: hidden !important;
+        height: min(680px, 82dvh) !important;
+        max-height: 82dvh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        border-radius: 22px !important;
+        transform: scale(1) translateY(0) !important;
       }
-      /* modal-handle and mc must flex to fill height */
+      /* modal-handle hidden */
       .modal-overlay.settings-overlay .modal .modal-handle {
-        display: none;
+        display: none !important;
       }
+      /* #mc fills the modal */
       .modal-overlay.settings-overlay .modal #mc {
-        flex: 1;
-        min-height: 0;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
       }
       .settings-shell {
-        display: flex;
-        flex-direction: row;
-        height: 100%;
-        flex: 1;
-        min-height: 0;
-        overflow: hidden;
-        gap: 0;
+        display: flex !important;
+        flex-direction: row !important;
+        width: 100% !important;
+        height: 100% !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        gap: 0 !important;
       }
       /* Left sidebar */
       .settings-sidebar {
-        display: flex;
-        flex-direction: column;
-        width: 200px;
-        min-width: 200px;
-        background: var(--bg);
-        border-right: 1px solid var(--border);
-        padding: 28px 0 20px;
-        gap: 2px;
-        overflow-y: auto;
-        flex-shrink: 0;
+        display: flex !important;
+        flex-direction: column !important;
+        width: 210px !important;
+        min-width: 210px !important;
+        max-width: 210px !important;
+        background: var(--bg) !important;
+        border-right: 1px solid var(--border) !important;
+        padding: 28px 0 20px !important;
+        gap: 2px !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        flex-shrink: 0 !important;
+        height: 100% !important;
+        box-sizing: border-box !important;
       }
       /* Right content panel */
       .settings-content {
-        flex: 1;
-        min-width: 0;
-        min-height: 0;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
+        flex: 1 !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+        position: relative;
       }
       /* Hide the inline section title in content (shown in sidebar) */
       .settings-content .settings-section-title {
@@ -1852,11 +1860,13 @@
         gap: 14px;
       }
       .settings-panel.active {
-        display: flex;
-        flex: 1;
-        min-height: 0;
-        overflow-y: auto;
-        padding: 28px 28px 24px;
+        display: flex !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        padding: 28px 28px 24px !important;
+        flex-direction: column !important;
+        gap: 14px !important;
       }
       /* Sidebar nav items */
       .settings-nav-item {
@@ -11889,11 +11899,21 @@ ${summaryCard}
     function handleOvClick(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
     function _settingsNav(btn, panelId) {
       document.querySelectorAll('.settings-nav-item').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.settings-panel').forEach(p => {
+        p.classList.remove('active');
+        p.style.display = 'none';
+      });
       btn.classList.add('active');
       const panel = document.getElementById(panelId);
       if (panel) {
         panel.classList.add('active');
+        panel.style.display       = 'flex';
+        panel.style.flexDirection = 'column';
+        panel.style.gap           = '14px';
+        panel.style.flex          = '1';
+        panel.style.minHeight     = '0';
+        panel.style.overflowY     = 'auto';
+        panel.style.padding       = '28px 28px 24px';
         panel.scrollTop = 0;
       }
     }
@@ -12510,6 +12530,74 @@ ${summaryCard}
           </div>`;
         }
         openModal(settingsHTML, isDesktop ? 'settings-modal' : (isTablet ? 'settings-modal' : ''));
+        // Force layout for desktop two-column settings
+        if (isDesktop) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {  // double-rAF ensures styles are applied
+              const modal   = document.getElementById('modal');
+              const mc      = document.getElementById('mc');
+              const shell   = document.querySelector('.settings-shell');
+              const sidebar = document.querySelector('.settings-sidebar');
+              const scontent= document.querySelector('.settings-content');
+
+              const H = Math.min(680, Math.round(window.innerHeight * 0.82));
+
+              if (modal) {
+                modal.style.display         = 'flex';
+                modal.style.flexDirection   = 'column';
+                modal.style.padding         = '0';
+                modal.style.overflow        = 'hidden';
+                modal.style.height          = H + 'px';
+                modal.style.maxHeight       = H + 'px';
+                modal.style.borderRadius    = '22px';
+                modal.style.transform       = 'scale(1) translateY(0)';
+              }
+              if (mc) {
+                mc.style.display        = 'flex';
+                mc.style.flexDirection  = 'column';
+                mc.style.flex           = '1';
+                mc.style.minHeight      = '0';
+                mc.style.overflow       = 'hidden';
+                mc.style.height         = '100%';
+              }
+              if (shell) {
+                shell.style.display        = 'flex';
+                shell.style.flexDirection  = 'row';
+                shell.style.width          = '100%';
+                shell.style.height         = '100%';
+                shell.style.minHeight      = '0';
+                shell.style.overflow       = 'hidden';
+                shell.style.flex           = '1';
+              }
+              if (sidebar) {
+                sidebar.style.height     = '100%';
+                sidebar.style.overflowY  = 'auto';
+                sidebar.style.flexShrink = '0';
+              }
+              if (scontent) {
+                scontent.style.display       = 'flex';
+                scontent.style.flexDirection = 'column';
+                scontent.style.flex          = '1';
+                scontent.style.minWidth      = '0';
+                scontent.style.minHeight     = '0';
+                scontent.style.overflow      = 'hidden';
+              }
+              // Ensure first panel is visible
+              document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
+              const firstPanel = document.getElementById('sp-account');
+              if (firstPanel) {
+                firstPanel.classList.add('active');
+                firstPanel.style.display       = 'flex';
+                firstPanel.style.flexDirection = 'column';
+                firstPanel.style.gap           = '14px';
+                firstPanel.style.flex          = '1';
+                firstPanel.style.minHeight     = '0';
+                firstPanel.style.overflowY     = 'auto';
+                firstPanel.style.padding       = '28px 28px 24px';
+              }
+            });
+          });
+        }
         setTimeout(() => { const tp = document.getElementById('theme-picker'); if (tp) applyTheme(localStorage.getItem('ntx_theme') || 'dark'); }, 0);
       } else {
         if (!_authInitialStateResolved) {
