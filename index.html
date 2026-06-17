@@ -3720,6 +3720,15 @@
       }
     }
 
+    .aic-disclaimer {
+      font-size: 10.5px;
+      color: var(--text3);
+      text-align: center;
+      margin-top: 7px;
+      line-height: 1.5;
+      letter-spacing: .1px;
+    }
+
     /* AI Chat — feedback button inside a chat bubble */
     .aic-feedback-btn {
       display: inline-flex;
@@ -7749,6 +7758,7 @@
           </button>
         </div>
         <div class="aic-key-hint">Press <kbd>Enter</kbd> to send</div>
+        <div class="aic-disclaimer">Finance Assistant is AI and can make mistakes. Please double-check important info.</div>
       </div>
     </div>
   </div>
@@ -8273,7 +8283,7 @@
     let txF = 'all', txQ = '', txDuration = 'all', loanF = 'all', txType = 'expense', editWltId = '', selColor = COLORS[0];
     let txAdvancedFilters = defaultTxFilters();
 
-    const APP_WEB_VERSION = '3.2.1';
+    const APP_WEB_VERSION = '4.0';
     const ANDROID_VERSION_FALLBACK = '1.0';
     const UPDATE_CONFIG_URL = '/version.json';
     const OFFICIAL_DOWNLOAD_URL = 'https://ntransactions.pro.bd/download';
