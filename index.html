@@ -11891,7 +11891,7 @@ ${summaryCard}
     }
     function openAuthModal(mode = 'in') {
       _authMode = mode === 'up' ? 'up' : 'in';
-      openModal(`<div class="auth-shell">
+      openModal(`<div class="auth-shell" id="auth-modal-shell">
         <div class="auth-top">
           <div class="auth-brand">
             <div class="auth-brand-mark">${authIconSvg('shield')}</div>
@@ -13876,32 +13876,54 @@ ${summaryCard}
       const btn   = document.getElementById('email-link-btn');
       const msg   = document.getElementById('email-link-msg');
       const email = (input ? input.value : '').trim();
+
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         if (msg) { msg.textContent = 'Enter a valid email address.'; msg.className = 'auth-message auth-message-error'; }
+        if (input) input.focus();
         return;
       }
-      if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
+
+      if (msg)  { msg.textContent = ''; msg.className = 'auth-message'; }
+      if (btn)  { btn.textContent = 'Sending…'; btn.disabled = true; }
+
       try {
         await fbAuth.sendSignInLinkToEmail(email, {
           url: EMAIL_LINK_ACTION_URL,
           handleCodeInApp: true
         });
+
+        // Persist email so we can complete sign-in when the user returns from the link
         try { localStorage.setItem(EMAIL_LINK_KEY, email); } catch (_) {}
+
         const sentView = document.getElementById('email-link-sent-view');
         const sendView = document.getElementById('email-link-send-view');
         if (sendView) sendView.style.display = 'none';
         if (sentView) {
           sentView.style.display = '';
           const sentTo = document.getElementById('email-link-sent-to');
-          if (sentTo) sentTo.innerHTML = `We sent a sign-in link to <strong>${esc(email)}</strong>.<br>Click the link in that email to sign in.`;
+          if (sentTo) sentTo.innerHTML =
+            `We sent a sign-in link to <strong>${esc(email)}</strong>.<br>Check your inbox and click the link to sign in.`;
         }
+
       } catch (e) {
         if (btn) { btn.textContent = 'Send Magic Link'; btn.disabled = false; }
-        if (msg) {
-          msg.textContent = authErrorMessage(e);
-          msg.className = 'auth-message auth-message-error';
-        }
+        const friendly = _emailLinkErrorMessage(e);
+        if (msg) { msg.textContent = friendly; msg.className = 'auth-message auth-message-error'; }
       }
+    }
+
+    function _emailLinkErrorMessage(e) {
+      const code = (e && e.code) ? String(e.code) : '';
+      if (code === 'auth/invalid-email')               return 'That email address is not valid.';
+      if (code === 'auth/missing-android-pkg-name')    return 'Firebase config error: missing Android package name.';
+      if (code === 'auth/missing-continue-uri')        return 'Firebase config error: missing continue URL.';
+      if (code === 'auth/missing-ios-bundle-id')       return 'Firebase config error: missing iOS bundle ID.';
+      if (code === 'auth/invalid-continue-uri')        return 'The sign-in URL is not authorised. Verify that ntransactions.pro.bd is in Firebase Console → Authentication → Authorised Domains.';
+      if (code === 'auth/unauthorized-continue-uri')   return 'Domain not authorised in Firebase Console. Add ntransactions.pro.bd to Authentication → Authorised Domains.';
+      if (code === 'auth/too-many-requests')           return 'Too many requests. Please wait and try again.';
+      if (code === 'auth/network-request-failed')      return 'Network error. Check your connection and try again.';
+      if (code === 'auth/operation-not-allowed')       return 'Email link sign-in is not enabled. Enable it in Firebase Console → Authentication → Sign-in methods.';
+      return (e && e.message) ? e.message : 'Could not send the link. Please try again.';
     }
 
     async function handleEmailLinkSignIn() {
@@ -14023,28 +14045,51 @@ ${summaryCard}
       const numEl   = document.getElementById('phone-number-input');
       const btn     = document.getElementById('phone-send-btn');
       const msg     = document.getElementById('phone-auth-msg');
+
       const rawCode = (codeEl ? codeEl.value.trim() : '+880');
       const rawNum  = (numEl  ? numEl.value.trim()  : '');
+
       if (!rawNum) {
         if (msg) { msg.textContent = 'Enter your phone number.'; msg.className = 'auth-message auth-message-error'; }
         return;
       }
       // Normalise: strip leading zero from local number, combine with country code
       const local    = rawNum.replace(/^0+/, '');
-      _phoneFormatted = rawCode + local;
+      _phoneFormatted = rawCode.startsWith('+') ? rawCode + local : '+' + rawCode + local;
+
       if (msg) { msg.textContent = ''; msg.className = 'auth-message'; }
       if (btn) { btn.textContent = 'Sending…'; btn.disabled = true; }
+
       try {
-        // Destroy previous verifier if exists
+        // Always destroy the previous verifier before creating a new one.
+        // Reusing a stale verifier is the most common cause of silent failures.
         if (_recaptchaVerifier) {
           try { _recaptchaVerifier.clear(); } catch (_) {}
           _recaptchaVerifier = null;
         }
+
+        // The container must exist in the DOM at this point (it's rendered by openPhoneScreen).
+        const container = document.getElementById('recaptcha-container');
+        if (!container) throw new Error('reCAPTCHA container not found in DOM.');
+
         _recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
           size: 'invisible',
-          callback: () => {}
+          callback: () => {},
+          'expired-callback': () => {
+            // Reset on expiry so the next attempt gets a fresh token
+            try { if (_recaptchaVerifier) _recaptchaVerifier.clear(); } catch (_) {}
+            _recaptchaVerifier = null;
+            if (btn) { btn.textContent = 'Send OTP'; btn.disabled = false; }
+            if (msg) { msg.textContent = 'reCAPTCHA expired. Please try again.'; msg.className = 'auth-message auth-message-error'; }
+          }
         });
+
+        // render() pre-loads the invisible widget; avoids a race condition where
+        // signInWithPhoneNumber fires before the widget is ready.
+        await _recaptchaVerifier.render();
+
         _phoneConfirmResult = await fbAuth.signInWithPhoneNumber(_phoneFormatted, _recaptchaVerifier);
+
         // Show OTP input
         const numView = document.getElementById('phone-number-view');
         const otpView = document.getElementById('phone-otp-view');
@@ -14055,15 +14100,29 @@ ${summaryCard}
           if (hint) hint.textContent = 'Enter the 6-digit code sent to ' + _phoneFormatted;
           document.getElementById('otp-d0')?.focus();
         }
+
       } catch (e) {
         if (btn) { btn.textContent = 'Send OTP'; btn.disabled = false; }
-        if (msg) {
-          msg.textContent = authErrorMessage(e);
-          msg.className = 'auth-message auth-message-error';
-        }
         try { if (_recaptchaVerifier) _recaptchaVerifier.clear(); } catch (_) {}
         _recaptchaVerifier = null;
+
+        // Surface the exact Firebase error so it's never silent
+        const friendly = _phoneErrorMessage(e);
+        if (msg) { msg.textContent = friendly; msg.className = 'auth-message auth-message-error'; }
       }
+    }
+
+    function _phoneErrorMessage(e) {
+      const code = (e && e.code) ? String(e.code) : '';
+      if (code === 'auth/invalid-phone-number')       return 'Invalid phone number. Include country code, e.g. +8801XXXXXXXXX.';
+      if (code === 'auth/too-many-requests')           return 'Too many attempts. Please wait a few minutes and try again.';
+      if (code === 'auth/captcha-check-failed')        return 'reCAPTCHA check failed. Reload the page and try again.';
+      if (code === 'auth/quota-exceeded')              return 'SMS quota exceeded. Try again later.';
+      if (code === 'auth/missing-phone-number')        return 'Enter a phone number before sending the OTP.';
+      if (code === 'auth/network-request-failed')      return 'Network error. Check your connection and try again.';
+      if (code === 'auth/operation-not-allowed')       return 'Phone sign-in is not enabled. Contact the app admin.';
+      if (code === 'auth/app-not-authorized')          return 'This app is not authorised for phone sign-in. Check Firebase config.';
+      return (e && e.message) ? e.message : 'Something went wrong. Please try again.';
     }
 
     async function verifyPhoneOtp() {
