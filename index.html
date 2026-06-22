@@ -3206,45 +3206,45 @@
       }
       .pf-topbar { padding: 26px 32px 18px; }
       .pf-title { font-size: 21px; }
-      .pf-scroll { padding: 4px 32px 8px; }
+      .pf-scroll { padding: 20px 32px 8px; }
       .pf-footer { padding: 18px 32px; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
 
+      /* Single column — aside sits above main, full width */
       .pf-layout {
-        flex-direction: row;
-        align-items: flex-start;
-        gap: 36px;
-      }
-
-      .pf-aside {
-        width: 240px;
-        flex-shrink: 0;
-        position: sticky;
-        top: 4px;
-        gap: 24px;
-      }
-
-      .pf-main {
-        flex: 1;
-        min-width: 0;
+        flex-direction: column;
         gap: 28px;
       }
 
-      /* Identity becomes vertical, centered — a true sidebar card-less hero */
-      .pf-identity {
-        flex-direction: column;
-        text-align: center;
-        gap: 14px;
-        padding-bottom: 20px;
-        border-bottom: 1px solid var(--pf-divider);
+      .pf-aside {
+        width: 100%;
+        flex-shrink: unset;
+        position: static;
+        gap: 0;
       }
-      .pf-avatar { width: 86px; height: 86px; } .pf-avatar span { font-size: 27px; }
-      .pf-identity-text { width: 100%; }
-      .pf-name, .pf-email { white-space: normal; text-align: center; }
-      .pf-name { font-size: 17px; }
 
-      .pf-stats { display: flex; }
-      .pf-mobile-only { display: none; }
-      .pf-desktop-only { display: flex; }
+      .pf-main {
+        flex: unset;
+        width: 100%;
+        gap: 28px;
+      }
+
+      /* Identity stays horizontal (avatar left, text right) */
+      .pf-identity {
+        flex-direction: row;
+        text-align: left;
+        gap: 18px;
+        padding-bottom: 0;
+        border-bottom: 0;
+      }
+      .pf-avatar { width: 80px; height: 80px; } .pf-avatar span { font-size: 26px; }
+      .pf-identity-text { width: auto; }
+      .pf-name, .pf-email { white-space: nowrap; text-align: left; }
+      .pf-name { font-size: 18px; }
+
+      /* Stats and desktop-only sync button not needed in single-column */
+      .pf-stats { display: none; }
+      .pf-mobile-only { display: block; }
+      .pf-desktop-only { display: none; }
 
       .pf-save-btn {
         width: auto;
@@ -3262,12 +3262,10 @@
       .modal.profile-modal { width: min(76vw, 1020px); }
       .pf-topbar { padding: 30px 40px 20px; }
       .pf-title { font-size: 23px; }
-      .pf-scroll { padding: 6px 40px 10px; }
+      .pf-scroll { padding: 22px 40px 10px; }
       .pf-footer { padding: 22px 40px; }
-      .pf-layout { gap: 48px; }
-      .pf-aside { width: 270px; gap: 28px; }
-      .pf-main { gap: 34px; }
-      .pf-avatar { width: 96px; height: 96px; } .pf-avatar span { font-size: 30px; }
+      .pf-layout { gap: 34px; }
+      .pf-avatar { width: 90px; height: 90px; } .pf-avatar span { font-size: 29px; }
       .pf-name { font-size: 18.5px; }
       .pf-field { padding: 15px 0; }
       .pf-input { height: 42px; }
