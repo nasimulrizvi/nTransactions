@@ -2765,6 +2765,14 @@
         transform: scale(1) translateY(0);
       }
       .modal.profile-modal .modal-handle { display: none; }
+      /* #mc must be a flex column filling the modal — same pattern as settings */
+      .modal.profile-modal #mc {
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
     }
 
     /* ── Shell skeleton: topbar / scroll area / footer ── */
@@ -2774,7 +2782,7 @@
       min-height: 0;
     }
     @media(min-width:700px) {
-      .pf-shell { height: 100%; flex: 1; }
+      .pf-shell { flex: 1; min-height: 0; overflow: hidden; }
     }
 
     .pf-topbar {
