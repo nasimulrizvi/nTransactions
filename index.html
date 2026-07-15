@@ -4550,6 +4550,10 @@
       background: #128a80;
     }
 
+    .about-icon.rose {
+      background: #e0447a;
+    }
+
     .about-icon.muted {
       background: #8b98ad;
     }
@@ -12924,7 +12928,8 @@ ${summaryCard}
         shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M12 8v5"/><path d="M12 17h.01"/>',
         terms: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/>',
         help: '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 1 1 5.2 2c-.9.8-1.8 1.3-1.8 2.7"/><path d="M12 17h.01"/>',
-        info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>'
+        info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+        heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>'
       };
       return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${paths[name] || paths.info}</svg>`;
     }
@@ -12958,6 +12963,29 @@ ${summaryCard}
       rows.push(aboutRowHTML('Help & Support', 'Email, WhatsApp and support options', 'help', 'teal', 'openHelpSupport()'));
       rows.push(aboutRowHTML('App Version', appVersionSubLabel(), 'info', 'muted', '', `v${esc(versionInfo.version)}`));
       return `<div class="about-card">${rows.join('')}</div>`;
+    }
+
+    // ============ DONATE (CHARITY) — separate, self-contained block ============
+    // Deliberately independent from aboutSectionHTML()/aboutRowHTML() rows above so a future,
+    // unrelated "Support Developer" block can be added as its own separate section without
+    // needing to restructure this one. Plain external link — no payment processing, no
+    // tracking/analytics attached to the click.
+    const DONATE_CHARITY_URL = 'https://asf.sh/OpCGQ';
+    const DONATE_CHARITY_NAME = 'As-Sunnah Foundation';
+    function externalLinkSvg(size = 14) {
+      return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+    }
+    function DonateCharitySection() {
+      return `<div class="about-card" style="margin-top:14px;">
+        <a class="about-row" href="${DONATE_CHARITY_URL}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;color:inherit;">
+          <div class="about-icon rose">${aboutIconSvg('heart')}</div>
+          <div class="about-row-main"><div class="about-row-title">Donate</div><div class="about-row-sub">Support ${esc(DONATE_CHARITY_NAME)}, a trusted charity</div></div>
+          <div class="about-row-right" style="color:var(--text3);">${externalLinkSvg()}</div>
+        </a>
+      </div>
+      <div class="settings-note" style="margin-top:8px;padding:0 2px;line-height:1.55;">
+        nTransactions is completely free and ad-free. This Donate link goes to a trusted third-party charity, ${esc(DONATE_CHARITY_NAME)} — not to the developer. No money from this donation reaches the developer or this app in any way.
+      </div>`;
     }
 
     function openSyncModal() {
@@ -13081,6 +13109,7 @@ ${summaryCard}
           <div class="settings-panel-heading">About</div>
           <div class="settings-panel-sub">App info, feedback and support.</div>
           ${aboutSectionHTML()}
+          ${DonateCharitySection()}
           <div style="height:1px;background:var(--border);margin:18px 0 14px;"></div>
           <div class="settings-card">
             <button type="button" class="settings-row" style="width:100%;text-align:left;" onclick="ntxConfirm('Are you sure you want to sign out?', doSignOut, {confirmLabel:'Sign Out', title:'Sign Out?'})" aria-label="Sign out">
