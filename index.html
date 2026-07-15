@@ -17,7 +17,7 @@
   <link rel="manifest" href="./manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link
-    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,520;9..144,540;9..144,560;9..144,600&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,520;9..144,540;9..144,560;9..144,600&family=Outfit:wght@700;800;900&family=Inter:wght@400..800&family=IBM+Plex+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -1258,6 +1258,7 @@
     }
 
     .sec-title {
+      font-family: 'Outfit', sans-serif;
       font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
@@ -2136,10 +2137,9 @@
     }
 
     .modal-title {
-      font-family: 'Fraunces', serif;
-      font-size: 22px;
-      font-weight: 540;
-      line-height: 1.25;
+      font-family: 'Outfit', sans-serif;
+      font-size: 18px;
+      font-weight: 800;
       margin-bottom: 18px;
     }
 
@@ -2843,12 +2843,12 @@
     .pf-back:active { transform: scale(.93); }
 
     .pf-title {
-      font-size: 20px;
+      font-size: 32px;
       font-weight: 540;
       color: var(--text);
-      font-family: 'Fraunces', serif;
+      font-family: var(--font-sans);
       letter-spacing: -0.01em;
-      line-height: 1.25;
+      line-height: 38px;
     }
 
     .pf-subtitle {
@@ -3229,7 +3229,6 @@
     @media(min-width:700px) and (max-width:899px) {
       .modal.profile-modal { width: min(92vw, 600px); }
       .pf-topbar { padding: 24px 30px 18px; }
-      .pf-title { font-size: 21px; }
       .pf-subtitle { font-size: 12.5px; }
       .pf-scroll { padding: 22px 30px 6px; }
       .pf-layout { gap: 30px; }
@@ -3248,7 +3247,6 @@
         width: min(88vw, 880px);
       }
       .pf-topbar { padding: 26px 32px 18px; }
-      .pf-title { font-size: 21px; }
       .pf-scroll { padding: 20px 32px 8px; }
       .pf-footer { padding: 18px 32px; padding-bottom: max(18px, env(safe-area-inset-bottom)); }
 
@@ -3298,7 +3296,6 @@
     @media(min-width:1280px) {
       .modal.profile-modal { width: min(76vw, 1020px); }
       .pf-topbar { padding: 30px 40px 20px; }
-      .pf-title { font-size: 23px; }
       .pf-scroll { padding: 22px 40px 10px; }
       .pf-layout { gap: 34px; }
       .pf-avatar { width: 90px; height: 90px; } .pf-avatar span { font-size: 29px; }
@@ -3555,6 +3552,9 @@
       font-size: 15px;
       font-weight: 600;
       outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
     }
 
     .reauth-input:focus {
@@ -4622,6 +4622,7 @@
     }
 
     .screen-title {
+      font-family: 'Outfit', sans-serif;
       font-size: 24px;
       line-height: 1.08;
       font-weight: 900;
@@ -6652,7 +6653,7 @@
     .auth-tab.active {
       color: var(--text);
       background: linear-gradient(135deg, rgba(12, 233, 127, .16), rgba(77, 159, 255, .10));
-      box-shadow: inset 0 0 0 1px rgba(12, 233, 127, .18), 0 8px 26px rgba(0, 0, 0, .26);
+      box-shadow: 0 8px 26px rgba(0, 0, 0, .18);
     }
 
     .auth-form {
@@ -6713,6 +6714,10 @@
       min-width: 0;
       border: 0;
       outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      box-shadow: none;
       background: transparent;
       color: var(--text);
       font-size: 15px;
@@ -7635,8 +7640,8 @@
 
     .dtp-ab.a {
       background: var(--blue);
-      color: #0B0F14;
-      box-shadow: 0 6px 14px rgba(77, 159, 255, .25);
+      color: var(--on-accent);
+      box-shadow: var(--e2);
     }
 
     .dtp-manual {
@@ -8312,7 +8317,53 @@
         scroll-behavior: auto !important;
       }
     }
+
+    /* ============ UX IMPROVEMENT PLAN: ACCESSIBILITY (Section 4.1) ============ */
+    /* Consistent, visible keyboard focus ring for elements that don't already carry their
+       own focus indication (links, buttons, custom tab-index/role="button" controls).
+       Deliberately EXCLUDES input/select/textarea: every text field in this app already has
+       a dedicated focus style on its own wrapper (.auth-input-wrap:focus-within, .pf-input:focus,
+       .reauth-input:focus, .pwd-dialog-input:focus, .dtp-manual-input:focus, .srch-wrap input:focus,
+       etc.) — adding this generic outline on top of those rendered as a second, misaligned box. */
+    a:focus-visible,
+    button:focus-visible,
+    [tabindex]:focus-visible,
+    [role="button"]:focus-visible {
+      outline: 2.5px solid var(--teal, #4FD1C5);
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
+
+    /* Screen-reader-only utility for text that should be announced but not shown visually
+       (used for chart data-table fallbacks and hidden helper text). */
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Font-size scaling (accessibility): --a11y-font-scale is set on <html> by the
+       Accessibility settings option and multiplies the whole app's base type size. */
+    html {
+      font-size: calc(16px * var(--a11y-font-scale, 1));
+    }
   </style>
+  <script>
+    // Apply saved font-scale before first paint to avoid a flash of default-size text.
+    (function () {
+      try {
+        var s = parseFloat(localStorage.getItem('ntx_font_scale') || '1');
+        if (!isFinite(s) || s < 0.85 || s > 1.4) s = 1;
+        document.documentElement.style.setProperty('--a11y-font-scale', s);
+      } catch (e) {}
+    })();
+  </script>
   <script>
     (function () { var s = document.createElement('script'); s.src = 'https://cdn.vercel-insights.com/v1/speed-insights/script.js'; s.defer = true; document.head.appendChild(s); window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); }; })();
   </script>
@@ -8649,6 +8700,91 @@
     window.addEventListener('appinstalled', () => { document.getElementById('pwa-banner').classList.remove('show'); deferredPrompt = null; });
     document.getElementById('pwa-install-btn').addEventListener('click', async () => { if (!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt = null; document.getElementById('pwa-banner').classList.remove('show'); });
     document.getElementById('pwa-close-btn').addEventListener('click', () => { document.getElementById('pwa-banner').classList.remove('show'); sessionStorage.setItem('pwa-dismissed', '1'); });
+
+    // ============ UX IMPROVEMENT PLAN: FEATURE FLAGS ============
+    // Finance Assistant (AI Chat) and Voice Transaction are temporarily disabled per product
+    // decision. All original code for both features is left completely untouched below —
+    // only these flags + the guard clauses at each entry point control availability, so the
+    // features can be re-enabled instantly by flipping DISABLED_FEATURES back to false.
+    const DISABLED_FEATURES = { aiChat: true, voiceTransaction: true };
+    const ANDROID_APP_NOTICE_URL = 'https://ntransactions.pro.bd/download';
+    function showFeatureDisabledNotice(featureName) {
+      openModal(`
+        <div class="modal-title" style="display:flex;align-items:center;gap:10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span>${featureName} Temporarily Unavailable</span>
+        </div>
+        <div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.25);border-radius:12px;padding:14px 15px;margin-bottom:16px;color:var(--amber);font-size:13px;line-height:1.7;">
+          ${featureName} is temporarily disabled in this web experience while we make improvements.
+          Please use the <strong>nTransactions Android App</strong> to access ${featureName} — it's fully active there.
+        </div>
+        <a class="btn btn-p" href="${ANDROID_APP_NOTICE_URL}" target="_blank" rel="noopener" style="text-decoration:none;text-align:center;display:block;">Get the nTransactions Android App</a>
+        <button type="button" class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Close</button>
+      `, 'feature-disabled-modal');
+    }
+
+    // ============ UX IMPROVEMENT PLAN: THEME LOCK ============
+    // Light theme is the default and only active theme for now. All Dark Theme CSS variables,
+    // classes, and JS logic (THEMES, applyTheme, loadSavedTheme, system-theme listener, etc.)
+    // remain fully in place below and untouched — this lock simply keeps the app pinned to
+    // 'light' until dark mode is reactivated for release.
+    const THEME_LOCKED_TO_LIGHT = true;
+
+    // ============ UX IMPROVEMENT PLAN: THEMED ALERT / CONFIRM ============
+    // Replaces native window.alert()/window.confirm() (which are inconsistent, unbrandable,
+    // and not screen-reader-friendly) with themed, accessible, on-brand dialogs, per Section
+    // 3.8 / 3.17 of the UX plan. Behaviorally equivalent at each call site.
+    function ntxAlert(message, tone = 'info') {
+      const toneColor = tone === 'error' ? 'var(--red)' : tone === 'success' ? 'var(--green)' : 'var(--amber)';
+      let box = document.getElementById('ntx-alert-toast');
+      if (!box) {
+        box = document.createElement('div');
+        box.id = 'ntx-alert-toast';
+        box.setAttribute('role', 'alert');
+        box.setAttribute('aria-live', 'assertive');
+        document.body.appendChild(box);
+      }
+      box.style.cssText = `position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(8px);max-width:min(420px,calc(100vw - 32px));background:var(--card);color:var(--text);border:1px solid ${toneColor};border-left:4px solid ${toneColor};padding:12px 16px;border-radius:12px;font-size:13px;font-weight:600;line-height:1.5;font-family:'Inter',sans-serif;z-index:99999;box-shadow:0 12px 32px rgba(0,0,0,.25);opacity:0;transition:opacity .2s ease, transform .2s ease;`;
+      box.textContent = message;
+      requestAnimationFrame(() => { box.style.opacity = '1'; box.style.transform = 'translateX(-50%) translateY(0)'; });
+      clearTimeout(window._ntxAlertTimeout);
+      window._ntxAlertTimeout = setTimeout(() => {
+        box.style.opacity = '0';
+        box.style.transform = 'translateX(-50%) translateY(8px)';
+      }, 3600);
+      return undefined; // matches native alert()'s return value so `return ntxAlert(...)` call sites keep working
+    }
+    // Themed confirmation modal for destructive/important actions. Cancel is the easy, visually
+    // secondary option; the destructive action is clearly labeled with its consequence.
+    function ntxConfirm(message, onConfirm, opts = {}) {
+      const confirmLabel = opts.confirmLabel || 'Confirm';
+      const title = opts.title || 'Please Confirm';
+      const danger = opts.danger !== false;
+      const btnClass = 'btn btn-p';
+      const btnStyle = danger ? 'background:var(--red);' : '';
+      const escHtml = String(message).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      window._ntxConfirmAction = onConfirm;
+      openModal(`
+        <div class="modal-title">${title}</div>
+        <div style="font-size:13.5px;line-height:1.7;color:var(--text2);margin-bottom:18px;">${escHtml}</div>
+        <button type="button" class="${btnClass}" style="${btnStyle}" onclick="_ntxConfirmRun()">${confirmLabel}</button>
+        <button type="button" class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>
+      `, 'ntx-confirm-modal');
+    }
+    function _ntxConfirmRun() {
+      const fn = window._ntxConfirmAction;
+      window._ntxConfirmAction = null;
+      closeModal();
+      if (typeof fn === 'function') setTimeout(fn, 50); // let modal close before follow-up UI (e.g. another modal) opens
+    }
+
+    // ============ UX IMPROVEMENT PLAN: ACCESSIBILITY — FONT SCALING ============
+    function setA11yFontScale(value) {
+      let s = parseFloat(value);
+      if (!isFinite(s) || s < 1 || s > 1.25) s = 1;
+      document.documentElement.style.setProperty('--a11y-font-scale', s);
+      localStorage.setItem('ntx_font_scale', String(s));
+    }
 
     // ============ CONSTANTS ============
     const DEFAULT_EXP_CATS = [
@@ -10959,7 +11095,7 @@
   ${chartVis.trend && hasData12 ? `
   <div class="section dash-grid-full">
     <div class="sec-hdr"><div class="sec-title">12-Month Overview</div><div style="display:flex;gap:12px;font-size:10px;font-weight:800;align-items:center;"><span style="color:#10b981;display:flex;align-items:center;gap:5px;"><i style="display:inline-block;width:18px;height:2px;border-radius:999px;background:#10b981;"></i>Cash In</span><span style="color:#f43f5e;display:flex;align-items:center;gap:5px;"><i style="display:inline-block;width:18px;height:2px;border-radius:999px;background:#f43f5e;"></i>Expense</span></div></div>
-    <div class="card trend-area-card chart-dark-card"><canvas id="chart-trend"></canvas></div>
+    <div class="card trend-area-card chart-dark-card"><canvas id="chart-trend" role="img" aria-label="Line chart comparing cash in and expense totals over the last 12 months"></canvas></div>
   </div>`: ''}
 
   <!-- CHART 2: Donut monthly + yearly side by side on desktop, stacked on mobile -->
@@ -10971,7 +11107,7 @@
       <div class="card donut-card" id="donut-card-m" style="padding:16px;display:flex;flex-direction:column;justify-content:center;">
         <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">${fmtMY(S.month)} \u2014 Monthly</div>
         <div class="donut-chart-row">
-          <div class="donut-chart-wrap"><canvas id="chart-donut"></canvas></div>
+          <div class="donut-chart-wrap"><canvas id="chart-donut" role="img" aria-label="Donut chart of spending by category for ${fmtMY(S.month)}. See the legend below for a full breakdown."></canvas></div>
           <div class="donut-legend" id="donut-legend"></div>
         </div>
       </div>`: ``}
@@ -10979,7 +11115,7 @@
       <div class="card donut-card" id="donut-card-y" style="padding:16px;display:flex;flex-direction:column;justify-content:center;">
         <div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">${yr} \u2014 Yearly</div>
         <div class="donut-chart-row">
-          <div class="donut-chart-wrap"><canvas id="chart-donut-yr"></canvas></div>
+          <div class="donut-chart-wrap"><canvas id="chart-donut-yr" role="img" aria-label="Donut chart of spending by category for ${yr}. See the legend below for a full breakdown."></canvas></div>
           <div class="donut-legend" id="donut-legend-yr"></div>
         </div>
       </div>`: ``}
@@ -11008,7 +11144,7 @@
   ${chartVis.catTrend && hasCatTrend ? `
   <div class="section dash-grid-full">
     <div class="sec-hdr"><div class="sec-title">Category Trend</div><span style="font-size:11px;color:var(--text3);">Last 6 months</span></div>
-    <div class="card trend-area-card chart-dark-card"><canvas id="chart-cattrend"></canvas></div>
+    <div class="card trend-area-card chart-dark-card"><canvas id="chart-cattrend" role="img" aria-label="Multi-line chart of spending by category over the last 6 months"></canvas></div>
   </div>`: ''}
 
   </div><!-- end dash-grid -->
@@ -11523,16 +11659,17 @@
       const found = findLoanEntry(loan, entryType, keyOrIdx);
       if (!found || !found.entry) return;
       const label = entryType === 'payment' ? 'payment' : 'additional entry';
-      if (!confirm(`Remove this ${label}? Wallet balance will be reversed.`)) return;
-      const domain = entryType === 'payment' ? 'loanPayments' : 'loanExtraEntries';
-      const prefix = entryType === 'payment' ? 'loan_payment' : 'loan_extra';
-      reverseLoanEntryWalletImpact(loan, entryType, found.entry);
-      ensureSyncItemMeta(found.entry, prefix);
-      recordTombstone(domain, loanChildKey(loanId, found.entry));
-      if (entryType === 'payment') loan.payments.splice(found.idx, 1);
-      else loan.extraEntries.splice(found.idx, 1);
-      touchSyncItem(loan);
-      save(); closeModal(); renderMain();
+      ntxConfirm(`Remove this ${label}? Wallet balance will be reversed.`, () => {
+        const domain = entryType === 'payment' ? 'loanPayments' : 'loanExtraEntries';
+        const prefix = entryType === 'payment' ? 'loan_payment' : 'loan_extra';
+        reverseLoanEntryWalletImpact(loan, entryType, found.entry);
+        ensureSyncItemMeta(found.entry, prefix);
+        recordTombstone(domain, loanChildKey(loanId, found.entry));
+        if (entryType === 'payment') loan.payments.splice(found.idx, 1);
+        else loan.extraEntries.splice(found.idx, 1);
+        touchSyncItem(loan);
+        save(); closeModal(); renderMain();
+      }, { confirmLabel: 'Remove', title: 'Remove Entry?' });
     }
 
     function txHTML(t) {
@@ -11800,10 +11937,10 @@
       const subEl = document.getElementById('rec-subcat');
       const nextDate = document.getElementById('rec-next').value;
       const freq = document.getElementById('rec-frequency').value;
-      if (!amt || amt <= 0) return alert('Enter a valid amount.');
-      if (!wallet) return alert('Select a wallet.');
-      if (!category) return alert('Select a category.');
-      if (!nextDate) return alert('Select the next due date.');
+      if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.');
+      if (!wallet) return ntxAlert('Select a wallet.');
+      if (!category) return ntxAlert('Select a category.');
+      if (!nextDate) return ntxAlert('Select the next due date.');
       const next = parseLocalDateTime(nextDate);
       r.amount = roundMoney(amt);
       r.wallet = wallet;
@@ -11823,11 +11960,12 @@
     }
     function deleteRecurring(id) {
       const r = (S.recurringTransactions || []).find(x => x.id === id); if (!r) return;
-      if (!confirm('Delete this recurring schedule? Existing transactions will remain.')) return;
-      ensureSyncItemMeta(r, 'recurringTransactions');
-      recordTombstone('recurringTransactions', id);
-      S.recurringTransactions = (S.recurringTransactions || []).filter(x => x.id !== id);
-      save(); renderMain();
+      ntxConfirm('Delete this recurring schedule? Existing transactions will remain.', () => {
+        ensureSyncItemMeta(r, 'recurringTransactions');
+        recordTombstone('recurringTransactions', id);
+        S.recurringTransactions = (S.recurringTransactions || []).filter(x => x.id !== id);
+        save(); renderMain();
+      }, { confirmLabel: 'Delete', title: 'Delete Recurring Schedule?' });
     }
 
     function openRecurringHistory(id) {
@@ -12194,7 +12332,7 @@ ${summaryCard}
       try {
         await fbDb.ref('shared_loans/' + shareId).set(l);
       } catch (e) {
-        alert('Could not generate link. Please ensure you are online and logged in.');
+        ntxAlert('Could not generate link. Please ensure you are online and logged in.');
         return;
       }
       const longUrl = window.location.origin + window.location.pathname + '?share=' + shareId;
@@ -12219,7 +12357,7 @@ ${summaryCard}
     function downloadReceiptPreviewImg(loanId) {
       const l = S.loans.find(x => x.id === loanId); if (!l) return;
       const wrap = document.getElementById('receipt-preview-wrap');
-      if (!wrap) { alert('Preview not found.'); return; }
+      if (!wrap) { ntxAlert('Preview not found.'); return; }
       const btn = document.getElementById('dl-preview-btn');
       if (btn) { btn.textContent = 'Generating\u2026'; btn.disabled = true; }
       function doCapture() {
@@ -12237,7 +12375,7 @@ ${summaryCard}
           if (receiptNativeBridge('saveReceiptImage')) {
             try {
               const saved = window.NativeApp.saveReceiptImage(dataUrl, fileName);
-              if (saved === false) alert('Could not save receipt image.');
+              if (saved === false) ntxAlert('Could not save receipt image.');
               resetReceiptImageBtn(btn);
               return;
             } catch (e) { }
@@ -12248,7 +12386,7 @@ ${summaryCard}
           link.click();
           resetReceiptImageBtn(btn);
         }).catch(() => {
-          alert('Image generation failed. Try again.');
+          ntxAlert('Image generation failed. Try again.');
           if (btn) { btn.textContent = 'Save as Image'; btn.disabled = false; }
         });
       }
@@ -12257,7 +12395,7 @@ ${summaryCard}
         const s = document.createElement('script');
         s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
         s.onload = doCapture;
-        s.onerror = () => { alert('Could not load library.'); if (btn) { btn.textContent = 'Save as Image'; btn.disabled = false; } };
+        s.onerror = () => { ntxAlert('Could not load library.'); if (btn) { btn.textContent = 'Save as Image'; btn.disabled = false; } };
         document.head.appendChild(s);
       }
     }
@@ -12272,7 +12410,7 @@ ${summaryCard}
       }
       const w = window.open('', '_blank');
       if (w) { w.document.write(html); w.document.close(); }
-      else alert('Please allow popups.');
+      else ntxAlert('Please allow popups.');
     }
     function buildReceiptHTML(l) {
       const cfg = LOAN_TYPES[l.type];
@@ -12728,39 +12866,41 @@ ${summaryCard}
   <button class="btn btn-s" onclick="openSyncModal()" style="margin-top:8px;">Back</button>`);
     }
     function saveNativeGeminiApiKeySetting() {
-      if (!nativeGeminiAvailable()) return alert('Open this setting inside the Android app.');
+      if (!nativeGeminiAvailable()) return ntxAlert('Open this setting inside the Android app.');
       const key = String(document.getElementById('native-gemini-api-key-input')?.value || '').trim();
-      if (!key || key.length < 20) return alert('Enter a valid Gemini API key.');
+      if (!key || key.length < 20) return ntxAlert('Enter a valid Gemini API key.');
       let ok = false;
       try { ok = !!window.NativeApp.saveGeminiApiKey(key); } catch (e) { ok = false; }
-      if (!ok) return alert('Could not save the Gemini API key in Android app storage.');
+      if (!ok) return ntxAlert('Could not save the Gemini API key in Android app storage.');
       _voiceParseCache = {};
       openVoiceAiSettings();
       renderMain();
     }
     function clearNativeGeminiApiKeySetting() {
       if (!nativeGeminiAvailable()) return;
-      if (!confirm('Remove the Gemini API key saved in this Android app?')) return;
-      try { window.NativeApp.clearGeminiApiKey(); } catch (e) { }
-      _voiceParseCache = {};
-      openVoiceAiSettings();
-      renderMain();
+      ntxConfirm('Remove the Gemini API key saved in this Android app?', () => {
+        try { window.NativeApp.clearGeminiApiKey(); } catch (e) { }
+        _voiceParseCache = {};
+        openVoiceAiSettings();
+        renderMain();
+      }, { confirmLabel: 'Remove', title: 'Remove Gemini API Key?' });
     }
     function saveOrApiKeySetting() {
       const input = document.getElementById('or-api-key-input');
       const key = String(input?.value || '').trim();
       // Ignore if still showing masked placeholder
-      if (!key || key === '••••••••••••') { alert('Paste your OpenRouter API key (starts with sk-or-).'); return; }
-      if (key.length < 20) { alert('That does not look like a valid OpenRouter API key.'); return; }
+      if (!key || key === '••••••••••••') { ntxAlert('Paste your OpenRouter API key (starts with sk-or-).'); return; }
+      if (key.length < 20) { ntxAlert('That does not look like a valid OpenRouter API key.'); return; }
       saveUserOrKey(key);
       openVoiceAiSettings();
       _updateAiKeyHint();
     }
     function clearOrApiKeySetting() {
-      if (!confirm('Remove the saved OpenRouter API key? AI Chat will use the server endpoint instead.')) return;
-      clearUserOrKey();
-      openVoiceAiSettings();
-      _updateAiKeyHint();
+      ntxConfirm('Remove the saved OpenRouter API key? AI Chat will use the server endpoint instead.', () => {
+        clearUserOrKey();
+        openVoiceAiSettings();
+        _updateAiKeyHint();
+      }, { confirmLabel: 'Remove', title: 'Remove OpenRouter API Key?' });
     }
     function _updateAiKeyHint() {
       const hint = document.getElementById('aic-key-hint');
@@ -12900,8 +13040,8 @@ ${summaryCard}
           <div class="settings-panel-heading">Smart Tools</div>
           <div class="settings-panel-sub">AI assistant, voice input, SMS parsing and Android integrations.</div>
           <div class="settings-card">
-            ${settingsRow('Finance Assistant', 'Ask AI about your spending, income and trends', settingsSvg.aiChat, 'green', 'openAiChatWindow()')}
-            ${settingsRow('Voice Transaction', 'Add a transaction by speaking naturally', settingsSvg.mic, 'blue', 'openVoiceTxModal()')}
+            ${settingsRow('Finance Assistant', DISABLED_FEATURES.aiChat ? 'Available in the nTransactions Android App' : 'Ask AI about your spending, income and trends', settingsSvg.aiChat, 'green', 'openAiChatWindow()', DISABLED_FEATURES.aiChat ? '<span style="font-size:10px;font-weight:800;letter-spacing:.3px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:3px 8px;border-radius:999px;white-space:nowrap;">Android app</span>' : '')}
+            ${settingsRow('Voice Transaction', DISABLED_FEATURES.voiceTransaction ? 'Available in the nTransactions Android App' : 'Add a transaction by speaking naturally', settingsSvg.mic, 'blue', 'openVoiceTxModal()', DISABLED_FEATURES.voiceTransaction ? '<span style="font-size:10px;font-weight:800;letter-spacing:.3px;color:var(--text3);background:var(--bg3);border:1px solid var(--border);padding:3px 8px;border-radius:999px;white-space:nowrap;">Android app</span>' : '')}
             ${isAndroidRuntime() ? settingsRow('Voice Transaction AI', 'Speak naturally and review before saving', settingsSvg.mic, 'blue', 'openVoiceAiSettings()') : ''}
             ${settingsRow('SMS Transaction Parser', 'Paste or review bank and MFS messages', settingsSvg.sms, 'purple', 'openSmsParser()')}
             ${nativeSmsAvailable ? settingsRow('Android SMS Detection', nativeSmsStatus, settingsSvg.phone, 'amber', 'openNativeSmsSettings()') : ''}
@@ -12925,6 +13065,15 @@ ${summaryCard}
             <div class="settings-row" onclick="openReminderSettings()" role="button" tabindex="0"><div class="settings-icon amber">${settingsSvg.bell}</div><div class="settings-row-main"><div class="settings-row-title">Reminder Settings</div><div class="settings-row-sub">Loan due reminders, days before due date and frequency</div></div><button id="rem-toggle-btn" onclick="event.stopPropagation();toggleReminders()" class="settings-chip" style="border-color:${_remindersEnabled ? 'rgba(12,233,127,.35)' : 'var(--border)'};background:${_remindersEnabled ? 'var(--green-d)' : 'var(--bg)'};color:${remColor};">${remNotif}</button></div>
             <div class="settings-inline"><div class="settings-inline-title">Currency</div><select class="fi" id="currency-select" onchange="saveCurrencySetting()" style="font-size:13px;">${currencyOpts()}</select><div class="settings-note">Used for balances, budgets, loans, savings and records.</div></div>
             <div class="settings-inline"><div class="settings-inline-title">Theme</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;" id="theme-picker"></div></div>
+            <div class="settings-inline">
+              <div class="settings-inline-title">Text Size</div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:11px;color:var(--text3);">A</span>
+                <input type="range" id="a11y-font-scale-slider" min="1" max="1.25" step="0.05" value="${localStorage.getItem('ntx_font_scale') || '1'}" oninput="setA11yFontScale(this.value)" style="flex:1;accent-color:var(--teal, #1F6F6B);" aria-label="Adjust app text size">
+                <span style="font-size:16px;color:var(--text3);">A</span>
+              </div>
+              <div class="settings-note">Scales text across the whole app for easier reading.</div>
+            </div>
             ${settingsRow('Dashboard Charts', 'Choose which charts to display', settingsSvg.chart, 'purple', 'openChartSettings()')}
           </div>`;
 
@@ -12934,7 +13083,7 @@ ${summaryCard}
           ${aboutSectionHTML()}
           <div style="height:1px;background:var(--border);margin:18px 0 14px;"></div>
           <div class="settings-card">
-            <button type="button" class="settings-row" style="width:100%;text-align:left;" onclick="if(confirm('Are you sure you want to sign out?'))doSignOut();" aria-label="Sign out">
+            <button type="button" class="settings-row" style="width:100%;text-align:left;" onclick="ntxConfirm('Are you sure you want to sign out?', doSignOut, {confirmLabel:'Sign Out', title:'Sign Out?'})" aria-label="Sign out">
               <div class="settings-icon" style="background:rgba(239,68,68,.12);color:#ef4444;border-color:rgba(239,68,68,.2);">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
               </div>
@@ -13464,7 +13613,7 @@ ${summaryCard}
 
     async function updateReportStatus(encodedId, status) {
       if (!fbUser || !fbDb) return openAuthModal('in');
-      if (!isAdminAccount()) return alert('Admin access is required to update report status.');
+      if (!isAdminAccount()) return ntxAlert('Admin access is required to update report status.');
       const id = decodeURIComponent(encodedId || '');
       const report = cachedReportById(id, 'admin');
       if (!report) return openAdminReports();
@@ -13489,7 +13638,7 @@ ${summaryCard}
         showToast('Report status updated');
         openReportDetail(encodeURIComponent(id), 'admin');
       } catch (e) {
-        alert('Could not update report status. Confirm the updated database rules are deployed.');
+        ntxAlert('Could not update report status. Confirm the updated database rules are deployed.');
         openReportDetail(encodeURIComponent(id), 'admin');
       }
     }
@@ -13613,7 +13762,7 @@ ${summaryCard}
       } catch (e) {
         if (input) input.value = '';
         if (label) label.textContent = 'Optional screenshot';
-        alert(e && e.message ? e.message : 'Please choose a smaller screenshot image.');
+        ntxAlert(e && e.message ? e.message : 'Please choose a smaller screenshot image.');
       }
     }
 
@@ -13649,7 +13798,7 @@ ${summaryCard}
       const type = document.getElementById('report-type')?.value || 'bug';
       const title = repairMojibakeText(String(document.getElementById('report-title')?.value || '').trim()).slice(0, 80);
       const description = repairMojibakeText(String(document.getElementById('report-desc')?.value || '').trim());
-      if (description.length < 10) return alert('Please add a detailed description.');
+      if (description.length < 10) return ntxAlert('Please add a detailed description.');
       const includeDevice = !!document.getElementById('report-device')?.checked;
       const notify = !!document.getElementById('report-notify')?.checked;
       const btn = document.getElementById('report-submit-btn');
@@ -13705,7 +13854,7 @@ ${summaryCard}
         openMyReports();
       } catch (e) {
         if (btn) { btn.disabled = false; btn.textContent = 'Submit'; }
-        alert('Could not submit the report right now.');
+        ntxAlert('Could not submit the report right now.');
       }
     }
 
@@ -13844,8 +13993,8 @@ ${summaryCard}
       const cfg = savingsTargetSettings();
       const monthlyDefault = parseFloat(document.getElementById('st-monthly-default')?.value);
       const yearlyDefault = parseFloat(document.getElementById('st-yearly-default')?.value);
-      if (!Number.isFinite(monthlyDefault) || monthlyDefault < 0) return alert('Enter a valid monthly percentage.');
-      if (!Number.isFinite(yearlyDefault) || yearlyDefault < 0) return alert('Enter a valid yearly percentage.');
+      if (!Number.isFinite(monthlyDefault) || monthlyDefault < 0) return ntxAlert('Enter a valid monthly percentage.');
+      if (!Number.isFinite(yearlyDefault) || yearlyDefault < 0) return ntxAlert('Enter a valid yearly percentage.');
       cfg.monthlyPct = monthlyDefault;
       cfg.yearlyPct = yearlyDefault;
       const monthKey = document.getElementById('st-month-key')?.value || S.month;
@@ -13854,7 +14003,7 @@ ${summaryCard}
         if (monthPctRaw === '') delete cfg.monthlyOverrides[monthKey];
         else {
           const monthPct = parseFloat(monthPctRaw);
-          if (!Number.isFinite(monthPct) || monthPct < 0) return alert('Enter a valid month-specific percentage.');
+          if (!Number.isFinite(monthPct) || monthPct < 0) return ntxAlert('Enter a valid month-specific percentage.');
           cfg.monthlyOverrides[monthKey] = monthPct;
         }
       }
@@ -13864,7 +14013,7 @@ ${summaryCard}
         if (yearPctRaw === '') delete cfg.yearlyOverrides[yearKey];
         else {
           const yearPct = parseFloat(yearPctRaw);
-          if (!Number.isFinite(yearPct) || yearPct < 0) return alert('Enter a valid year-specific percentage.');
+          if (!Number.isFinite(yearPct) || yearPct < 0) return ntxAlert('Enter a valid year-specific percentage.');
           cfg.yearlyOverrides[yearKey] = yearPct;
         }
       }
@@ -15374,7 +15523,7 @@ ${summaryCard}
     }
     function txVoiceTriggerHTML() {
       const micSVG = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><line x1="12" y1="21" x2="12" y2="17"/><line x1="8" y1="21" x2="16" y2="21"/></svg>`;
-      if (!voiceTxAvailable()) return `<div class="modal-title">Add Transaction</div>`;
+      if (!DISABLED_FEATURES.voiceTransaction && !voiceTxAvailable()) return `<div class="modal-title">Add Transaction</div>`;
       return `<div class="tx-title-row"><div class="modal-title">Add Transaction</div><button type="button" class="tx-voice-trigger" onclick="openVoiceTxModal()" aria-label="Start Voice Transaction">${micSVG}<span>Voice</span></button></div>`;
     }
     function txRecurringCardHTML() {
@@ -15419,9 +15568,9 @@ ${summaryCard}
       if (window._submitting) return; window._submitting = true; setTimeout(() => window._submitting = false, 2000);
       const amt = parseFloat(document.getElementById('tx-amt').value); const wEl = document.getElementById('tx-w'); const w = wEl ? wEl.value : ''; const dtRaw = document.getElementById('tx-dt').value; const note = document.getElementById('tx-note').value.trim(); const catEl = document.getElementById('tx-cat'); const catVal = catEl ? catEl.value : ''; const subEl = document.getElementById('tx-subcat'); const subVal = subEl && !subEl.disabled ? subEl.value : '';
       const dt = dtRaw || todayDT(); // store full datetime string
-      if (!amt || amt <= 0) return alert('Enter a valid amount.');
-      if (txType !== 'transfer' && !catVal) return alert('Select a category.');
-      if (!w) return alert('Select a wallet.'); if (!dt) return alert('Select a date and time.');
+      if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.');
+      if (txType !== 'transfer' && !catVal) return ntxAlert('Select a category.');
+      if (!w) return ntxAlert('Select a wallet.'); if (!dt) return ntxAlert('Select a date and time.');
       // Capture recurring state before DOM is destroyed
       const recToggle = document.getElementById('tx-rec-toggle');
       const recEnabled = recToggle ? recToggle.classList.contains('is-on') : false;
@@ -15430,7 +15579,7 @@ ${summaryCard}
       const tx = { id: uid(), type: txType, category: catVal, subcategory: subVal || '', amount: amt, wallet: w, date: dt, note, photo: _txPhoto || '', at: new Date().toISOString() }; _txPhoto = '';
       if (txType === 'transfer') {
         const twEl = document.getElementById('tx-tw'); tx.toWallet = twEl ? twEl.value : '';
-        if (tx.wallet === tx.toWallet) return alert('Cannot transfer to same wallet.');
+        if (tx.wallet === tx.toWallet) return ntxAlert('Cannot transfer to same wallet.');
         const feeEl = document.getElementById('tx-fee');
         const fee = feeEl ? parseFloat(feeEl.value) || 0 : 0;
         tx.fee = fee;
@@ -15521,6 +15670,7 @@ ${summaryCard}
       }
     }
     function openVoiceTxModal() {
+      if (DISABLED_FEATURES.voiceTransaction) { showFeatureDisabledNotice('Voice Transaction'); return; }
       if (!voiceTxAvailable()) {
         openModal(`<div class="modal-title">Voice Transaction Unavailable</div>
 <div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.25);border-radius:12px;padding:13px 14px;margin-bottom:14px;color:var(--amber);font-size:13px;line-height:1.6;">Voice Transaction is available in the Android app and on the official WebApp when you are signed in.</div>
@@ -15904,7 +16054,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
     async function confirmVoiceParsedTx() {
       const p = _voiceParsedTx;
-      if (!p) return alert('Parse a voice transaction first.');
+      if (!p) return ntxAlert('Parse a voice transaction first.');
       if (voiceIsLoanType(p.type)) return saveVoiceLoan(p);
       return saveVoiceTransaction(p);
     }
@@ -15913,12 +16063,12 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const amt = parseFloat(p.amount);
       const wallet = document.getElementById('voice-wallet')?.value || p.walletId || '';
       const toWallet = document.getElementById('voice-to-wallet')?.value || p.toWalletId || '';
-      if (!amt || amt <= 0) return alert('Enter a valid amount.');
-      if (!wallet) return alert('Select a wallet.');
+      if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.');
+      if (!wallet) return ntxAlert('Select a wallet.');
       const tx = { id: uid(), type: p.type, category: p.categoryId || '', subcategory: p.subcategoryId || '', amount: amt, wallet, date: p.dateTime || todayDT(), note: p.description || '', photo: '', at: new Date().toISOString(), fromVoice: true };
       if (p.type === 'transfer') {
-        if (!toWallet) return alert('Select To Wallet.');
-        if (wallet === toWallet) return alert('Cannot transfer to same wallet.');
+        if (!toWallet) return ntxAlert('Select To Wallet.');
+        if (wallet === toWallet) return ntxAlert('Cannot transfer to same wallet.');
         tx.toWallet = toWallet;
         const fw = S.wallets.find(x => x.id === wallet);
         const tw = S.wallets.find(x => x.id === toWallet);
@@ -15938,8 +16088,8 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const amt = parseFloat(p.amount);
       const person = (document.getElementById('voice-person')?.value || p.person || '').trim();
       const wallet = document.getElementById('voice-wallet')?.value || p.walletId || '';
-      if (!person) return alert('Enter a person or organization.');
-      if (!amt || amt <= 0) return alert('Enter a valid amount.');
+      if (!person) return ntxAlert('Enter a person or organization.');
+      if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.');
       const lnObj = { id: uid(), type: p.type, person, amount: amt, wallet, date: p.dateTime || todayDT(), dueDate: p.dueDate || '', note: p.description || '', photo: '', payments: [], at: new Date().toISOString(), fromVoice: true };
       touchSyncItem(lnObj);
       S.loans.unshift(lnObj);
@@ -15995,8 +16145,8 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const tx = S.transactions.find(t => t.id === txId);
       const amt = parseFloat(document.getElementById('cashin-save-amt')?.value || 0);
       if (!tx) return skipCashInSavings();
-      if (!amt || amt <= 0) return alert('Enter a valid savings amount, or tap Skip.');
-      if (amt > tx.amount) return alert('Savings amount cannot be more than the Cash In amount.');
+      if (!amt || amt <= 0) return ntxAlert('Enter a valid savings amount, or tap Skip.');
+      if (amt > tx.amount) return ntxAlert('Savings amount cannot be more than the Cash In amount.');
       addSavingsDeposit(amt, txId, 'cash_in', tx.date || todayDT());
       save(); closeModal(); renderMain();
     }
@@ -16015,8 +16165,8 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const amt = parseFloat(document.getElementById('manual-save-amt')?.value || 0);
       const dt = document.getElementById('manual-save-dt')?.value || todayDT();
       const note = document.getElementById('manual-save-note')?.value.trim() || '';
-      if (!amt || amt <= 0) return alert('Enter a valid saved amount.');
-      if (!dt) return alert('Select a date and time.');
+      if (!amt || amt <= 0) return ntxAlert('Enter a valid saved amount.');
+      if (!dt) return ntxAlert('Select a date and time.');
       addSavingsDeposit(amt, '', 'budget_manual', dt, note);
       save(); closeModal(); renderMain(); setTimeout(() => showBgtTab(period), 0);
     }
@@ -16096,8 +16246,8 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const nDt = document.getElementById('ele-dt').value;
       const nWlt = document.getElementById('ele-wlt').value;
       const nNt = document.getElementById('ele-nt').value.trim();
-      if (!nAmt || nAmt <= 0) return alert('Enter a valid amount.');
-      if (!nDt) return alert('Select a date.');
+      if (!nAmt || nAmt <= 0) return ntxAlert('Enter a valid amount.');
+      if (!nDt) return ntxAlert('Select a date.');
       if (entryType === 'initial') {
         reverseLoanEntryWalletImpact(l, 'initial', { wallet: l.wallet, amount: l.amount });
         l.amount = nAmt; l.wallet = nWlt; l.date = nDt; l.note = nNt;
@@ -16119,12 +16269,14 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       save(); closeModal(); renderMain();
     }
     function delTx(id) {
-      const t = S.transactions.find(x => x.id === id); if (!t) return; if (!confirm('Delete this transaction? Wallet balance will be reversed.')) return;
-      if (t.type === 'expense') { const w = S.wallets.find(x => x.id === t.wallet); if (w) w.balance += t.amount; }
-      else if (t.type === 'income') { const w = S.wallets.find(x => x.id === t.wallet); if (w) w.balance -= t.amount; }
-      else { const fw = S.wallets.find(x => x.id === t.wallet); const tw = S.wallets.find(x => x.id === t.toWallet); const fee = t.fee || 0; if (fw) fw.balance += (t.amount + fee); if (tw) tw.balance -= t.amount; }
-      recordTombstone('transactions', id);
-      S.transactions = S.transactions.filter(x => x.id !== id); save(); closeModal(); renderMain();
+      const t = S.transactions.find(x => x.id === id); if (!t) return;
+      ntxConfirm('Delete this transaction? Wallet balance will be reversed.', () => {
+        if (t.type === 'expense') { const w = S.wallets.find(x => x.id === t.wallet); if (w) w.balance += t.amount; }
+        else if (t.type === 'income') { const w = S.wallets.find(x => x.id === t.wallet); if (w) w.balance -= t.amount; }
+        else { const fw = S.wallets.find(x => x.id === t.wallet); const tw = S.wallets.find(x => x.id === t.toWallet); const fee = t.fee || 0; if (fw) fw.balance += (t.amount + fee); if (tw) tw.balance -= t.amount; }
+        recordTombstone('transactions', id);
+        S.transactions = S.transactions.filter(x => x.id !== id); save(); closeModal(); renderMain();
+      }, { confirmLabel: 'Delete', title: 'Delete Transaction?' });
     }
     function openEditTx(id) {
       const t = S.transactions.find(x => x.id === id); if (!t) return;
@@ -16143,8 +16295,8 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
     function submitEditTx(id) {
       const t = S.transactions.find(x => x.id === id); if (!t) return;
-      const dt = document.getElementById('et-dt').value; const note = document.getElementById('et-note').value.trim(); if (!dt) return alert('Select a date.');
-      if (t.type !== 'transfer') { const nAmt = parseFloat(document.getElementById('et-amt').value); const nW = document.getElementById('et-w').value; const nCat = document.getElementById('et-cat').value; const nSubEl = document.getElementById('et-subcat'); const nSub = nSubEl && !nSubEl.disabled ? nSubEl.value : ''; if (!nAmt || nAmt <= 0) return alert('Enter a valid amount.'); if (!nW) return alert('Select a wallet.'); if (!nCat) return alert('Select a category.'); const oW = S.wallets.find(x => x.id === t.wallet); if (oW) { if (t.type === 'expense') oW.balance += t.amount; else oW.balance -= t.amount; } const nwObj = S.wallets.find(x => x.id === nW); if (nwObj) { if (t.type === 'expense') nwObj.balance -= nAmt; else nwObj.balance += nAmt; } t.amount = nAmt; t.wallet = nW; t.category = nCat; t.subcategory = nSub || ''; }
+      const dt = document.getElementById('et-dt').value; const note = document.getElementById('et-note').value.trim(); if (!dt) return ntxAlert('Select a date.');
+      if (t.type !== 'transfer') { const nAmt = parseFloat(document.getElementById('et-amt').value); const nW = document.getElementById('et-w').value; const nCat = document.getElementById('et-cat').value; const nSubEl = document.getElementById('et-subcat'); const nSub = nSubEl && !nSubEl.disabled ? nSubEl.value : ''; if (!nAmt || nAmt <= 0) return ntxAlert('Enter a valid amount.'); if (!nW) return ntxAlert('Select a wallet.'); if (!nCat) return ntxAlert('Select a category.'); const oW = S.wallets.find(x => x.id === t.wallet); if (oW) { if (t.type === 'expense') oW.balance += t.amount; else oW.balance -= t.amount; } const nwObj = S.wallets.find(x => x.id === nW); if (nwObj) { if (t.type === 'expense') nwObj.balance -= nAmt; else nwObj.balance += nAmt; } t.amount = nAmt; t.wallet = nW; t.category = nCat; t.subcategory = nSub || ''; }
       t.date = dt; t.note = note; t.edited = new Date().toISOString(); save(); closeModal(); renderMain();
     }
 
@@ -16179,8 +16331,8 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const count = getSubcats(type, catId).length;
       wrap.innerHTML = `<button class="sm-btn" onclick="openManageSubcats('${type}','${catId}','cats')" style="width:100%;justify-content:center;padding:9px 12px;">${count ? 'Manage ' + count + ' Subcategories' : 'Create Subcategories'} for ${esc(cat.label)}</button>`;
     }
-    function addCustomCat(type) { const icon = document.getElementById('nc-icon').value.trim() || 'misc'; const label = document.getElementById('nc-name').value.trim(); if (!label) return alert('Enter a category name.'); const c = { id: 'custom_' + uid(), label, icon }; if (type === 'expense') S.customExpCats.push(c); else S.customIncCats.push(c); save(); openManageCats(type); }
-    function delCustomCat(type, idx) { if (!confirm('Delete this category?')) return; if (type === 'expense') S.customExpCats.splice(idx, 1); else S.customIncCats.splice(idx, 1); save(); openManageCats(type); }
+    function addCustomCat(type) { const icon = document.getElementById('nc-icon').value.trim() || 'misc'; const label = document.getElementById('nc-name').value.trim(); if (!label) return ntxAlert('Enter a category name.'); const c = { id: 'custom_' + uid(), label, icon }; if (type === 'expense') S.customExpCats.push(c); else S.customIncCats.push(c); save(); openManageCats(type); }
+    function delCustomCat(type, idx) { ntxConfirm('Delete this category?', () => { if (type === 'expense') S.customExpCats.splice(idx, 1); else S.customIncCats.splice(idx, 1); save(); openManageCats(type); }, { confirmLabel: 'Delete', title: 'Delete Category?' }); }
 
     function openManageSubcats(type, catId, backTarget = 'cats') {
       const cat = getCat(type, catId);
@@ -16206,10 +16358,10 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
     function addSubcat(type, catId, backTarget = 'cats') {
       const label = document.getElementById('subcat-name')?.value.trim() || '';
-      if (!label) return alert('Enter a subcategory name.');
+      if (!label) return ntxAlert('Enter a subcategory name.');
       S.subcategories = normalizeSubcategories(S.subcategories);
       if (!S.subcategories[type][catId]) S.subcategories[type][catId] = [];
-      if (S.subcategories[type][catId].some(s => s.label.toLowerCase() === label.toLowerCase())) return alert('This subcategory already exists.');
+      if (S.subcategories[type][catId].some(s => s.label.toLowerCase() === label.toLowerCase())) return ntxAlert('This subcategory already exists.');
       S.subcategories[type][catId].push({ id: 'sub_' + uid(), label });
       save(); openManageSubcats(type, catId, backTarget);
     }
@@ -16219,16 +16371,17 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const label = prompt('Rename subcategory', item.label);
       if (label === null) return;
       const clean = label.trim();
-      if (!clean) return alert('Enter a subcategory name.');
+      if (!clean) return ntxAlert('Enter a subcategory name.');
       item.label = clean;
       save(); openManageSubcats(type, catId, backTarget);
     }
     function delSubcat(type, catId, subId, backTarget = 'cats') {
-      if (!confirm('Delete this subcategory? Existing records will keep the main category.')) return;
-      S.subcategories = normalizeSubcategories(S.subcategories);
-      S.subcategories[type][catId] = getSubcats(type, catId).filter(s => s.id !== subId);
-      S.transactions.forEach(t => { if (t.type === type && t.category === catId && t.subcategory === subId) t.subcategory = ''; });
-      save(); openManageSubcats(type, catId, backTarget);
+      ntxConfirm('Delete this subcategory? Existing records will keep the main category.', () => {
+        S.subcategories = normalizeSubcategories(S.subcategories);
+        S.subcategories[type][catId] = getSubcats(type, catId).filter(s => s.id !== subId);
+        S.transactions.forEach(t => { if (t.type === type && t.category === catId && t.subcategory === subId) t.subcategory = ''; });
+        save(); openManageSubcats(type, catId, backTarget);
+      }, { confirmLabel: 'Delete', title: 'Delete Subcategory?' });
     }
 
     // ============ WALLETS MODAL ============
@@ -16291,7 +16444,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
 
     function submitWlt() {
       const nm = document.getElementById('w-nm').value.trim(); const tp = document.getElementById('w-tp').value; const bal = parseFloat(document.getElementById('w-bal').value) || 0;
-      if (!nm) return alert('Enter a wallet name.');
+      if (!nm) return ntxAlert('Enter a wallet name.');
       if (editWltId) {
         const w = S.wallets.find(x => x.id === editWltId);
         if (w) {
@@ -16305,7 +16458,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       } else S.wallets.push({ id: uid(), name: nm, type: tp, balance: bal, color: selColor, at: todayD() });
       save(); closeModal(); renderMain();
     }
-    function delWlt(id) { const w = S.wallets.find(x => x.id === id); if (!w) return; if (!confirm(`Delete wallet "${w.name}"?`)) return; recordTombstone('wallets', id); S.wallets = S.wallets.filter(x => x.id !== id); save(); renderMain(); }
+    function delWlt(id) { const w = S.wallets.find(x => x.id === id); if (!w) return; ntxConfirm(`Delete wallet "${w.name}"?`, () => { recordTombstone('wallets', id); S.wallets = S.wallets.filter(x => x.id !== id); save(); renderMain(); }, { confirmLabel: 'Delete', title: 'Delete Wallet?' }); }
 
     // ============ BUDGET MODALS ============
     function openAddBgt() {
@@ -16349,12 +16502,12 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
     function applyCalc() {
       const mainEl = document.getElementById('b-edit-amt'); const opEl = document.getElementById('calc-op'); const valEl = document.getElementById('calc-val'); if (!mainEl || !opEl || !valEl) return;
-      const ma = parseFloat(mainEl.value) || 0; const op = opEl.value; const val = parseFloat(valEl.value); if (isNaN(val)) return alert('Enter a number.');
-      let result; if (op === '+') result = ma + val; else if (op === '-') result = ma - val; else if (op === '*') result = ma * val; else if (op === '/') result = val === 0 ? (alert('Cannot divide by zero.'), NaN) : ma / val;
-      if (isNaN(result) || !isFinite(result) || result < 0) return alert('Invalid result.'); mainEl.value = parseFloat(result.toFixed(2)); valEl.value = '';
+      const ma = parseFloat(mainEl.value) || 0; const op = opEl.value; const val = parseFloat(valEl.value); if (isNaN(val)) return ntxAlert('Enter a number.');
+      let result; if (op === '+') result = ma + val; else if (op === '-') result = ma - val; else if (op === '*') result = ma * val; else if (op === '/') result = val === 0 ? (ntxAlert('Cannot divide by zero.'), NaN) : ma / val;
+      if (isNaN(result) || !isFinite(result) || result < 0) return ntxAlert('Invalid result.'); mainEl.value = parseFloat(result.toFixed(2)); valEl.value = '';
     }
-    function submitBudgetOnly(period) { const amt = parseFloat(document.getElementById('b-amt').value); if (!amt || amt <= 0) return alert('Enter a valid amount.'); const yr = curYear(); if (period === 'monthly') { const idx = S.budgets.findIndex(b => b.category === 'overall' && b.month === S.month && b.period !== 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'overall', amount: amt, month: S.month, period: 'monthly' }); } else { const idx = S.budgets.findIndex(b => b.category === 'overall' && b.year === yr && b.period === 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'overall', amount: amt, year: yr, period: 'yearly' }); } save(); closeModal(); renderMain(); }
-    function submitSavingsOnly(period) { const amt = parseFloat(document.getElementById('b-amt').value); if (!amt || amt <= 0) return alert('Enter a valid amount.'); const yr = curYear(); if (period === 'monthly') { const idx = S.budgets.findIndex(b => b.category === 'savings' && b.month === S.month && b.period === 'monthly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'savings', amount: amt, month: S.month, period: 'monthly' }); } else { const idx = S.budgets.findIndex(b => b.category === 'savings' && b.year === yr && b.period === 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'savings', amount: amt, year: yr, period: 'yearly' }); } save(); closeModal(); renderMain(); setTimeout(() => showBgtTab(period), 0); }
+    function submitBudgetOnly(period) { const amt = parseFloat(document.getElementById('b-amt').value); if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.'); const yr = curYear(); if (period === 'monthly') { const idx = S.budgets.findIndex(b => b.category === 'overall' && b.month === S.month && b.period !== 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'overall', amount: amt, month: S.month, period: 'monthly' }); } else { const idx = S.budgets.findIndex(b => b.category === 'overall' && b.year === yr && b.period === 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'overall', amount: amt, year: yr, period: 'yearly' }); } save(); closeModal(); renderMain(); }
+    function submitSavingsOnly(period) { const amt = parseFloat(document.getElementById('b-amt').value); if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.'); const yr = curYear(); if (period === 'monthly') { const idx = S.budgets.findIndex(b => b.category === 'savings' && b.month === S.month && b.period === 'monthly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'savings', amount: amt, month: S.month, period: 'monthly' }); } else { const idx = S.budgets.findIndex(b => b.category === 'savings' && b.year === yr && b.period === 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'savings', amount: amt, year: yr, period: 'yearly' }); } save(); closeModal(); renderMain(); setTimeout(() => showBgtTab(period), 0); }
     function clearSavingsAmountOverride(period) {
       const yr = curYear();
       S.budgets.filter(b => b.category === 'savings' && ((period === 'monthly' && b.month === S.month && b.period === 'monthly') || (period === 'yearly' && b.year === yr && b.period === 'yearly'))).forEach(b => recordTombstone('budgets', b.id));
@@ -16363,7 +16516,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
     function submitEditBgt(bgtId) {
       const amt = parseFloat(document.getElementById('b-edit-amt').value);
-      if (!amt || amt <= 0) return alert('Enter a valid amount.');
+      if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.');
       const b = S.budgets.find(x => x.id === bgtId); if (!b) return;
       const oldAmt = b.amount;
       const isSav = b.category === 'savings';
@@ -16379,24 +16532,24 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       }
       save(); closeModal(); renderMain();
     }
-    function delBgt(id) { if (!confirm('Delete this budget?')) return; recordTombstone('budgets', id); S.budgets = S.budgets.filter(x => x.id !== id); save(); closeModal(); renderMain(); }
+    function delBgt(id) { ntxConfirm('Delete this budget?', () => { recordTombstone('budgets', id); S.budgets = S.budgets.filter(x => x.id !== id); save(); closeModal(); renderMain(); }, { confirmLabel: 'Delete', title: 'Delete Budget?' }); }
     function bgtTypeChanged() { const t = document.getElementById('b-type').value; const cw = document.getElementById('b-cat-wrap'); const h = document.getElementById('b-hint'); if (cw) cw.style.display = t === 'category' ? '' : 'none'; const hints = { monthly_overall: `Applies to ${fmtMY(S.month)}`, yearly_overall: `Applies to full year ${curYear()}`, monthly_savings: `Monthly savings target for ${fmtMY(S.month)}`, yearly_savings: `Yearly savings target for ${curYear()}`, category: `Category budget for ${fmtMY(S.month)}` }; if (h) h.textContent = hints[t] || ''; }
     function submitBgt() {
-      const type = document.getElementById('b-type').value; const amt = parseFloat(document.getElementById('b-amt').value); if (!amt || amt <= 0) return alert('Enter a valid amount.'); const yr = curYear();
+      const type = document.getElementById('b-type').value; const amt = parseFloat(document.getElementById('b-amt').value); if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.'); const yr = curYear();
       if (type === 'monthly_overall') { const idx = S.budgets.findIndex(b => b.category === 'overall' && b.month === S.month && b.period !== 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'overall', amount: amt, month: S.month, period: 'monthly' }); }
       else if (type === 'yearly_overall') { const idx = S.budgets.findIndex(b => b.category === 'overall' && b.year === yr && b.period === 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'overall', amount: amt, year: yr, period: 'yearly' }); }
       else if (type === 'monthly_savings') { const idx = S.budgets.findIndex(b => b.category === 'savings' && b.month === S.month && b.period === 'monthly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'savings', amount: amt, month: S.month, period: 'monthly' }); }
       else if (type === 'yearly_savings') { const idx = S.budgets.findIndex(b => b.category === 'savings' && b.year === yr && b.period === 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: 'savings', amount: amt, year: yr, period: 'yearly' }); }
-      else { const catEl = document.getElementById('b-cat'); const cat = catEl ? catEl.value : ''; if (!cat) return alert('Select a category.'); const idx = S.budgets.findIndex(b => b.category === cat && b.month === S.month && b.period !== 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: cat, amount: amt, month: S.month, period: 'monthly' }); }
+      else { const catEl = document.getElementById('b-cat'); const cat = catEl ? catEl.value : ''; if (!cat) return ntxAlert('Select a category.'); const idx = S.budgets.findIndex(b => b.category === cat && b.month === S.month && b.period !== 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: cat, amount: amt, month: S.month, period: 'monthly' }); }
       save(); closeModal(); renderMain();
     }
-    function submitBgtCat() { const cat = document.getElementById('b-cat').value; const amt = parseFloat(document.getElementById('b-amt').value); if (!cat) return alert('Select a category.'); if (!amt || amt <= 0) return alert('Enter a valid amount.'); const idx = S.budgets.findIndex(b => b.category === cat && b.month === S.month && b.period !== 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: cat, amount: amt, month: S.month, period: 'monthly' }); save(); closeModal(); renderMain(); }
+    function submitBgtCat() { const cat = document.getElementById('b-cat').value; const amt = parseFloat(document.getElementById('b-amt').value); if (!cat) return ntxAlert('Select a category.'); if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.'); const idx = S.budgets.findIndex(b => b.category === cat && b.month === S.month && b.period !== 'yearly'); if (idx >= 0) S.budgets[idx].amount = amt; else S.budgets.push({ id: uid(), category: cat, amount: amt, month: S.month, period: 'monthly' }); save(); closeModal(); renderMain(); }
     function showBgtTab(tab) { const m = document.getElementById('bgt-monthly'); const y = document.getElementById('bgt-yearly'); const tm = document.getElementById('btab-m'); const ty = document.getElementById('btab-y'); if (!m || !y) return; if (tab === 'monthly') { m.style.display = ''; y.style.display = 'none'; if (tm) tm.classList.add('active'); if (ty) ty.classList.remove('active'); } else { m.style.display = 'none'; y.style.display = ''; if (ty) ty.classList.add('active'); if (tm) tm.classList.remove('active'); } }
 
     // ============ LOANS MODALS ============
     async function pickFromContacts() {
       if (!('contacts' in navigator && 'ContactsManager' in window)) {
-        alert('Contacts API is not supported on this device/browser. Please type the name manually.'); return;
+        ntxAlert('Contacts API is not supported on this device/browser. Please type the name manually.'); return;
       }
       try {
         const contacts = await navigator.contacts.select(['name'], { multiple: false });
@@ -16407,7 +16560,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
           hideLoanUsernameSuggestions();
         }
       } catch (e) {
-        if (e.name !== 'AbortError') alert('Could not access contacts: ' + e.message);
+        if (e.name !== 'AbortError') ntxAlert('Could not access contacts: ' + e.message);
       }
     }
 
@@ -16546,7 +16699,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     function openAddLoan() {
       const contactsAPI = ('contacts' in navigator && 'ContactsManager' in window);
       const cBtnStyle = contactsAPI ? 'background:var(--blue-d);border:1px solid rgba(77,159,255,.3);color:var(--blue);cursor:pointer;' : 'background:var(--bg3);border:1px solid var(--border);color:var(--text3);cursor:not-allowed;opacity:.5;';
-      const cBtnClick = contactsAPI ? 'pickFromContacts()' : "alert('Contacts API not available on this browser. Please type the name manually.')";
+      const cBtnClick = contactsAPI ? 'pickFromContacts()' : "ntxAlert('Contacts API not available on this browser. Please type the name manually.')";
       const contactBtn = `<button type="button" onclick="${cBtnClick}" style="display:inline-flex;align-items:center;gap:5px;padding:8px 12px;border-radius:10px;${cBtnStyle}font-size:12px;font-weight:700;font-family:'Inter',sans-serif;white-space:nowrap;flex-shrink:0;transition:all .2s;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Contacts</button>`;
       const walletsHtml = `<option value="">Select a Wallet</option>` + S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
       openModal(`<div class="modal-title">New Loan / Deposit Entry</div><div class="fg"><label class="fl">Type</label><select class="fi" id="ln-tp" onchange="lnTypeChanged()"><option value="deposit">Taking a Deposit</option><option value="loan_recv">Loan Received</option><option value="loan_given">Loan Given</option></select></div><div id="ln-wallet-info" style="font-size:12px;background:var(--blue-d);border:1px solid rgba(77,159,255,.2);border-radius:10px;padding:9px 12px;margin-bottom:14px;color:var(--blue);display:none;"></div><div class="fg"><label class="fl">Wallet (Optional)</label><select class="fi" id="ln-wlt">${walletsHtml}</select></div><div class="fg"><label class="fl">Person / Organisation</label><div class="loan-person-entry"><div class="username-suggest-wrap"><input type="text" class="fi" id="ln-pr" placeholder="Type name or @username" style="width:100%;" autocomplete="off" autocapitalize="none" oninput="handleLoanPersonInput(this)" onkeydown="handleLoanPersonKeydown(event)" onfocus="handleLoanPersonInput(this)" onblur="setTimeout(hideLoanUsernameSuggestions,180)"><div id="ln-username-suggestions" class="username-suggestions" role="listbox"></div></div>${contactBtn}</div></div><div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="ln-amt" placeholder="0" min="0"></div></div><div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="ln-dt" value="${new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)}"></div><div class="fg"><label class="fl">Due Date (optional)</label><input type="date" class="fi" id="ln-dd"></div><div class="fg"><label class="fl">Note (optional)</label><input type="text" class="fi" id="ln-nt" placeholder="Additional details"></div><div class="fg"><label class="fl">Photo (optional)</label><div id="ln-photo-preview" style="display:none;margin-bottom:8px;position:relative;"><img id="ln-photo-img" style="width:100%;max-height:140px;object-fit:contain;border-radius:10px;border:1px solid var(--border);cursor:pointer;" onclick="openPhotoPreview(this.src)" /><button onclick="document.getElementById('ln-photo-preview').style.display='none';document.getElementById('ln-photo-input').value='';" style="position:absolute;top:6px;right:6px;background:rgba(0,0,0,.55);border:none;border-radius:50%;width:24px;height:24px;color:#fff;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;">&times;</button></div><input type="file" id="ln-photo-input" accept="image/*" style="display:none;" onchange="handleLnPhoto(this)"><input type="file" id="ln-camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleLnCameraPhoto(this)"><div style="display:flex;gap:8px;"><button type="button" onclick="document.getElementById('ln-photo-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>Gallery</button><button type="button" onclick="document.getElementById('ln-camera-input').click()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 10px;border-radius:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2);font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 0 2-2l2-2h8l2 2h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Camera</button></div></div><button class="btn btn-p" onclick="submitLoan()">Add Record</button><button class="btn btn-s" onclick="closeModal()" style="margin-top:8px;">Cancel</button>`);
@@ -16560,7 +16713,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
     function submitSubEntry(loanId) {
       if (window._submitting) return; window._submitting = true; setTimeout(() => window._submitting = false, 2000);
-      const loan = S.loans.find(l => l.id === loanId); if (!loan) return; const amt = parseFloat(document.getElementById('se-amt').value); const dt = document.getElementById('se-dt').value; const nt = document.getElementById('se-nt').value.trim(); if (!amt || amt <= 0) return alert('Enter a valid amount.'); if (!dt) return alert('Select a date.');
+      const loan = S.loans.find(l => l.id === loanId); if (!loan) return; const amt = parseFloat(document.getElementById('se-amt').value); const dt = document.getElementById('se-dt').value; const nt = document.getElementById('se-nt').value.trim(); if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.'); if (!dt) return ntxAlert('Select a date.');
       const wltId = document.getElementById('se-wlt') ? document.getElementById('se-wlt').value : '';
       if (!loan.extraEntries) loan.extraEntries = [];
       const entry = touchSyncItem({ id: uid(), amount: amt, wallet: wltId, date: dt, note: nt, photo: _lpPhoto || '' });
@@ -16578,7 +16731,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     async function submitLoan() {
       if (window._submitting) return; window._submitting = true; setTimeout(() => window._submitting = false, 2000);
       const tp = document.getElementById('ln-tp').value; const pr = document.getElementById('ln-pr').value.trim(); const amt = parseFloat(document.getElementById('ln-amt').value); const dt = document.getElementById('ln-dt').value; const dd = document.getElementById('ln-dd').value; const nt = document.getElementById('ln-nt').value.trim(); const wltId = document.getElementById('ln-wlt') ? document.getElementById('ln-wlt').value : '';
-      if (!pr) return alert('Enter a person name.'); if (!amt || amt <= 0) return alert('Enter a valid amount.'); if (!dt) return alert('Select a date.');
+      if (!pr) return ntxAlert('Enter a person name.'); if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.'); if (!dt) return ntxAlert('Select a date.');
 
       const linkedMeta = pr.startsWith('@') && _selectedLoanUsernameMeta && _selectedLoanUsernameMeta.username === pr.slice(1).toLowerCase().replace(/[^a-z0-9]/g, '')
         ? { linkedUsername: _selectedLoanUsernameMeta.username, linkedUid: _selectedLoanUsernameMeta.uid || '' }
@@ -16636,10 +16789,10 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       if (!loan.payments) loan.payments = [];
       if (!loan.extraEntries) loan.extraEntries = [];
       const amt = parseFloat(document.getElementById('lp-amt').value); const dt = document.getElementById('lp-dt').value; const nt = document.getElementById('lp-nt').value.trim(); const remain = loanRemain(loan);
-      if (!amt || amt <= 0) return alert('Enter a valid amount.');
+      if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.');
       // Allow up to 5% overpayment or a small rounding tolerance, whichever is smaller
-      if (remain > 0) { const maxAllowed = remain + Math.min(remain * 0.05, 100); if (amt > maxAllowed + 0.01) return alert(`Amount too large. You can pay up to ${fmt(maxAllowed)} (allows small rounding).`); }
-      if (!dt) return alert('Select a date.');
+      if (remain > 0) { const maxAllowed = remain + Math.min(remain * 0.05, 100); if (amt > maxAllowed + 0.01) return ntxAlert(`Amount too large. You can pay up to ${fmt(maxAllowed)} (allows small rounding).`); }
+      if (!dt) return ntxAlert('Select a date.');
       const wltId = document.getElementById('lp-wlt') ? document.getElementById('lp-wlt').value : '';
       const payment = touchSyncItem({ id: uid(), amount: amt, wallet: wltId, date: dt, note: nt, photo: _lpPhoto || '' });
       loan.payments.push(payment);
@@ -16655,13 +16808,14 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     function settleFullLoan(loanId) { const loan = S.loans.find(l => l.id === loanId); if (!loan) return; openAddLoanPayment(loanId); }
     function delLoan(id) {
       const loan = S.loans.find(x => x.id === id); if (!loan) return;
-      if (!confirm('Delete this loan record? All wallet-linked loan impacts will be reversed.')) return;
-      reverseAllLoanWalletImpacts(loan);
-      ensureSyncItemMeta(loan, 'loan');
-      (loan.payments || []).forEach(p => { ensureSyncItemMeta(p, 'loan_payment'); recordTombstone('loanPayments', loanChildKey(id, p)); });
-      (loan.extraEntries || []).forEach(e => { ensureSyncItemMeta(e, 'loan_extra'); recordTombstone('loanExtraEntries', loanChildKey(id, e)); });
-      recordTombstone('loans', id);
-      S.loans = S.loans.filter(x => x.id !== id); save(); closeModal(); renderMain();
+      ntxConfirm('Delete this loan record? All wallet-linked loan impacts will be reversed.', () => {
+        reverseAllLoanWalletImpacts(loan);
+        ensureSyncItemMeta(loan, 'loan');
+        (loan.payments || []).forEach(p => { ensureSyncItemMeta(p, 'loan_payment'); recordTombstone('loanPayments', loanChildKey(id, p)); });
+        (loan.extraEntries || []).forEach(e => { ensureSyncItemMeta(e, 'loan_extra'); recordTombstone('loanExtraEntries', loanChildKey(id, e)); });
+        recordTombstone('loans', id);
+        S.loans = S.loans.filter(x => x.id !== id); save(); closeModal(); renderMain();
+      }, { confirmLabel: 'Delete', title: 'Delete Loan Record?' });
     }
 
     // ============ EXPORT ============
@@ -16672,7 +16826,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     function doExport() {
       const dur = document.getElementById('ex-dur').value; let txs = [...S.transactions];
       if (dur === 'yearly') txs = txs.filter(t => t.date && t.date.startsWith(curYear())); else if (dur === 'monthly') txs = txs.filter(t => t.date && t.date.startsWith(S.month)); else if (dur === 'custom') { const fr = document.getElementById('ex-from').value; const to = document.getElementById('ex-to').value; if (fr) txs = txs.filter(t => t.date >= fr); if (to) txs = txs.filter(t => t.date <= to); }
-      if (!txs.length) return alert('No transactions found.');
+      if (!txs.length) return ntxAlert('No transactions found.');
       const currencyCode = getCurrency().code;
       txs.sort((a, b) => b.date.localeCompare(a.date)); const rows = txs.map(t => { let cat = t.type === 'expense' ? getCat('expense', t.category).label : t.type === 'income' ? getCat('income', t.category).label : 'Transfer'; const sub = (t.type === 'expense' || t.type === 'income') ? subcatLabel(t.type, t.category, t.subcategory) : ''; return { 'Date': fmtD(t.date), 'Type': t.type.charAt(0).toUpperCase() + t.type.slice(1), 'Category': cat, 'Subcategory': sub, [`Amount (${currencyCode})`]: t.amount, 'Wallet': getWlt(t.wallet).name, 'To Wallet': t.toWallet ? getWlt(t.toWallet).name : '', 'Note': t.note || '' }; });
       const wb = XLSX.utils.book_new(); const ws = XLSX.utils.json_to_sheet(rows); ws['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 24 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 28 }]; XLSX.utils.book_append_sheet(wb, ws, 'Transactions');
@@ -16716,7 +16870,10 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       _systemThemeBound = true;
     }
     function applyTheme(t) {
-      const requested = ['light', 'dark', 'system'].includes(t) ? t : 'dark';
+      // UX IMPROVEMENT PLAN: THEME LOCK — Dark/System are temporarily disabled; force 'light'
+      // while preserving the original request so re-enabling later is a one-line flip.
+      const requestedRaw = ['light', 'dark', 'system'].includes(t) ? t : 'dark';
+      const requested = THEME_LOCKED_TO_LIGHT ? 'light' : requestedRaw;
       const resolved = requested === 'system' ? (systemThemeIsLight() ? 'light' : 'dark') : requested;
       const b = document.body;
       ['light', 'dark', 'system', 'slate'].forEach(k => b.classList.remove('theme-' + k));
@@ -16737,12 +16894,20 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
         const accents = { light: '#1F6F6B', dark: '#4FD1C5', system: resolved === 'light' ? '#1F6F6B' : '#4FD1C5' };
         tp.innerHTML = Object.keys(THEMES).map(k => {
           const isActive = (requested === k);
-          return `<button onclick="applyTheme('${k}')" style="padding:9px 6px;border-radius:10px;border:1.5px solid ${isActive ? accents[k] : 'var(--border)'};background:${isActive ? 'rgba(255,255,255,0.06)' : 'var(--bg)'};cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s;font-family:'Inter',sans-serif;"><span style="width:22px;height:22px;border-radius:7px;background:${previews[k]};border:1px solid rgba(255,255,255,.12);display:inline-block;box-shadow:inset 0 0 0 5px ${accents[k]}22;"></span><span style="font-size:9px;font-weight:700;color:${isActive ? accents[k] : 'var(--text3)'};text-align:center;line-height:1.2;">${labels[k]}</span></button>`;
+          const isLocked = THEME_LOCKED_TO_LIGHT && k !== 'light';
+          const clickHandler = isLocked ? `showFeatureDisabledNotice('${labels[k]} Theme')` : `applyTheme('${k}')`;
+          return `<button onclick="${clickHandler}" ${isLocked ? 'aria-disabled="true"' : ''} style="padding:9px 6px;border-radius:10px;border:1.5px solid ${isActive ? accents[k] : 'var(--border)'};background:${isActive ? 'rgba(255,255,255,0.06)' : 'var(--bg)'};cursor:${isLocked ? 'not-allowed' : 'pointer'};opacity:${isLocked ? '.45' : '1'};display:flex;flex-direction:column;align-items:center;gap:5px;transition:all .2s;font-family:'Inter',sans-serif;position:relative;"><span style="width:22px;height:22px;border-radius:7px;background:${previews[k]};border:1px solid rgba(255,255,255,.12);display:inline-block;box-shadow:inset 0 0 0 5px ${accents[k]}22;"></span><span style="font-size:9px;font-weight:700;color:${isActive ? accents[k] : 'var(--text3)'};text-align:center;line-height:1.2;">${labels[k]}${isLocked ? ' 🔒' : ''}</span></button>`;
         }).join('');
       }
       if (typeof S !== 'undefined' && S.view === 'dashboard') setTimeout(() => drawDashCharts(), 40);
     }
-    function loadSavedTheme() { const t = localStorage.getItem('ntx_theme') || 'dark'; applyTheme(t); }
+    function loadSavedTheme() {
+      // UX IMPROVEMENT PLAN: THEME LOCK — always boot into Light while locked; the user's
+      // previously saved preference is preserved in localStorage untouched for when Dark/System
+      // are reactivated.
+      const t = THEME_LOCKED_TO_LIGHT ? 'light' : (localStorage.getItem('ntx_theme') || 'dark');
+      applyTheme(t);
+    }
 
 
     // ============ PROFILE PHOTO ============
@@ -16857,7 +17022,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
         if (inProfileModal) openProfileModal('Photo updated and synced.');
         else openSyncModal();
       } catch (e) {
-        alert(e && e.message ? e.message : 'Photo must be a smaller image file.');
+        ntxAlert(e && e.message ? e.message : 'Photo must be a smaller image file.');
       } finally {
         if (input) input.value = '';
       }
@@ -16881,7 +17046,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
 
     function handleLpPhoto(input) {
       const file = input.files[0]; if (!file) return;
-      if (file.size > 3 * 1024 * 1024 && !isAdminUser()) { alert('Photo must be under 3MB.'); return; }
+      if (file.size > 3 * 1024 * 1024 && !isAdminUser()) { ntxAlert('Photo must be under 3MB.'); return; }
       const reader = new FileReader();
       reader.onload = function (e) {
         _lpPhoto = e.target.result;
@@ -16918,7 +17083,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
     function handleTxPhoto(input) {
       const file = input.files[0]; if (!file) return;
-      if (file.size > 3 * 1024 * 1024 && !isAdminUser()) { alert('Photo must be under 3MB.'); return; }
+      if (file.size > 3 * 1024 * 1024 && !isAdminUser()) { ntxAlert('Photo must be under 3MB.'); return; }
       const reader = new FileReader();
       reader.onload = function (e) {
         _txPhoto = e.target.result;
@@ -16979,7 +17144,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
     function handleLnPhoto(input) {
       const file = input.files[0]; if (!file) return;
-      if (file.size > 3 * 1024 * 1024 && !isAdminUser()) { alert('Photo must be under 3MB.'); return; }
+      if (file.size > 3 * 1024 * 1024 && !isAdminUser()) { ntxAlert('Photo must be under 3MB.'); return; }
       const reader = new FileReader();
       reader.onload = function (e) {
         _lnPhoto = e.target.result;
@@ -17351,7 +17516,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     async function parseSmsAndPreview() {
       const smsEl = document.getElementById('sms-input');
       const sms = smsEl ? smsEl.value.trim() : '';
-      if (!sms) { alert('Please paste an SMS first.'); return; }
+      if (!sms) { ntxAlert('Please paste an SMS first.'); return; }
 
       const btn = document.getElementById('sms-parse-btn');
       const resultEl = document.getElementById('sms-result');
@@ -17457,14 +17622,14 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const note = document.getElementById('sp-note').value.trim();
       const catEl = document.getElementById('sp-cat');
       const cat = catEl ? catEl.value : '';
-      if (!amt || amt <= 0) return alert('Enter a valid amount.');
-      if (!wid) return alert('Select a wallet.');
+      if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.');
+      if (!wid) return ntxAlert('Select a wallet.');
       const tx = { id: uid(), type, category: cat || '', amount: amt, wallet: wid, date: dt || todayDT(), note, photo: '', at: new Date().toISOString() };
       if (type === 'transfer') {
         const wid2El = document.getElementById('sp-wlt2');
         const wid2 = wid2El ? wid2El.value : '';
-        if (!wid2) return alert('Select To Wallet.');
-        if (wid === wid2) return alert('From and To wallet cannot be the same.');
+        if (!wid2) return ntxAlert('Select To Wallet.');
+        if (wid === wid2) return ntxAlert('From and To wallet cannot be the same.');
         tx.toWallet = wid2;
         const fw = S.wallets.find(x => x.id === wid);
         const tw = S.wallets.find(x => x.id === wid2);
@@ -17843,6 +18008,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
 
     function openAiChatWindow() {
+      if (DISABLED_FEATURES.aiChat) { showFeatureDisabledNotice('Finance Assistant'); return; }
       _aiChatMessages = [];
       _aiChatLoading = false;
       _aiChatAddTxMode = false;
@@ -18214,14 +18380,14 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const note = document.getElementById('sms-note').value.trim();
       const catEl = document.getElementById('sms-cat');
       const cat = catEl ? catEl.value : '';
-      if (!amt || amt <= 0) return alert('Enter a valid amount.');
-      if (!wId) return alert('Select a wallet.');
+      if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.');
+      if (!wId) return ntxAlert('Select a wallet.');
       const tx = { id: uid(), type, category: cat || '', amount: amt, wallet: wId, date: dt, note, at: new Date().toISOString(), fromSms: true };
       if (type === 'transfer') {
         const wId2El = document.getElementById('sms-wallet2');
         const wId2 = wId2El ? wId2El.value : '';
-        if (!wId2) return alert('Select To Wallet.');
-        if (wId === wId2) return alert('From and To wallet cannot be the same.');
+        if (!wId2) return ntxAlert('Select To Wallet.');
+        if (wId === wId2) return ntxAlert('From and To wallet cannot be the same.');
         tx.toWallet = wId2;
         const fw = S.wallets.find(x => x.id === wId);
         const tw = S.wallets.find(x => x.id === wId2);
@@ -18240,11 +18406,12 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
     async function discardSmsTx(idx) {
       const p = _smsPending[idx]; if (!p) return;
-      if (!confirm('Discard this SMS transaction?')) return;
-      await removePendingSmsSource(p);
-      updateSmsBadge();
-      if (_smsPending.length > idx) showSmsReview(idx);
-      else closeModal();
+      ntxConfirm('Discard this SMS transaction?', async () => {
+        await removePendingSmsSource(p);
+        updateSmsBadge();
+        if (_smsPending.length > idx) showSmsReview(idx);
+        else closeModal();
+      }, { confirmLabel: 'Discard', title: 'Discard SMS Transaction?' });
     }
 
     // ============ NOTE AUTOCOMPLETE ============
@@ -18351,11 +18518,12 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     }
     async function discardPendingLoan(idx) {
       const p = _pendingLoans[idx]; if (!p) return;
-      if (!confirm('Discard this incoming record?')) return;
-      try { await fbDb.ref('users/' + fbUser.uid + '/pending_loans/' + p._key).remove(); } catch (e) { }
-      _pendingLoans.splice(idx, 1); updatePendingLoansBadge();
-      if (_pendingLoans.length > idx) showPendingLoanReview(idx);
-      else closeModal();
+      ntxConfirm('Discard this incoming record?', async () => {
+        try { await fbDb.ref('users/' + fbUser.uid + '/pending_loans/' + p._key).remove(); } catch (e) { }
+        _pendingLoans.splice(idx, 1); updatePendingLoansBadge();
+        if (_pendingLoans.length > idx) showPendingLoanReview(idx);
+        else closeModal();
+      }, { confirmLabel: 'Discard', title: 'Discard Incoming Record?' });
     }
 
 
