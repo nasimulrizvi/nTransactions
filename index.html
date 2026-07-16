@@ -16757,49 +16757,60 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       deleteLoanEntry(loanId, 'extra', idx);
     }
     function lnTypeChanged() { const tp = document.getElementById('ln-tp').value; const info = document.getElementById('ln-wallet-info'); if (info) info.style.display = 'none'; }
+    // Reusable core of loan/deposit record creation, extracted verbatim from submitLoan() so
+    // any other entry point (e.g. SMS review) creates loan records through the exact same
+    // tested path — no duplicated balance/sync logic.
+    function commitNewLoanRecord({ type, person, amount, wallet = '', date, dueDate = '', note = '', photo = '' }) {
+      const linkedMeta = person.startsWith('@') && _selectedLoanUsernameMeta && _selectedLoanUsernameMeta.username === person.slice(1).toLowerCase().replace(/[^a-z0-9]/g, '')
+        ? { linkedUsername: _selectedLoanUsernameMeta.username, linkedUid: _selectedLoanUsernameMeta.uid || '' }
+        : {};
+      const lnObj = { id: uid(), type, person, amount, wallet, date, dueDate, note, photo, payments: [], at: new Date().toISOString(), ...linkedMeta };
+      touchSyncItem(lnObj);
+      S.loans.unshift(lnObj);
+      if (LOAN_TYPES[type]) applyLoanWalletImpact(wallet, amount, LOAN_TYPES[type].walletDir);
+      return { lnObj, linkedMeta };
+    }
+    // Cross-user invite push, extracted verbatim from submitLoan(). Fire-and-forget: caller
+    // does not need to await this for the local save to be complete.
+    async function pushLoanInviteIfLinked(lnObj, linkedMeta) {
+      const pr = lnObj.person || '';
+      const tp = lnObj.type;
+      if (!(pr.startsWith('@') && S.username && fbUser && navigator.onLine)) return;
+      const targetUname = pr.slice(1).toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!targetUname || targetUname === S.username) return;
+      try {
+        let targetUid = linkedMeta.linkedUsername === targetUname && linkedMeta.linkedUid ? linkedMeta.linkedUid : '';
+        if (!targetUid) {
+          const snap = await fbDb.ref('usernames/' + targetUname).get();
+          targetUid = usernameRecordUid(snap.val());
+        }
+        if (targetUid) {
+          const inv = { ...lnObj };
+          inv.id = uid(); // new id for the target
+          inv.person = '@' + S.username; // Note: Sender must have username!
+          if (tp === 'deposit') inv.type = 'deposit_given';
+          else if (tp === 'deposit_given') inv.type = 'deposit';
+          else if (tp === 'loan_recv') inv.type = 'loan_given';
+          else if (tp === 'loan_given') inv.type = 'loan_recv';
+          inv.senderUid = fbUser.uid;
+          inv.wallet = '';
+          inv.photo = ''; // skip large photos for inbox push
+          await fbDb.ref('users/' + targetUid + '/pending_loans').push(inv);
+        }
+      } catch (e) { console.error('Failed to sync cross-user loan', e); }
+    }
     async function submitLoan() {
       if (window._submitting) return; window._submitting = true; setTimeout(() => window._submitting = false, 2000);
       const tp = document.getElementById('ln-tp').value; const pr = document.getElementById('ln-pr').value.trim(); const amt = parseFloat(document.getElementById('ln-amt').value); const dt = document.getElementById('ln-dt').value; const dd = document.getElementById('ln-dd').value; const nt = document.getElementById('ln-nt').value.trim(); const wltId = document.getElementById('ln-wlt') ? document.getElementById('ln-wlt').value : '';
       if (!pr) return ntxAlert('Enter a person name.'); if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.'); if (!dt) return ntxAlert('Select a date.');
 
-      const linkedMeta = pr.startsWith('@') && _selectedLoanUsernameMeta && _selectedLoanUsernameMeta.username === pr.slice(1).toLowerCase().replace(/[^a-z0-9]/g, '')
-        ? { linkedUsername: _selectedLoanUsernameMeta.username, linkedUid: _selectedLoanUsernameMeta.uid || '' }
-        : {};
-      const loanId = uid();
-      const lnObj = { id: loanId, type: tp, person: pr, amount: amt, wallet: wltId, date: dt, dueDate: dd, note: nt, photo: _lnPhoto || '', payments: [], at: new Date().toISOString(), ...linkedMeta };
-      touchSyncItem(lnObj);
-      S.loans.unshift(lnObj);
-      if (LOAN_TYPES[tp]) applyLoanWalletImpact(wltId, amt, LOAN_TYPES[tp].walletDir);
+      const { lnObj, linkedMeta } = commitNewLoanRecord({ type: tp, person: pr, amount: amt, wallet: wltId, date: dt, dueDate: dd, note: nt, photo: _lnPhoto || '' });
       _lnPhoto = '';
       save();
       closeModal(); renderMain();
 
       // Cross-user sync check
-      if (pr.startsWith('@') && S.username && fbUser && navigator.onLine) {
-        const targetUname = pr.slice(1).toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (targetUname && targetUname !== S.username) {
-          try {
-            let targetUid = linkedMeta.linkedUsername === targetUname && linkedMeta.linkedUid ? linkedMeta.linkedUid : '';
-            if (!targetUid) {
-              const snap = await fbDb.ref('usernames/' + targetUname).get();
-              targetUid = usernameRecordUid(snap.val());
-            }
-            if (targetUid) {
-              const inv = { ...lnObj };
-              inv.id = uid(); // new id for the target
-              inv.person = '@' + S.username; // Note: Sender must have username!
-              if (tp === 'deposit') inv.type = 'deposit_given';
-              else if (tp === 'deposit_given') inv.type = 'deposit';
-              else if (tp === 'loan_recv') inv.type = 'loan_given';
-              else if (tp === 'loan_given') inv.type = 'loan_recv';
-              inv.senderUid = fbUser.uid;
-              inv.wallet = '';
-              inv.photo = ''; // skip large photos for inbox push
-              await fbDb.ref('users/' + targetUid + '/pending_loans').push(inv);
-            }
-          } catch (e) { console.error('Failed to sync cross-user loan', e); }
-        }
-      }
+      await pushLoanInviteIfLinked(lnObj, linkedMeta);
     }
     function openAddLoanPayment(loanId) {
       window._submitting = false;
@@ -18337,9 +18348,10 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const wOpts = S.wallets.map(w => `<option value="${w.id}" ${(w.name === p.wallet || w.id === p.wallet) ? 'selected' : ''}>${w.name}</option>`).join('');
       const allWOpts = S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
 
-      const typeOpts = ['expense', 'income', 'transfer'].map(tp => {
+      const typeOpts = ['expense', 'income', 'transfer', 'deposit', 'loan_recv', 'loan_given'].map(tp => {
         const match = (tp === 'expense' && pType === 'expense') || (tp === 'income' && (pType === 'income' || pType === 'cash in')) || (tp === 'transfer' && pType === 'transfer');
-        return `<option value="${tp}" ${match ? 'selected' : ''}>${tp === 'expense' ? 'Expense' : tp === 'income' ? 'Cash In' : 'Transfer'}</option>`;
+        const labels = { expense: 'Expense', income: 'Cash In', transfer: 'Transfer', deposit: 'Taking a Deposit', loan_recv: 'Loan Received', loan_given: 'Loan Given' };
+        return `<option value="${tp}" ${match ? 'selected' : ''}>${labels[tp]}</option>`;
       }).join('');
 
       let dtVal = '';
@@ -18350,16 +18362,32 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const balHtml = p.balance ? `<span style="color:var(--text3);">Balance: <b style="color:var(--text);">${fmt(p.balance)}</b></span>` : '';
       const txnHtml = p.txnId ? `<span style="color:var(--text3);">TxnID: <b style="color:var(--text);">${p.txnId}</b></span>` : '';
 
-      // Wallet fields rendered based on current type
-      function buildWalletFields(isTrf) {
-        return isTrf
-          ? `<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="sms-wallet2">${allWOpts}</select></div>`
-          : `<div class="fg"><label class="fl">Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div>`;
+      // Wallet fields rendered based on current type. Loan/deposit types reuse the same
+      // "Wallet (Optional)" single-select pattern as the Loans menu (New Loan / Deposit Entry).
+      function buildWalletFields(isTrf, isLoan = false) {
+        if (isTrf) return `<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="sms-wallet2">${allWOpts}</select></div>`;
+        const walletLabel = isLoan ? 'Wallet (Optional)' : 'Wallet';
+        const walletOpts = isLoan ? `<option value="">Select a Wallet</option>${allWOpts}` : wOpts;
+        return `<div class="fg"><label class="fl">${walletLabel}</label><select class="fi" id="sms-wallet">${walletOpts}</select></div>`;
       }
-      function buildCatField(isTrf, isInc) {
-        if (isTrf) return '';
+      function buildCatField(isTrf, isInc, isLoan = false) {
+        if (isTrf || isLoan) return '';
         return `<div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(isInc ? 'income' : 'expense').replace('<option value="">Select a category</option>', '')}</select></div>`;
       }
+      // Person + Due Date fields only apply to Taking a Deposit / Loan Received / Loan Given —
+      // reuses the exact same "Person / Organisation" username-autocomplete widget (ln-pr /
+      // ln-username-suggestions / handleLoanPersonInput / handleLoanPersonKeydown) already used
+      // by the Loans menu's "New Loan / Deposit Entry" form, so behavior stays consistent and
+      // no new autocomplete logic is duplicated.
+      function buildPersonField(isLoan) {
+        if (!isLoan) return '';
+        return `<div class="fg"><label class="fl">Person / Organisation</label><div class="loan-person-entry"><div class="username-suggest-wrap"><input type="text" class="fi" id="ln-pr" placeholder="Type name or @username" style="width:100%;" autocomplete="off" autocapitalize="none" oninput="handleLoanPersonInput(this)" onkeydown="handleLoanPersonKeydown(event)" onfocus="handleLoanPersonInput(this)" onblur="setTimeout(hideLoanUsernameSuggestions,180)"><div id="ln-username-suggestions" class="username-suggestions" role="listbox"></div></div></div></div>`;
+      }
+      function buildDueDateField(isLoan) {
+        if (!isLoan) return '';
+        return `<div class="fg"><label class="fl">Due Date (Optional)</label><input type="date" class="fi" id="sms-dd"></div>`;
+      }
+      const isLoanTx = ['deposit', 'loan_recv', 'loan_given'].includes(pType);
 
       openModal(`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
     <div class="modal-title" style="margin:0;">Review SMS Transaction</div>
@@ -18371,10 +18399,12 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
     ${balHtml}${txnHtml ? txnHtml : ''}
   </div>
   <div class="fg"><label class="fl">Type</label><select class="fi" id="sms-type" onchange="smsTypeChanged(${idx})">${typeOpts}</select></div>
-  <div id="sms-wallet-fields">${buildWalletFields(isTransfer)}</div>
+  <div id="sms-wallet-fields">${buildWalletFields(isTransfer, isLoanTx)}</div>
+  <div id="sms-person-field">${buildPersonField(isLoanTx)}</div>
   <div class="fg"><label class="fl">Date & Time</label><input type="datetime-local" class="fi" id="sms-dt" value="${dtVal}"></div>
   <div class="fg"><label class="fl">Amount</label><div class="amt-wrap">${moneyPrefix()}<input type="number" class="fi amt-fi" id="sms-amt" value="${p.amount || ''}" min="0" step="0.01"></div></div>
-  <div id="sms-cat-field">${buildCatField(isTransfer, isIncome)}</div>
+  <div id="sms-duedate-field">${buildDueDateField(isLoanTx)}</div>
+  <div id="sms-cat-field">${buildCatField(isTransfer, isIncome, isLoanTx)}</div>
   <div class="fg"><label class="fl">Description / Note</label><input type="text" class="fi" id="sms-note" value="${p.description || ''}" placeholder="Auto-filled from SMS"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
     <button class="btn btn-p" onclick="confirmSmsTx(${idx})" style="margin:0;">Confirm & Save</button>
@@ -18387,15 +18417,20 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       const type = document.getElementById('sms-type').value;
       const isTrf = type === 'transfer';
       const isInc = type === 'income';
+      const isLoan = ['deposit', 'loan_recv', 'loan_given'].includes(type);
       const p = _smsPending[idx] || {};
       const wOpts = S.wallets.map(w => `<option value="${w.id}" ${(w.name === p.wallet || w.id === p.wallet) ? 'selected' : ''}>${w.name}</option>`).join('');
       const allWOpts = S.wallets.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
       const wf = document.getElementById('sms-wallet-fields');
       const cf = document.getElementById('sms-cat-field');
+      const pf = document.getElementById('sms-person-field');
+      const df = document.getElementById('sms-duedate-field');
       if (wf) wf.innerHTML = isTrf
         ? `<div class="fg"><label class="fl">From Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div><div class="fg"><label class="fl">To Wallet</label><select class="fi" id="sms-wallet2">${allWOpts}</select></div>`
-        : `<div class="fg"><label class="fl">Wallet</label><select class="fi" id="sms-wallet">${wOpts}</select></div>`;
-      if (cf) cf.innerHTML = isTrf ? '' : `<div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(isInc ? 'income' : 'expense').replace('<option value="">Select a category</option>', '')}</select></div>`;
+        : `<div class="fg"><label class="fl">${isLoan ? 'Wallet (Optional)' : 'Wallet'}</label><select class="fi" id="sms-wallet">${isLoan ? `<option value="">Select a Wallet</option>${allWOpts}` : wOpts}</select></div>`;
+      if (cf) cf.innerHTML = (isTrf || isLoan) ? '' : `<div class="fg"><label class="fl">Category <span style="color:var(--text3);font-weight:400;">(edit later)</span></label><select class="fi" id="sms-cat"><option value="">-- Select category --</option>${txCatOpts(isInc ? 'income' : 'expense').replace('<option value="">Select a category</option>', '')}</select></div>`;
+      if (pf) pf.innerHTML = isLoan ? `<div class="fg"><label class="fl">Person / Organisation</label><div class="loan-person-entry"><div class="username-suggest-wrap"><input type="text" class="fi" id="ln-pr" placeholder="Type name or @username" style="width:100%;" autocomplete="off" autocapitalize="none" oninput="handleLoanPersonInput(this)" onkeydown="handleLoanPersonKeydown(event)" onfocus="handleLoanPersonInput(this)" onblur="setTimeout(hideLoanUsernameSuggestions,180)"><div id="ln-username-suggestions" class="username-suggestions" role="listbox"></div></div></div></div>` : '';
+      if (df) df.innerHTML = isLoan ? `<div class="fg"><label class="fl">Due Date (Optional)</label><input type="date" class="fi" id="sms-dd"></div>` : '';
     }
     async function confirmSmsTx(idx) {
       const p = _smsPending[idx]; if (!p) return;
@@ -18403,6 +18438,32 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       if (type === 'Cash In') type = 'income';
       if (type === 'Expense') type = 'expense';
       if (type === 'Transfer') type = 'transfer';
+
+      // Taking a Deposit / Loan Received / Loan Given: these are Loans records, not
+      // transactions, so they're created via the exact same helper the Loans menu's
+      // "New Loan / Deposit Entry" form uses (commitNewLoanRecord + pushLoanInviteIfLinked) —
+      // no separate/duplicated balance or sync logic for this path.
+      if (['deposit', 'loan_recv', 'loan_given'].includes(type)) {
+        const prEl = document.getElementById('ln-pr');
+        const pr = prEl ? prEl.value.trim() : '';
+        const amt = parseFloat(document.getElementById('sms-amt').value);
+        const dtFull = document.getElementById('sms-dt').value || todayDT();
+        const note = document.getElementById('sms-note').value.trim();
+        const wId = document.getElementById('sms-wallet') ? document.getElementById('sms-wallet').value : '';
+        const ddEl = document.getElementById('sms-dd');
+        const dd = ddEl ? ddEl.value : '';
+        if (!pr) return ntxAlert('Enter a person name.');
+        if (!amt || amt <= 0) return ntxAlert('Enter a valid amount.');
+        const { lnObj, linkedMeta } = commitNewLoanRecord({ type, person: pr, amount: amt, wallet: wId, date: dtFull, dueDate: dd, note, photo: '' });
+        save();
+        await removePendingSmsSource(p);
+        updateSmsBadge();
+        if (_smsPending.length > idx) showSmsReview(idx);
+        else { closeModal(); renderMain(); }
+        await pushLoanInviteIfLinked(lnObj, linkedMeta);
+        return;
+      }
+
       const wId = document.getElementById('sms-wallet').value;
       const amt = parseFloat(document.getElementById('sms-amt').value);
       const dt = document.getElementById('sms-dt').value || todayDT();
