@@ -3706,6 +3706,73 @@
       margin-top: 7px;
     }
 
+    /* Support Developer — read-only bank details card */
+    .bank-detail-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      overflow: hidden;
+    }
+
+    .bank-detail-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 13px 15px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .bank-detail-row:last-child {
+      border-bottom: 0;
+    }
+
+    .bank-detail-text {
+      min-width: 0;
+    }
+
+    .bank-detail-label {
+      font-size: 10.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--text3);
+      margin-bottom: 3px;
+    }
+
+    .bank-detail-value {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      word-break: break-word;
+    }
+
+    .bank-detail-copy {
+      flex-shrink: 0;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .bank-detail-copy:hover {
+      background: var(--teal-d);
+      color: var(--teal);
+      border-color: var(--teal);
+    }
+
+    .bank-detail-copy:active {
+      transform: scale(.92);
+    }
+
     .settings-about {
       padding: 15px;
       display: flex;
@@ -12929,7 +12996,9 @@ ${summaryCard}
         terms: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/>',
         help: '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 1 1 5.2 2c-.9.8-1.8 1.3-1.8 2.7"/><path d="M12 17h.01"/>',
         info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
-        heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>'
+        heart: '<path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8z"/>',
+        bank: '<path d="M3 21h18"/><path d="M4 21V10.5"/><path d="M20 21V10.5"/><path d="M2 10.5 12 4l10 6.5"/><path d="M8 21v-6"/><path d="M12 21v-6"/><path d="M16 21v-6"/>',
+        copy: '<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'
       };
       return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${paths[name] || paths.info}</svg>`;
     }
@@ -12986,6 +13055,63 @@ ${summaryCard}
       <div class="settings-note" style="margin-top:8px;padding:0 2px;line-height:1.55;">
         nTransactions is completely free and ad-free. This Donate link goes to a trusted third-party charity, ${esc(DONATE_CHARITY_NAME)} — not to the developer. No money from this donation reaches the developer or this app in any way.
       </div>`;
+    }
+    // ============ SUPPORT DEVELOPER (BANK TRANSFER) — separate, self-contained block ============
+    // Deliberately independent from DonateCharitySection() above: different destination (the
+    // developer, not a charity), different content (static bank details, not a link), its own
+    // sub-page. Nothing here reads, writes, or depends on the Donate block's code or state.
+    const SUPPORT_DEV_BANK_DETAILS = [
+      { label: 'Bank', value: 'Islami Bank Bangladesh PLC' },
+      { label: 'Account Name', value: 'Md. Nasimul Islam Rizvi' },
+      { label: 'Branch', value: 'Gazipur Chawrasta, Gazipur' },
+      { label: 'Account No', value: '20501586700211503' },
+      { label: 'Routing No', value: '125330550' },
+      { label: 'Swift Code', value: 'IBBLBDDH' },
+    ];
+    function SupportDeveloperSection() {
+      return `<div class="about-card" style="margin-top:14px;">
+        <div class="about-row" onclick="openSupportDeveloperModal()" role="button" tabindex="0">
+          <div class="about-icon gold">${aboutIconSvg('bank')}</div>
+          <div class="about-row-main"><div class="about-row-title">Buy Me a Coffee</div><div class="about-row-sub">Send a contribution directly via bank transfer</div></div>
+          <svg class="settings-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>`;
+    }
+    // Plain clipboard convenience — no payment processing, no network calls, no analytics.
+    function copyBankDetail(text, label) {
+      const done = () => showToast(`${label ? label + ' ' : ''}Copied!`);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => prompt('Copy this value:', text));
+      } else {
+        prompt('Copy this value:', text);
+      }
+    }
+    function supportDeveloperDetailRowsHTML() {
+      return SUPPORT_DEV_BANK_DETAILS.map((d, i) => `
+        <div class="bank-detail-row">
+          <div class="bank-detail-text">
+            <div class="bank-detail-label">${esc(d.label)}</div>
+            <div class="bank-detail-value">${esc(d.value)}</div>
+          </div>
+          <button type="button" class="bank-detail-copy" onclick="copyBankDetail('${d.value.replace(/'/g, "\\'")}','${d.label.replace(/'/g, "\\'")}')" aria-label="Copy ${esc(d.label)}">${aboutIconSvg('copy', 16)}</button>
+        </div>`).join('');
+    }
+    function openSupportDeveloperModal() {
+      openModal(`<div class="app-screen">
+        <div class="screen-top">
+          <button type="button" class="screen-back" onclick="openSyncModal()" aria-label="Back">${aboutBackSvg(20)}</button>
+          <div><div class="screen-title">Buy Me a Coffee</div><div class="screen-subtitle">Send a direct contribution via bank transfer</div></div>
+        </div>
+        <div style="padding:0 18px;">
+          <div style="background:var(--amber-d);border:1px solid rgba(255,176,32,.22);border-radius:14px;padding:13px 15px;margin-bottom:16px;font-size:12.5px;line-height:1.7;color:var(--text2);">
+            If you'd like to support the development of this app directly, you can send a contribution via bank transfer using the details below.
+          </div>
+          <div class="bank-detail-card">${supportDeveloperDetailRowsHTML()}</div>
+          <div class="settings-note" style="margin-top:12px;padding:0 2px;line-height:1.55;">
+            These are static, informational details only — nothing here is processed automatically. Please double-check the account details in your banking app before sending any transfer.
+          </div>
+        </div>
+      </div>`, 'app-screen-modal');
     }
 
     function openSyncModal() {
@@ -13110,6 +13236,7 @@ ${summaryCard}
           <div class="settings-panel-sub">App info, feedback and support.</div>
           ${aboutSectionHTML()}
           ${DonateCharitySection()}
+          ${SupportDeveloperSection()}
           <div style="height:1px;background:var(--border);margin:18px 0 14px;"></div>
           <div class="settings-card">
             <button type="button" class="settings-row" style="width:100%;text-align:left;" onclick="ntxConfirm('Are you sure you want to sign out?', doSignOut, {confirmLabel:'Sign Out', title:'Sign Out?'})" aria-label="Sign out">
