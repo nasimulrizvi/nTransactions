@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ntx-pwa-v2-1-android-34';
+const CACHE_NAME = 'ntx-pwa-v2-1-android-32';
 const APP_SHELL = [
   './index.html',
   './manifest.json',

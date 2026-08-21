@@ -7,16 +7,12 @@
 //             sharing never breaks because of this endpoint.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { verifyFirebaseToken } = require('./firebase-verify');
-
 const SHORTIO_API_URL = 'https://api.short.io/links';
 const SHORTIO_DOMAIN  = 'rizvi.nav.bd';
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://ntransactions.pro.bd',
   'https://www.ntransactions.pro.bd',
-  'https://ntransactions.ai.studio',
-  'https://www.ntransactions.ai.studio',
   'https://ntransaction.vercel.app',
   'https://ntransactions.vercel.app',
   'https://appassets.androidplatform.net'
@@ -53,7 +49,15 @@ function rateLimit(uid) {
 }
 
 async function verifyFirebaseUser(idToken) {
-  return verifyFirebaseToken(idToken);
+  const firebaseKey = process.env.FIREBASE_WEB_API_KEY;
+  if (!firebaseKey) throw new Error('missing_firebase_key');
+  const resp = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseKey)}`,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) }
+  );
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok || !Array.isArray(data.users) || !data.users.length) return null;
+  return data.users[0];
 }
 
 async function fetchWithTimeout(url, options, timeoutMs) {
@@ -106,19 +110,10 @@ async function handler(req, res) {
   if (!user || !user.localId) { sendJson(res, 401, { error: 'invalid_session' }); return; }
   if (!rateLimit(user.localId)) { sendJson(res, 429, { error: 'rate_limited' }); return; }
 
-  const shortioKey = (process.env.SHORTIO_API_KEY || '').trim();
+  const shortioKey = process.env.SHORTIO_API_KEY;
   if (!shortioKey) {
-    // SHORTIO_API_KEY not set in Vercel environment variables yet.
-    sendJson(res, 200, { shortUrl: longUrl, shortened: false, reason: 'not_configured' });
-    return;
-  }
-
-  // Detect the common mistake of using the PUBLIC key (pk_…) instead of the secret key.
-  // Public keys are for the Short.io analytics SDK — link creation requires the secret key
-  // from Short.io dashboard → Integrations & API → Secret API key.
-  if (shortioKey.startsWith('pk_')) {
-    console.warn('[shorten] SHORTIO_API_KEY is a public key (pk_…). Link creation requires the SECRET key from Short.io dashboard.');
-    sendJson(res, 200, { shortUrl: longUrl, shortened: false, reason: 'public_key_not_allowed' });
+    // Not configured yet — caller falls back to the original long URL.
+    sendJson(res, 200, { shortUrl: longUrl, shortened: false });
     return;
   }
 
@@ -127,23 +122,21 @@ async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'authorization': shortioKey    // Short.io uses lowercase 'authorization'
+        'Authorization': shortioKey
       },
       body: JSON.stringify({ domain: SHORTIO_DOMAIN, originalURL: longUrl })
     }, 8000);
 
     const data = await resp.json().catch(() => ({}));
-    // Short.io returns shortURL or secureShortURL depending on domain SSL setting
-    const short = data.shortURL || data.secureShortURL || '';
-    if (resp.ok && short) {
-      sendJson(res, 200, { shortUrl: short, shortened: true });
+    if (resp.ok && data.shortURL) {
+      sendJson(res, 200, { shortUrl: data.shortURL, shortened: true });
     } else {
-      console.error('[shorten] Short.io API error', resp.status, JSON.stringify(data).slice(0, 200));
-      sendJson(res, 200, { shortUrl: longUrl, shortened: false, reason: 'api_error' });
+      // Short.io rejected the request (e.g. invalid/secret-vs-public key mismatch)
+      // — fall back to the long URL so sharing never breaks.
+      sendJson(res, 200, { shortUrl: longUrl, shortened: false });
     }
   } catch (e) {
-    console.error('[shorten] fetch failed:', e.message);
-    sendJson(res, 200, { shortUrl: longUrl, shortened: false, reason: 'network_error' });
+    sendJson(res, 200, { shortUrl: longUrl, shortened: false });
   }
 }
 
