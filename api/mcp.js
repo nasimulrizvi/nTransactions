@@ -373,8 +373,13 @@ module.exports = async function handler(req, res) {
   }
 
   // 2. Authenticated endpoints (tools/list & tools/call)
+  const host = req.headers.host || 'ntransactions.pro.bd';
+  const proto = req.headers['x-forwarded-proto'] || (host.includes('localhost') ? 'http' : 'https');
+  const baseUrl = `${proto}://${host}`;
+
   const tokenPayload = verifyAccessToken(token);
   if (!tokenPayload || !tokenPayload.sub) {
+    res.setHeader('WWW-Authenticate', `Bearer realm="nTransactions MCP", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`);
     return sendJsonRpc(res, 401, { jsonrpc: '2.0', error: { code: -32001, message: 'Unauthorized: Invalid or expired Bearer token' }, id: reqId });
   }
 

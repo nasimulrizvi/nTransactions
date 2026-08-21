@@ -219,16 +219,27 @@
 
       const demoUid = 'user_demo_123';
 
-      // Generate temporary authorization code
-      const authCode = 'auth_code_' + demoUid + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      try {
+        const resp = await fetch('/api/mcp-auth?action=issue_code', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: demoUid })
+        });
+        const data = await resp.json();
+        const authCode = data.code || ('auth_code_' + demoUid + '_' + Date.now());
 
-      if (redirectUri) {
-        const dest = new URL(redirectUri);
-        dest.searchParams.set('code', authCode);
-        if (state) dest.searchParams.set('state', state);
-        window.location.href = dest.toString();
-      } else {
-        alert('Authorization successful! Auth Code: ' + authCode);
+        if (redirectUri) {
+          const dest = new URL(redirectUri);
+          dest.searchParams.set('code', authCode);
+          if (state) dest.searchParams.set('state', state);
+          window.location.href = dest.toString();
+        } else {
+          alert('Authorization successful! Auth Code: ' + authCode);
+          btn.disabled = false;
+          btn.textContent = 'Authorize Access';
+        }
+      } catch (e) {
+        alert('Could not complete authorization. Please try again.');
         btn.disabled = false;
         btn.textContent = 'Authorize Access';
       }

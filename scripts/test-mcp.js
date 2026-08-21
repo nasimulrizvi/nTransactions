@@ -106,15 +106,57 @@ async function runTests() {
     assert.strictEqual(r8.sanitized.amount, 45.5);
   });
 
-  // 3. OAuth Token issuance & verification
-  test('OAuth token issuance and JWT verification', () => {
-    const tokenObj = issueAccessToken('user_test_999');
-    assert.ok(tokenObj.access_token, 'Issues access token string');
+  // 3. OAuth Discovery & Metadata
+  await testAsync('OAuth 2.0 Discovery Metadata (RFC 8414)', async () => {
+    const oauthDiscovery = require('../api/oauth-discovery');
+
+    // Server metadata
+    const reqServer = { method: 'GET', query: { type: 'server' }, headers: { host: 'ntransactions.pro.bd' }, url: '/.well-known/oauth-authorization-server' };
+    const resServer = createMockRes();
+    await oauthDiscovery(reqServer, resServer);
+
+    assert.strictEqual(resServer.statusCode, 200);
+    const serverMeta = JSON.parse(resServer.body);
+    assert.strictEqual(serverMeta.issuer, 'https://ntransactions.pro.bd');
+    assert.strictEqual(serverMeta.authorization_endpoint, 'https://ntransactions.pro.bd/mcp-auth.html');
+    assert.strictEqual(serverMeta.token_endpoint, 'https://ntransactions.pro.bd/api/mcp-auth');
+
+    // Resource metadata
+    const reqRes = { method: 'GET', query: { type: 'resource' }, headers: { host: 'ntransactions.pro.bd' }, url: '/.well-known/oauth-protected-resource' };
+    const resRes = createMockRes();
+    await oauthDiscovery(reqRes, resRes);
+
+    assert.strictEqual(resRes.statusCode, 200);
+    const resourceMeta = JSON.parse(resRes.body);
+    assert.strictEqual(resourceMeta.resource, 'https://ntransactions.pro.bd/api/mcp');
+  });
+
+  // 4. OAuth Code issue and Token Exchange Flow
+  await testAsync('Full OAuth Authorization Code to Bearer Token Exchange', async () => {
+    const reqCode = { method: 'POST', query: { action: 'issue_code' }, body: { uid: 'user_flow_123' }, headers: {} };
+    const resCode = createMockRes();
+    await mcpAuth(reqCode, resCode);
+
+    assert.strictEqual(resCode.statusCode, 200);
+    const codeObj = JSON.parse(resCode.body);
+    assert.ok(codeObj.code, 'Issues auth code');
+
+    // Exchange code for token
+    const reqToken = {
+      method: 'POST',
+      body: { grant_type: 'authorization_code', code: codeObj.code },
+      headers: {}
+    };
+    const resToken = createMockRes();
+    await mcpAuth(reqToken, resToken);
+
+    assert.strictEqual(resToken.statusCode, 200);
+    const tokenObj = JSON.parse(resToken.body);
+    assert.ok(tokenObj.access_token, 'Returns access token');
     assert.strictEqual(tokenObj.token_type, 'Bearer');
 
     const decoded = verifyAccessToken(tokenObj.access_token);
-    assert.ok(decoded, 'Verifies valid access token');
-    assert.strictEqual(decoded.sub, 'user_test_999');
+    assert.strictEqual(decoded.sub, 'user_flow_123');
   });
 
   // 4. Mock HTTP Server Helper for testing handler

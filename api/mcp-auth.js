@@ -157,6 +157,27 @@ module.exports = async function handler(req, res) {
     });
   }
 
+  const action = (req.query && req.query.action) || (req.body && req.body.action);
+
+  if (action === 'register') {
+    return sendJson(res, 201, {
+      client_id: 'ntransactions_mcp_client',
+      client_secret: 'ntransactions_mcp_public_secret',
+      client_id_issued_at: Math.floor(Date.now() / 1000),
+      client_secret_expires_at: 0
+    });
+  }
+
+  if (action === 'issue_code') {
+    let body = req.body;
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch (e) { body = Object.fromEntries(new URLSearchParams(req.body)); }
+    }
+    const uid = (body && body.uid) || (req.query && req.query.uid) || 'user_demo_123';
+    const code = generateAuthCode(uid);
+    return sendJson(res, 200, { code });
+  }
+
   if (req.method !== 'POST') {
     return sendJson(res, 405, { error: 'invalid_request', error_description: 'Method not allowed' });
   }
