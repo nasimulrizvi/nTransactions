@@ -31,6 +31,8 @@ const {
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://ntransactions.pro.bd',
   'https://www.ntransactions.pro.bd',
+  'https://ntx.nasimulrizvi.com',
+  'https://www.ntx.nasimulrizvi.com',
   'https://ntransactions.ai.studio',
   'https://ntransaction.vercel.app',
   'https://ntransactions.vercel.app',
@@ -98,15 +100,25 @@ const DB_BASE_URL = (process.env.FIREBASE_DATABASE_URL || 'https://ntransactions
 // Mock database storage for local testing when Firebase credentials are not set
 const _localMockDb = new Map();
 
-async function getFirebaseUserData(uid) {
+function getDbUrl(path, idToken = '') {
+  const secret = (process.env.FIREBASE_DATABASE_SECRET || process.env.FIREBASE_ADMIN_SECRET || '').trim();
+  const tokenToUse = secret || idToken;
+  const authQuery = tokenToUse ? `?auth=${encodeURIComponent(tokenToUse)}` : '';
+  return `${DB_BASE_URL}${path}${authQuery}`;
+}
+
+async function getFirebaseUserData(uid, idToken = '') {
   if (process.env.NODE_ENV === 'test' || process.env.USE_MOCK_DB === 'true') {
     return _localMockDb.get(uid) || null;
   }
 
   try {
-    const url = `${DB_BASE_URL}/users/${uid}/data.json`;
+    const url = getDbUrl(`/users/${uid}/data.json`, idToken);
     const resp = await fetch(url);
-    if (!resp.ok) return null;
+    if (!resp.ok) {
+      console.warn('[MCP Firebase Fetch Non-OK]', resp.status, await resp.text());
+      return null;
+    }
     return await resp.json();
   } catch (e) {
     console.error('[MCP Firebase Fetch Error]', e);
@@ -117,7 +129,7 @@ async function getFirebaseUserData(uid) {
 /**
  * Atomic write helper to users/{uid}/data
  */
-async function atomicUpdateUserData(uid, mutatorFn) {
+async function atomicUpdateUserData(uid, mutatorFn, idToken = '') {
   if (process.env.NODE_ENV === 'test' || process.env.USE_MOCK_DB === 'true') {
     let current = _localMockDb.get(uid) || null;
     const updated = mutatorFn(current);
@@ -125,8 +137,7 @@ async function atomicUpdateUserData(uid, mutatorFn) {
     return updated;
   }
 
-  // Firebase Realtime Database REST ETag optimistic concurrency or Admin SDK transaction
-  const url = `${DB_BASE_URL}/users/${uid}/data.json`;
+  const url = getDbUrl(`/users/${uid}/data.json`, idToken);
 
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
@@ -493,7 +504,7 @@ module.exports = async function handler(req, res) {
           recomputeAllWalletBalances(currentData);
           currentData.ts = Date.now();
           return currentData;
-        });
+        }, tokenPayload.idToken);
 
         const typeLabel = input.type.replace('_', ' ').toUpperCase();
         return sendJsonRpc(res, 200, {
@@ -509,7 +520,7 @@ module.exports = async function handler(req, res) {
       }
 
       // ─── READ TOOLS ────────────────────────────────────────────────────────
-      const userState = (await getFirebaseUserData(uid)) || buildSyncPayload({}, Date.now());
+      const userState = (await getFirebaseUserData(uid, tokenPayload.idToken)) || buildSyncPayload({}, Date.now());
 
       if (name === 'get_period_summary') {
         const period = (toolArgs && toolArgs.period) || 'all';

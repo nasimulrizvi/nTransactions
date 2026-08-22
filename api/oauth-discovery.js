@@ -8,6 +8,8 @@
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://ntransactions.pro.bd',
   'https://www.ntransactions.pro.bd',
+  'https://ntx.nasimulrizvi.com',
+  'https://www.ntx.nasimulrizvi.com',
   'https://ntransactions.ai.studio',
   'https://ntransaction.vercel.app',
   'https://ntransactions.vercel.app',

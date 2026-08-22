@@ -10,6 +10,8 @@ const crypto = require('crypto');
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://ntransactions.pro.bd',
   'https://www.ntransactions.pro.bd',
+  'https://ntx.nasimulrizvi.com',
+  'https://www.ntx.nasimulrizvi.com',
   'https://ntransactions.ai.studio',
   'https://ntransaction.vercel.app',
   'https://ntransactions.vercel.app',
@@ -70,14 +72,14 @@ function verifySignature(payloadStr, signature) {
 /**
  * Issue a signed OAuth access token valid for 30 days
  */
-function issueAccessToken(uid) {
+function issueAccessToken(uid, idToken = '') {
   const secret = getSecretKey();
   const iat = Math.floor(Date.now() / 1000);
   const expires_in = 30 * 24 * 60 * 60; // 30 days in seconds
   const exp = iat + expires_in;
 
   const headerB64 = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
-  const payloadB64 = Buffer.from(JSON.stringify({ sub: uid, iat, exp, iss: 'ntransactions-mcp' })).toString('base64url');
+  const payloadB64 = Buffer.from(JSON.stringify({ sub: uid, idToken: idToken || '', iat, exp, iss: 'ntransactions-mcp' })).toString('base64url');
 
   const signedContent = `${headerB64}.${payloadB64}`;
   const signature = crypto.createHmac('sha256', secret).update(signedContent).digest('base64url');
@@ -109,19 +111,19 @@ function verifyAccessToken(tokenStr) {
     const nowSec = Math.floor(Date.now() / 1000);
     if (payload.exp && payload.exp < nowSec) return null; // expired
 
-    return payload; // { sub, iat, exp, iss }
+    return payload; // { sub, idToken, iat, exp, iss }
   } catch (e) {
     return null;
   }
 }
 
 /**
- * Generate a short-lived authorization code containing UID
+ * Generate a short-lived authorization code containing UID and ID Token
  */
-function generateAuthCode(uid) {
+function generateAuthCode(uid, idToken = '') {
   const secret = getSecretKey();
   const exp = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
-  const payloadObj = { uid, exp, nonce: crypto.randomBytes(8).toString('hex') };
+  const payloadObj = { uid, idToken: idToken || '', exp, nonce: crypto.randomBytes(8).toString('hex') };
   const payloadStr = Buffer.from(JSON.stringify(payloadObj)).toString('base64url');
   const sig = crypto.createHmac('sha256', secret).update(payloadStr).digest('hex');
   return `${payloadStr}.${sig}`;
@@ -139,7 +141,7 @@ function verifyAuthCode(codeStr) {
     if (!verifySignature(parts[0], parts[1])) return null;
     const payloadObj = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
     if (!payloadObj.uid || !payloadObj.exp || payloadObj.exp < Date.now()) return null;
-    return payloadObj.uid;
+    return payloadObj; // { uid, idToken }
   } catch (e) {
     return null;
   }
@@ -157,39 +159,42 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const action = (req.query && req.query.action) || (req.body && req.body.action);
-
-  if (action === 'register') {
-    return sendJson(res, 201, {
-      client_id: 'ntransactions_mcp_client',
-      client_secret: 'ntransactions_mcp_public_secret',
-      client_id_issued_at: Math.floor(Date.now() / 1000),
-      client_secret_expires_at: 0
-    });
-  }
-
-  if (action === 'issue_code') {
-    let body = req.body;
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch (e) { body = Object.fromEntries(new URLSearchParams(req.body)); }
-    }
-    const uid = (body && body.uid) || (req.query && req.query.uid) || 'user_demo_123';
-    const code = generateAuthCode(uid);
-    return sendJson(res, 200, { code });
-  }
-
-  if (req.method !== 'POST') {
-    return sendJson(res, 405, { error: 'invalid_request', error_description: 'Method not allowed' });
-  }
-
   // Parse body (Form URL encoded or JSON)
   let body = req.body;
   if (typeof body === 'string') {
     try {
       body = JSON.parse(body);
     } catch (e) {
-      body = Object.fromEntries(new URLSearchParams(req.body));
+      try { body = Object.fromEntries(new URLSearchParams(req.body)); } catch (err) { body = {}; }
     }
+  }
+
+  const action = (req.query && req.query.action) || (body && body.action);
+
+  // Dynamic Client Registration (RFC 7591)
+  if (action === 'register' || (req.url && req.url.includes('register')) || (req.method === 'POST' && body && body.redirect_uris)) {
+    const redirectUris = (body && Array.isArray(body.redirect_uris)) ? body.redirect_uris : ['https://claude.ai/api/auth/callback/mcp'];
+    return sendJson(res, 201, {
+      client_id: 'ntransactions_mcp_client',
+      client_secret: 'ntransactions_mcp_public_secret',
+      client_id_issued_at: Math.floor(Date.now() / 1000),
+      client_secret_expires_at: 0,
+      redirect_uris: redirectUris,
+      grant_types: ['authorization_code'],
+      response_types: ['code'],
+      token_endpoint_auth_method: 'none'
+    });
+  }
+
+  if (action === 'issue_code') {
+    const uid = (body && body.uid) || (req.query && req.query.uid) || 'user_demo_123';
+    const idToken = (body && body.idToken) || (req.query && req.query.idToken) || '';
+    const code = generateAuthCode(uid, idToken);
+    return sendJson(res, 200, { code });
+  }
+
+  if (req.method !== 'POST') {
+    return sendJson(res, 405, { error: 'invalid_request', error_description: 'Method not allowed' });
   }
 
   const { grant_type, code } = body || {};
@@ -201,15 +206,17 @@ module.exports = async function handler(req, res) {
     });
   }
 
-  const uid = verifyAuthCode(code);
-  if (!uid) {
+  const codeData = verifyAuthCode(code);
+  if (!codeData) {
     return sendJson(res, 400, {
       error: 'invalid_grant',
       error_description: 'Authorization code is invalid or expired.'
     });
   }
 
-  const tokenResp = issueAccessToken(uid);
+  const uid = typeof codeData === 'string' ? codeData : codeData.uid;
+  const idToken = typeof codeData === 'object' ? (codeData.idToken || '') : '';
+  const tokenResp = issueAccessToken(uid, idToken);
   return sendJson(res, 200, tokenResp);
 };
 

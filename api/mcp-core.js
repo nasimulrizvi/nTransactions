@@ -125,16 +125,59 @@ function resolveWalletId(wallets, walletNameOrId) {
   return wallets[0].id;
 }
 
+const DEFAULT_EXP_CATS = [
+  { id: 'education', label: 'Education', synonyms: ['education', 'study', 'school', 'college', 'university', 'tuition', 'books'] },
+  { id: 'entertainment', label: 'Entertainment', synonyms: ['entertainment', 'movie', 'cinema', 'fun', 'game', 'gaming', 'sports'] },
+  { id: 'transportation', label: 'Transport', synonyms: ['transport', 'transportation', 'fare', 'bus', 'train', 'rickshaw', 'uber', 'pathao', 'taxi', 'travel', 'ride', 'traveling', 'yathayat'] },
+  { id: 'food', label: 'Food & Dining', synonyms: ['food', 'dining', 'restaurant', 'meal', 'lunch', 'dinner', 'breakfast', 'snacks', 'fooding', 'grocery', 'groceries', 'bazaar'] },
+  { id: 'health', label: 'Health & Medical', synonyms: ['health', 'medical', 'medicine', 'doctor', 'hospital', 'clinic', 'pharma', 'pharmacy'] },
+  { id: 'accommodation', label: 'Accommodation', synonyms: ['accommodation', 'rent', 'house rent', 'flat rent', 'stay', 'hotel', 'hostel'] },
+  { id: 'mobile', label: 'Mobile Recharge', synonyms: ['mobile', 'recharge', 'flexiload', 'phone', 'bill', 'talktime', 'internet', 'data'] },
+  { id: 'misc', label: 'Miscellaneous Expenses', synonyms: ['misc', 'miscellaneous', 'other', 'others', 'general'] },
+  { id: 'clothing', label: 'Clothing & Accessories', synonyms: ['clothing', 'clothes', 'dress', 'shirt', 'pants', 'shoes', 'accessories'] },
+  { id: 'tech', label: 'Technology & Electronics', synonyms: ['tech', 'technology', 'electronics', 'gadget', 'computer', 'laptop', 'software', 'domain'] },
+  { id: 'travel', label: 'Travel', synonyms: ['tour', 'trip', 'vacation', 'flight', 'air ticket'] },
+  { id: 'donation', label: 'Donation', synonyms: ['donation', 'charity', 'sadaka', 'zakat', 'gift'] }
+];
+
+const DEFAULT_INC_CATS = [
+  { id: 'family', label: 'Parents & Family', synonyms: ['parents', 'family', 'abbu', 'ammu', 'father', 'mother', 'brother', 'sister'] },
+  { id: 'salary', label: 'Salary', synonyms: ['salary', 'paycheck', 'wage', 'wages', 'stipend', 'job'] },
+  { id: 'business', label: 'Business Profit', synonyms: ['business', 'profit', 'sales', 'revenue', 'freelance', 'freelancing', 'client'] },
+  { id: 'bonus', label: 'Bonus & Cash Back', synonyms: ['bonus', 'cashback', 'cash back', 'reward', 'rewards'] },
+  { id: 'relatives', label: 'Relatives', synonyms: ['relatives', 'relative', 'gift from relative'] },
+  { id: 'other', label: 'Other Income', synonyms: ['other', 'others', 'misc', 'miscellaneous'] }
+];
+
 function resolveCategoryId(state, type, categoryNameOrId) {
   if (!categoryNameOrId || isLoanType(type) || type === 'transfer') return '';
-  const target = String(categoryNameOrId).trim().toLowerCase();
+  const raw = String(categoryNameOrId).trim();
+  const target = raw.toLowerCase();
 
+  // 1. Check custom categories
   const customCats = type === 'expense' ? (state.customExpCats || []) : (state.customIncCats || []);
-  const foundCustom = customCats.find(c => c && (c.id === categoryNameOrId || String(c.label || c.name).trim().toLowerCase() === target));
+  const foundCustom = customCats.find(c => c && (c.id === raw || String(c.label || c.name || '').trim().toLowerCase() === target));
   if (foundCustom) return foundCustom.id;
 
-  // Return sanitized name if no exact ID match so it stores as custom label
-  return categoryNameOrId.trim();
+  // 2. Check built-in categories (exact ID or exact Label match)
+  const defaultCats = type === 'expense' ? DEFAULT_EXP_CATS : DEFAULT_INC_CATS;
+  const exactDef = defaultCats.find(c => c.id === target || c.id === raw || c.label.toLowerCase() === target);
+  if (exactDef) return exactDef.id;
+
+  // 3. Fuzzy & Synonyms match against built-in categories
+  for (const c of defaultCats) {
+    if (target.includes(c.id) || c.id.includes(target) || target.includes(c.label.toLowerCase()) || c.label.toLowerCase().includes(target)) {
+      return c.id;
+    }
+    if (Array.isArray(c.synonyms)) {
+      if (c.synonyms.some(s => target.includes(s) || s.includes(target))) {
+        return c.id;
+      }
+    }
+  }
+
+  // 4. Fallback: Return raw string if no relevant existing category matches
+  return raw;
 }
 
 // ─── Financial Read Computations ──────────────────────────────────────────────

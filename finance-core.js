@@ -262,7 +262,7 @@ function getApiEndpoint(apiPath) {
     return 'https://ntransactions.pro.bd' + apiPath;
   }
   // Standard web production domain or localhost relative routing
-  if (protocol.startsWith('http') && (/ntransactions\.pro\.bd|ntransaction.*\.vercel\.app|localhost/.test(origin))) {
+  if (protocol.startsWith('http') && (/ntransactions\.pro\.bd|ntx\.nasimulrizvi\.com|ntransaction.*\.vercel\.app|localhost/.test(origin))) {
     return apiPath;
   }
   return 'https://ntransactions.pro.bd' + apiPath;
