@@ -318,7 +318,7 @@ Gazipur, Dhaka, Bangladesh
 
 - 🌐 GitHub: [@nasimulrizvi](https://github.com/nasimulrizvi)
 - 💼 Repository: [https://github.com/nasimulrizvi/nTransactions](https://github.com/nasimulrizvi/nTransactions)
-- ✉️ Email: [contact.nasimulrizvi@gmail.com](mailto:contact.nasimulrizvi@gmail.com) / [hello@nasimulrizvi.com](mailto:hello@nasimulrizvi.com)
+- ✉️ Email: [hello@nasimulrizvi.com](mailto:hello@nasimulrizvi.com)
 
 ---
 
