@@ -7,20 +7,12 @@
 //             sharing never breaks because of this endpoint.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { verifyFirebaseToken } = require('./firebase-verify');
-
 const SHORTIO_API_URL = 'https://api.short.io/links';
 const SHORTIO_DOMAIN  = 'rizvi.nav.bd';
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://ntransactions.pro.bd',
   'https://www.ntransactions.pro.bd',
-  'https://ntx.nasimulrizvi.com',
-  'https://www.ntx.nasimulrizvi.com',
-  'https://ntransactions.ai.studio',
-  'https://www.ntransactions.ai.studio',
-  'https://ntransaction.vercel.app',
-  'https://ntransactions.vercel.app',
   'https://appassets.androidplatform.net'
 ];
 
@@ -32,8 +24,8 @@ function envList(value) {
 
 function setCors(req, res) {
   const origin = req.headers.origin || '';
-  const allowed = new Set([...DEFAULT_ALLOWED_ORIGINS, ...envList(process.env.VOICE_ALLOWED_ORIGINS)]);
-  if (allowed.has(origin)) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
@@ -54,8 +46,63 @@ function rateLimit(uid) {
   recent.push(now); shortenBuckets.set(uid, recent); return true;
 }
 
+const crypto = require('crypto');
+const CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
+let _certCache = null, _certCacheExp = 0;
+
+async function _getCerts() {
+  const now = Date.now();
+  if (_certCache && now < _certCacheExp) return _certCache;
+  let resp;
+  try { resp = await fetch(CERTS_URL, { signal: AbortSignal.timeout(6000) }); }
+  catch (_) { throw new Error('firebase_network_error'); }
+  if (!resp.ok) throw new Error('firebase_network_error');
+  const match = (resp.headers.get('cache-control') || '').match(/max-age=(\d+)/);
+  _certCache = await resp.json();
+  _certCacheExp = now + (match ? parseInt(match[1]) * 1000 : 3_600_000);
+  return _certCache;
+}
+
 async function verifyFirebaseUser(idToken) {
-  return verifyFirebaseToken(idToken);
+  const firebaseKey = process.env.FIREBASE_WEB_API_KEY;
+  if (firebaseKey) {
+    try {
+      const resp = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseKey)}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ idToken }) }
+      );
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && Array.isArray(data.users) && data.users.length) {
+        return { localId: data.users[0].localId, email: data.users[0].email || '' };
+      }
+    } catch (_) {}
+  }
+
+  const parts = String(idToken || '').split('.');
+  if (parts.length !== 3) return null;
+  let header, payload;
+  try {
+    header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+    payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+  } catch (_) { return null; }
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp <= now || payload.iat > now + 300) return null;
+
+  const projectId = process.env.FIREBASE_PROJECT_ID || payload.aud || 'ntransactions';
+  if (payload.aud !== projectId && payload.aud !== payload.iss?.split('/').pop()) return null;
+  if (!payload.sub || header.alg !== 'RS256' || !header.kid) return null;
+
+  const certs = await _getCerts();
+  const pem = certs[header.kid];
+  if (!pem) return null;
+
+  try {
+    const v = crypto.createVerify('RSA-SHA256');
+    v.update(parts[0] + '.' + parts[1], 'utf8');
+    if (!v.verify(pem, Buffer.from(parts[2], 'base64url'))) return null;
+  } catch (_) { return null; }
+
+  return { localId: String(payload.sub), email: String(payload.email || '') };
 }
 
 async function fetchWithTimeout(url, options, timeoutMs) {
@@ -108,19 +155,10 @@ async function handler(req, res) {
   if (!user || !user.localId) { sendJson(res, 401, { error: 'invalid_session' }); return; }
   if (!rateLimit(user.localId)) { sendJson(res, 429, { error: 'rate_limited' }); return; }
 
-  const shortioKey = (process.env.SHORTIO_API_KEY || '').trim();
+  const shortioKey = process.env.SHORTIO_API_KEY;
   if (!shortioKey) {
-    // SHORTIO_API_KEY not set in Vercel environment variables yet.
-    sendJson(res, 200, { shortUrl: longUrl, shortened: false, reason: 'not_configured' });
-    return;
-  }
-
-  // Detect the common mistake of using the PUBLIC key (pk_…) instead of the secret key.
-  // Public keys are for the Short.io analytics SDK — link creation requires the secret key
-  // from Short.io dashboard → Integrations & API → Secret API key.
-  if (shortioKey.startsWith('pk_')) {
-    console.warn('[shorten] SHORTIO_API_KEY is a public key (pk_…). Link creation requires the SECRET key from Short.io dashboard.');
-    sendJson(res, 200, { shortUrl: longUrl, shortened: false, reason: 'public_key_not_allowed' });
+    // Not configured yet — caller falls back to the original long URL.
+    sendJson(res, 200, { shortUrl: longUrl, shortened: false });
     return;
   }
 
@@ -129,23 +167,21 @@ async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'authorization': shortioKey    // Short.io uses lowercase 'authorization'
+        'Authorization': shortioKey
       },
       body: JSON.stringify({ domain: SHORTIO_DOMAIN, originalURL: longUrl })
     }, 8000);
 
     const data = await resp.json().catch(() => ({}));
-    // Short.io returns shortURL or secureShortURL depending on domain SSL setting
-    const short = data.shortURL || data.secureShortURL || '';
-    if (resp.ok && short) {
-      sendJson(res, 200, { shortUrl: short, shortened: true });
+    if (resp.ok && data.shortURL) {
+      sendJson(res, 200, { shortUrl: data.shortURL, shortened: true });
     } else {
-      console.error('[shorten] Short.io API error', resp.status, JSON.stringify(data).slice(0, 200));
-      sendJson(res, 200, { shortUrl: longUrl, shortened: false, reason: 'api_error' });
+      // Short.io rejected the request (e.g. invalid/secret-vs-public key mismatch)
+      // — fall back to the long URL so sharing never breaks.
+      sendJson(res, 200, { shortUrl: longUrl, shortened: false });
     }
   } catch (e) {
-    console.error('[shorten] fetch failed:', e.message);
-    sendJson(res, 200, { shortUrl: longUrl, shortened: false, reason: 'network_error' });
+    sendJson(res, 200, { shortUrl: longUrl, shortened: false });
   }
 }
 

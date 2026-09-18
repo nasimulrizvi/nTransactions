@@ -261,8 +261,8 @@ function getApiEndpoint(apiPath) {
   if (isAndroidRuntime()) {
     return 'https://ntransactions.pro.bd' + apiPath;
   }
-  // Standard web production domain or localhost relative routing
-  if (protocol.startsWith('http') && (/ntransactions\.pro\.bd|ntx\.nasimulrizvi\.com|ntransaction.*\.vercel\.app|localhost/.test(origin))) {
+  // Standard web relative routing
+  if (protocol.startsWith('http')) {
     return apiPath;
   }
   return 'https://ntransactions.pro.bd' + apiPath;
@@ -325,20 +325,4 @@ function runLedgerUnitTests(stateObj) {
   return { passed, total, results };
 }
 
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = {
-    LOAN_TYPES,
-    roundMoney,
-    deltaForTransaction,
-    deltaForLoanEntry,
-    deltaForWltHistory,
-    computeWalletBalance,
-    recomputeAllWalletBalances,
-    recomputeAllBalances,
-    buildSyncPayload,
-    runLedgerUnitTests
-  };
-}
-
 // === FINANCE-CORE END ===
-

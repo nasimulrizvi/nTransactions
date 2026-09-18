@@ -1,0 +1,6 @@
+{
+  "name": "nTransactions",
+  "description": "Personal finance tracker - expenses, income, loans and budgets",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

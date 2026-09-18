@@ -6,25 +6,17 @@
 // Fallback  : Client handles offline regex fallback if this endpoint fails
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { verifyFirebaseToken } = require('./firebase-verify');
-
 const OR_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const DEFAULT_OR_MODELS = [
   'meta-llama/llama-3.3-70b-instruct:free',
-  'google/gemma-4-31b-it:free',
-  'openrouter/free'
+  'openai/gpt-oss-120b:free',
+  'qwen/qwen-2.5-72b-instruct:free'
 ];
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://ntransactions.pro.bd',
   'https://www.ntransactions.pro.bd',
-  'https://ntx.nasimulrizvi.com',
-  'https://www.ntx.nasimulrizvi.com',
-  'https://ntransactions.ai.studio',
-  'https://www.ntransactions.ai.studio',
-  'https://ntransaction.vercel.app',
-  'https://ntransactions.vercel.app',
   'https://appassets.androidplatform.net'
 ];
 
@@ -38,8 +30,8 @@ function envList(value) {
 
 function setCors(req, res) {
   const origin = req.headers.origin || '';
-  const allowed = new Set([...DEFAULT_ALLOWED_ORIGINS, ...envList(process.env.VOICE_ALLOWED_ORIGINS)]);
-  if (allowed.has(origin)) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
@@ -60,8 +52,70 @@ function rateLimit(uid) {
   recent.push(now); smsBuckets.set(uid, recent); return true;
 }
 
+// ─── Zero-dependency Firebase JWT verifier ───────────────────────────────────
+
+const crypto = require('crypto');
+const CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
+let _certCache = null, _certCacheExp = 0;
+
+async function _getCerts() {
+  const now = Date.now();
+  if (_certCache && now < _certCacheExp) return _certCache;
+  let resp;
+  try { resp = await fetch(CERTS_URL, { signal: AbortSignal.timeout(6000) }); }
+  catch (_) { throw new Error('firebase_network_error'); }
+  if (!resp.ok) throw new Error('firebase_network_error');
+  const match = (resp.headers.get('cache-control') || '').match(/max-age=(\d+)/);
+  _certCache = await resp.json();
+  _certCacheExp = now + (match ? parseInt(match[1]) * 1000 : 3_600_000);
+  return _certCache;
+}
+
 async function verifyFirebaseUser(idToken) {
-  return verifyFirebaseToken(idToken);
+  const firebaseKey = process.env.FIREBASE_WEB_API_KEY;
+  if (firebaseKey) {
+    try {
+      const resp = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        }
+      );
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && Array.isArray(data.users) && data.users.length) {
+        const u = data.users[0];
+        return { localId: u.localId, email: u.email || '' };
+      }
+    } catch (_) {}
+  }
+
+  const parts = String(idToken || '').split('.');
+  if (parts.length !== 3) return null;
+  let header, payload;
+  try {
+    header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+    payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+  } catch (_) { return null; }
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp <= now || payload.iat > now + 300) return null;
+
+  const projectId = process.env.FIREBASE_PROJECT_ID || payload.aud || 'ntransactions';
+  if (payload.aud !== projectId && payload.aud !== payload.iss?.split('/').pop()) return null;
+  if (!payload.sub || header.alg !== 'RS256' || !header.kid) return null;
+
+  const certs = await _getCerts();
+  const pem = certs[header.kid];
+  if (!pem) return null;
+
+  try {
+    const v = crypto.createVerify('RSA-SHA256');
+    v.update(parts[0] + '.' + parts[1], 'utf8');
+    if (!v.verify(pem, Buffer.from(parts[2], 'base64url'))) return null;
+  } catch (_) { return null; }
+
+  return { localId: String(payload.sub), email: String(payload.email || '') };
 }
 
 async function fetchWithTimeout(url, options, timeoutMs) {
@@ -78,42 +132,32 @@ const SYSTEM_PROMPT = `You are an expert SMS transaction parser for a Bangladesh
 
 Extract structured transaction data from the provided bank or mobile banking SMS.
 
-Supported sources: bKash, Nagad, Rocket, CellFin, Dutch-Bangla Bank (DBBL), Bank Asia, BRAC Bank, City Bank, Islami Bank, Eastern Bank, Standard Chartered Bangladesh, HSBC Bangladesh, Mutual Trust Bank, Prime Bank, Southeast Bank, UCB, IFIC Bank, Trust Bank, generic Bangladeshi bank debit/credit alerts, ATM withdrawals, POS purchases, mobile banking payments, fund transfers, cash-out transactions, merchant payments.
+Supported sources include: bKash, Nagad, Rocket, CellFin, DBBL, Bank Asia, BRAC Bank, City Bank, Islami Bank, Eastern Bank, Standard Chartered Bangladesh, HSBC Bangladesh, Mutual Trust Bank, Prime Bank, Southeast Bank, UCB, IFIC Bank, Trust Bank, and any generic Bangladeshi debit/credit alert.
 
 RULES:
-1. transactionType: "Expense" for debit/payment/cashout/withdrawal/purchase/sent; "Cash In" for credit/received/cashin/deposit/incoming; "Transfer" for send/transfer between accounts.
-2. wallet: match the user wallet list by name (provided in the prompt). If no match, use the service name inferred from the SMS (e.g. "bKash", "Nagad", "BRAC Bank").
-3. dateTime: normalize to "YYYY-MM-DD HH:MM" (24h) when date/time is present; otherwise return empty string "".
-4. amount: extract numeric value only; remove commas/spaces; return as a number (not a string).
-5. currency: always "BDT".
-6. category: infer intelligently from context (e.g. "Food & Drinks", "Transportation", "Mobile Recharge", "Online Shopping", "Cash Withdrawal", "Utilities", "Health & Care", "Education", "Money Transfer", "Other").
-7. referenceNumber: extract TxnID / Ref / Txn No / Reference / Transaction ID if present; otherwise return empty string "".
-8. description: CRITICAL RULE — You MUST write a SHORT (5–12 words), natural English sentence that summarises the financial action FROM THE USER'S PERSPECTIVE. STRICTLY FORBIDDEN: do NOT copy, paraphrase, or echo any part of the raw SMS text. NEVER include phone numbers, OTPs, account balance, reference numbers, or raw transaction IDs in the description. Write as if the user is adding a quick diary note about what they spent or received money for.
+1. transactionType: "Expense" for debit/payment/cashout/withdrawal/purchase/sent; "Cash In" for credit/received/cashin/deposit/incoming; "Transfer" for send/transfer between accounts
+2. wallet: match against the provided user wallet list by name; if none match, use the service name from the SMS (e.g. "bKash", "Nagad", "BRAC Bank")
+3. dateTime: normalize to "YYYY-MM-DD HH:MM" when date/time is present; otherwise return empty string
+4. amount: extract numeric value only; remove commas; return as number
+5. currency: always "BDT"
+6. category: infer intelligently (e.g. "Food & Drinks", "Transportation", "Mobile Recharge", "Online Shopping", "Cash Withdrawal", "Utilities", "Health & Care", "Education", "Money Transfer", "Other")
+7. referenceNumber: extract TxnID/Ref/Txn No/Reference/ID if present; otherwise empty string
+8. description: generate a SHORT, intelligent, user-friendly English description of the financial action. Do NOT copy SMS text. Make it feel natural and useful in a transaction history.
 
-DESCRIPTION GOOD EXAMPLES (right column = correct output):
-SMS → Description
-"Cash Out Tk 500.00 from Agent 01XXXXXXXX" → "Cash withdrawn from mobile banking agent."
-"Payment Tk 1200.00 to Daraz" → "Online shopping payment completed."
-"Send Money Tk 3000 to 01XXXXXXXXX" → "Money sent to a contact."
-"You have received Tk 5000 from 01XXXXXXXXX" → "Payment received from a contact."
-"ATM withdrawal Tk 10000 from DBBL" → "Cash withdrawn from ATM."
-"Bill payment Tk 800 for DESCO" → "Electricity bill paid."
-"Mobile Recharge Tk 50 to Grameenphone" → "Mobile airtime recharged."
-"POS Purchase Tk 2500 at ShopUp" → "Card payment at retail store."
-"bKash cashout TK 200.00 from Agent Point Your Balance is TK 1234.56 TxnID ABC123" → "Cash withdrawn via mobile banking agent."
-"Nagad: You have received TK 36.55. Your Balance is TK 100.00" → "Payment received via mobile wallet."
-"Salary Tk 45000 credited to your account" → "Monthly salary deposited."
-"Loan EMI Tk 5000 debited" → "Loan instalment payment processed."
+DESCRIPTION EXAMPLES:
+- "Cash Out Tk 500 from Agent" → "Cash withdrawn from an agent point."
+- "Payment Tk 1200 to Daraz" → "Online shopping payment completed."
+- "Send Money Tk 3000 to 01XXXXXXXXX" → "Peer-to-peer mobile transfer sent."
+- "You have received Tk 5000 from 01XXXXXXXXX" → "Mobile transfer received from sender."
+- "ATM withdrawal Tk 10000" → "Cash withdrawn from ATM."
+- "Bill payment Tk 800 for DESCO" → "Electricity bill payment processed."
+- "Mobile recharge Tk 50 to Grameenphone" → "Mobile airtime recharge completed."
+- "POS purchase Tk 2500 at ShopUp" → "In-store card payment made."
 
-BAD DESCRIPTION EXAMPLES (NEVER output these):
-"bKash cashout TK 200.00 from Agent Point Your Balance is TK 1234.56" (raw SMS copy)
-"You have received TK 36.55" (raw SMS paraphrase)
-"Nagad: TK 36.55 received. Your Balance is TK 100.00" (contains balance)
+OUTPUT: Return ONLY valid JSON. No markdown. No code fences. No explanations. No additional text.
 
-OUTPUT FORMAT: Return ONLY valid JSON. No markdown. No code fences. No explanations. No additional text before or after the JSON.
-
-Required JSON schema (all fields mandatory):
-{"transactionType":"Expense","wallet":"bKash","dateTime":"2026-06-09 16:30","amount":500,"currency":"BDT","category":"Mobile Recharge","referenceNumber":"","description":"Mobile airtime recharged."}`;
+JSON schema:
+{"transactionType":"Expense","wallet":"","dateTime":"","amount":0,"currency":"BDT","category":"","referenceNumber":"","description":""}`;
 
 function buildSmsPrompt(sms, wallets, currency) {
   return `User wallets: ${JSON.stringify(wallets.map(w => ({ id: w.id, name: w.name })))}\nCurrency: ${currency || 'BDT'}\nSMS:\n${sms}`;
@@ -157,11 +201,37 @@ async function callOpenRouter(orKey, smsText, wallets, currency) {
     if (text) return { ok: true, text, model: data.model || models[0] };
     return { ok: false, reason: 'empty' };
   }
+  return { ok: false, reason: 'http', status: resp.status };
+}
 
-  const message = (data.error && data.error.message)
-    ? String(data.error.message) : `HTTP ${resp.status}`;
-  console.error('[OpenRouter Error]', resp.status, message);
-  return { ok: false, reason: 'http', status: resp.status, message };
+async function callGemini(geminiKey, smsText, wallets, currency) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`;
+  const timeoutMs = Math.max(10000, Math.min(Number(process.env.OR_TIMEOUT_MS || 30000) || 30000, 60000));
+  try {
+    const resp = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [
+          { role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\n${buildSmsPrompt(smsText, wallets, currency)}` }] }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 400,
+          responseMimeType: 'application/json'
+        }
+      })
+    }, timeoutMs);
+
+    const data = await resp.json().catch(() => ({}));
+    if (resp.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return { ok: true, text: data.candidates[0].content.parts[0].text.trim(), model: 'gemini-2.5-flash' };
+    }
+    return { ok: false, reason: 'http', status: resp.status };
+  } catch (e) {
+    if (e && e.reason === 'timeout') return { ok: false, reason: 'timeout' };
+    return { ok: false, reason: 'network' };
+  }
 }
 
 // ─── JSON parsing ─────────────────────────────────────────────────────────────
@@ -192,7 +262,11 @@ async function handler(req, res) {
   if (req.method !== 'POST') { sendJson(res, 405, { error: 'method_not_allowed' }); return; }
 
   const orKey = process.env.OPENROUTER_API_KEY;
-  if (!orKey) { sendJson(res, 500, { error: 'openrouter_not_configured', message: 'SMS AI parser is not configured on the server.' }); return; }
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!orKey && !geminiKey) {
+    sendJson(res, 500, { error: 'ai_not_configured', message: 'SMS AI parser is not configured on the server.' });
+    return;
+  }
 
   // Firebase auth
   const auth = String(req.headers.authorization || '');
@@ -202,10 +276,11 @@ async function handler(req, res) {
   let user;
   try { user = await verifyFirebaseUser(idToken); }
   catch (e) {
-    if (e && e.message === 'missing_firebase_key') { sendJson(res, 500, { error: 'firebase_not_configured' }); return; }
-    sendJson(res, 500, { error: 'auth_unavailable', message: 'Could not verify session.' }); return;
+    if (e && e.message === 'firebase_api_key_invalid') { sendJson(res, 500, { error: 'firebase_misconfigured', message: 'Firebase project ID mismatch. Check FIREBASE_PROJECT_ID env var.' }); return; }
+    if (e && e.message === 'firebase_network_error') { sendJson(res, 503, { error: 'auth_unavailable', message: 'Authentication temporarily unreachable. Please try again.' }); return; }
+    sendJson(res, 500, { error: 'auth_error', message: 'Could not verify session. Please try again.' }); return;
   }
-  if (!user || !user.localId) { sendJson(res, 401, { error: 'invalid_session' }); return; }
+  if (!user || !user.localId) { sendJson(res, 401, { error: 'invalid_session', message: 'Your session has expired. Please sign in again.' }); return; }
   if (!rateLimit(user.localId)) { sendJson(res, 429, { error: 'rate_limited', message: 'Too many requests. Please wait.' }); return; }
 
   const body = requestBody(req);
@@ -215,13 +290,16 @@ async function handler(req, res) {
   const wallets = Array.isArray(body.wallets) ? body.wallets.slice(0, 50) : [];
   const currency = String(body.currency || 'BDT').slice(0, 10);
 
-  const result = await callOpenRouter(orKey, sms, wallets, currency);
-  if (!result.ok) {
-    sendJson(res, result.status === 429 ? 429 : 502, {
-      error: 'ai_parse_failed',
-      message: result.message || 'AI parser unavailable — use offline fallback.',
-      reason: result.reason
-    });
+  let result = null;
+  if (geminiKey) {
+    result = await callGemini(geminiKey, sms, wallets, currency);
+  }
+  if ((!result || !result.ok) && orKey) {
+    result = await callOpenRouter(orKey, sms, wallets, currency);
+  }
+
+  if (!result || !result.ok) {
+    sendJson(res, 502, { error: 'ai_parse_failed', message: 'AI parser unavailable — use offline fallback.', reason: result?.reason });
     return;
   }
 

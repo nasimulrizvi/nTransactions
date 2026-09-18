@@ -3,7 +3,7 @@
   "latestVersion": "1.0",
   "minimumVersion": "1.0",
   "apkUrl": "",
-  "releaseDate": "2026-05-17",
+  "releaseDate": "2026-09-01",
   "forceUpdate": false,
   "webPushVapidKey": "BGsLQIJhnCApn_GOoqbvZJ9N_wfWlR1mHBTtFu7TWsZxzzY_gfYnDzcPYUNnTSGpCkU5l6YvNPFIsFkPXFLNX9I",
   "title": "nTransactions Android APK v1.0",
@@ -19,7 +19,7 @@
     "latestVersion": "1.0",
     "minimumVersion": "1.0",
     "apkUrl": "https://github.com/nasimulrizvi/nTransactions/releases/download/V1.0.0/nTransactions-V1.0.apk",
-    "releaseDate": "2026-05-17",
+    "releaseDate": "2026-09-01",
     "forceUpdate": false,
     "title": "nTransactions APK v1.0",
     "message": "Download the latest official nTransactions Android APK.",
@@ -32,10 +32,10 @@
     ]
   },
   "web": {
-    "latestVersion": "3.2.1",
-    "minimumVersion": "3.2.0",
+    "latestVersion": "5.1",
+    "minimumVersion": "5.1",
     "webPushVapidKey": "BGsLQIJhnCApn_GOoqbvZJ9N_wfWlR1mHBTtFu7TWsZxzzY_gfYnDzcPYUNnTSGpCkU5l6YvNPFIsFkPXFLNX9I",
-    "releaseDate": "2026-05-16",
+    "releaseDate": "2026-09-01",
     "forceUpdate": false,
     "title": "What's New in nTransactions",
     "message": "PWA users can now see release notes and reload when a fresh deployment is available.",
@@ -57,13 +57,13 @@
   },
   "announcements": [
     {
-      "id": "update-system-ready-2026-05-14",
+      "id": "update-system-ready-2026-09-01",
       "active": false,
       "platforms": [
         "all"
       ],
-      "version": "3.2.1",
-      "releaseDate": "2026-05-16",
+      "version": "5.1",
+      "releaseDate": "2026-09-01",
       "title": "Update Notifications Ready",
       "message": "nTransactions can now show lightweight release announcements and Firebase Messaging notifications.",
       "changelog": [

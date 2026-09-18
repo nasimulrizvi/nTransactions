@@ -4,27 +4,19 @@
 // Fallback  : native OpenRouter `models` array — single HTTP call, no manual loop
 // ─────────────────────────────────────────────────────────────────────────────
 
-const { verifyFirebaseToken } = require('./firebase-verify');
-
 const OR_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 // Ordered fallback list.  Primary → secondary Gemini → free LLMs.
 // Override at runtime via OR_VOICE_MODELS (comma-separated OpenRouter model ids).
 const DEFAULT_OR_MODELS = [
   'meta-llama/llama-3.3-70b-instruct:free',
-  'google/gemma-4-31b-it:free',
-  'openrouter/free'
+  'openai/gpt-oss-120b:free',
+  'qwen/qwen-2.5-72b-instruct:free'
 ];
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://ntransactions.pro.bd',
   'https://www.ntransactions.pro.bd',
-  'https://ntx.nasimulrizvi.com',
-  'https://www.ntx.nasimulrizvi.com',
-  'https://ntransactions.ai.studio',
-  'https://www.ntransactions.ai.studio',
-  'https://ntransaction.vercel.app',
-  'https://ntransactions.vercel.app',
   'https://appassets.androidplatform.net'
 ];
 
@@ -48,10 +40,8 @@ function allowedOrigins() {
 
 function setCors(req, res) {
   const origin = req.headers.origin || '';
-  if (allowedOrigins().has(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Vary', 'Origin');
-  }
+  res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  res.setHeader('Vary', 'Origin');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
@@ -79,8 +69,74 @@ function rateLimit(uid) {
   return true;
 }
 
+// ─── Zero-dependency Firebase JWT verifier ───────────────────────────────────
+// Validates Firebase Auth ID tokens using Node.js built-in crypto.
+// No firebase-admin, no npm install, no package.json changes needed.
+
+const crypto = require('crypto');
+const CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
+
+let _certCache = null;
+let _certCacheExp = 0;
+
+async function _getCerts() {
+  const now = Date.now();
+  if (_certCache && now < _certCacheExp) return _certCache;
+  let resp;
+  try { resp = await fetch(CERTS_URL, { signal: AbortSignal.timeout(6000) }); }
+  catch (_) { throw new Error('firebase_network_error'); }
+  if (!resp.ok) throw new Error('firebase_network_error');
+  const match = (resp.headers.get('cache-control') || '').match(/max-age=(\d+)/);
+  _certCache = await resp.json();
+  _certCacheExp = now + (match ? parseInt(match[1]) * 1000 : 3_600_000);
+  return _certCache;
+}
+
 async function verifyFirebaseUser(idToken) {
-  return verifyFirebaseToken(idToken);
+  const firebaseKey = process.env.FIREBASE_WEB_API_KEY;
+  if (firebaseKey) {
+    try {
+      const resp = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseKey)}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken })
+        }
+      );
+      const data = await resp.json().catch(() => ({}));
+      if (resp.ok && Array.isArray(data.users) && data.users.length) {
+        const u = data.users[0];
+        return { localId: u.localId, email: u.email || '' };
+      }
+    } catch (_) {}
+  }
+
+  const parts = String(idToken || '').split('.');
+  if (parts.length !== 3) return null;
+  let header, payload;
+  try {
+    header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
+    payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+  } catch (_) { return null; }
+  const now = Math.floor(Date.now() / 1000);
+  if (payload.exp <= now || payload.iat > now + 300) return null;
+
+  const projectId = process.env.FIREBASE_PROJECT_ID || payload.aud || 'ntransactions';
+  if (payload.aud !== projectId && payload.aud !== payload.iss?.split('/').pop()) return null;
+  if (!payload.sub || header.alg !== 'RS256' || !header.kid) return null;
+
+  const certs = await _getCerts();
+  const pem = certs[header.kid];
+  if (!pem) return null;
+
+  try {
+    const v = crypto.createVerify('RSA-SHA256');
+    v.update(parts[0] + '.' + parts[1], 'utf8');
+    if (!v.verify(pem, Buffer.from(parts[2], 'base64url'))) return null;
+  } catch (_) { return null; }
+
+  return { localId: String(payload.sub), email: String(payload.email || '') };
 }
 
 // ─── OpenRouter config ────────────────────────────────────────────────────────
@@ -270,6 +326,32 @@ function requestBody(req) {
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 
+async function callGemini(geminiKey, promptText, config) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`;
+  try {
+    const response = await fetchWithTimeout(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: promptText }] }],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 700,
+          responseMimeType: 'application/json'
+        }
+      })
+    }, config.timeoutMs);
+
+    const data = await response.json().catch(() => ({}));
+    if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+      return { ok: true, text: data.candidates[0].content.parts[0].text.trim(), model: 'gemini-2.5-flash' };
+    }
+    return { ok: false, status: response.status, reason: 'http' };
+  } catch (e) {
+    return { ok: false, status: 504, reason: e?.reason === 'timeout' ? 'timeout' : 'network' };
+  }
+}
+
 async function handler(req, res) {
   setCors(req, res);
 
@@ -285,9 +367,10 @@ async function handler(req, res) {
   }
 
   const orKey = process.env.OPENROUTER_API_KEY;
-  if (!orKey) {
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (!orKey && !geminiKey) {
     sendJson(res, 500, {
-      error: 'openrouter_not_configured',
+      error: 'ai_not_configured',
       message: 'Voice Transaction AI is not configured on the server yet.'
     });
     return;
@@ -304,21 +387,26 @@ async function handler(req, res) {
   try {
     user = await verifyFirebaseUser(idToken);
   } catch (e) {
-    if (e && e.message === 'missing_firebase_key') {
+    if (e && e.message === 'firebase_api_key_invalid') {
       sendJson(res, 500, {
-        error: 'firebase_not_configured',
-        message: 'Voice Transaction authentication is not configured on the server yet.'
+        error: 'firebase_misconfigured',
+        message: 'Firebase project ID mismatch. Set FIREBASE_PROJECT_ID env var if needed.'
+      });
+    } else if (e && e.message === 'firebase_network_error') {
+      sendJson(res, 503, {
+        error: 'auth_unavailable',
+        message: 'Authentication temporarily unreachable. Please try again.'
       });
     } else {
       sendJson(res, 500, {
-        error: 'auth_verification_unavailable',
+        error: 'auth_error',
         message: 'Could not verify your session. Please try again.'
       });
     }
     return;
   }
   if (!user || !user.localId) {
-    sendJson(res, 401, { error: 'invalid_session' });
+    sendJson(res, 401, { error: 'invalid_session', message: 'Your session has expired. Please sign in again.' });
     return;
   }
   if (!rateLimit(user.localId)) {
@@ -340,15 +428,21 @@ async function handler(req, res) {
   const config = openRouterConfig();
   const prompt = buildPrompt(transcript, context);
 
-  const result = await callOpenRouter(orKey, prompt, config);
+  let result = null;
+  if (geminiKey) {
+    result = await callGemini(geminiKey, prompt, config);
+  }
+  if ((!result || !result.ok) && orKey) {
+    result = await callOpenRouter(orKey, prompt, config);
+  }
 
-  if (!result.ok) {
-    const status = result.status === 429 ? 429 : 502;
+  if (!result || !result.ok) {
+    const status = result?.status === 429 ? 429 : 502;
     sendJson(res, status, {
-      error: 'openrouter_request_failed',
-      status: result.status,
-      model: result.model || '',
-      message: orClientMessage(result)
+      error: 'ai_request_failed',
+      status: result?.status,
+      model: result?.model || '',
+      message: orClientMessage(result || {})
     });
     return;
   }

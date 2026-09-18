@@ -1,9 +1,11 @@
-const CACHE_NAME = 'ntx-pwa-v2-1-android-32';
+const CACHE_NAME = 'ntx-pwa-v2-1-android-47';
 const APP_SHELL = [
   './index.html',
   './manifest.json',
   './favicon.png',
-  './favicon-maskable.png'
+  './favicon-192.png',
+  './favicon-maskable.png',
+  './favicon-maskable-192.png'
 ];
 
 const FIREBASE_CONFIG = {

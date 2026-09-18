@@ -13203,36 +13203,12 @@ function runLedgerUnitTests(stateObj) {
         return `${ctx.dataset.label}: ${chartMoney(value)}`;
       }
 
-      // ---- CHART 1: 12-month Area (daily granularity, monthly axis labels) ----
+      // ---- CHART 1: 12-month Area ----
       const c1 = document.getElementById('chart-trend');
       if (c1 && chartVis.trend) {
         destroyChart('trend');
-        // Build a continuous list of ISO day strings spanning the same 12-month window
-        // (1st of the month, 11 months back  ->  last day of the current month).
-        const _now = new Date();
-        const _startD = new Date(_now.getFullYear(), _now.getMonth() - 11, 1);
-        const _endD = new Date(_now.getFullYear(), _now.getMonth() + 1, 0);
-        const dayList = [];
-        for (let d = new Date(_startD); d <= _endD; d.setDate(d.getDate() + 1)) {
-          dayList.push(d.toISOString().slice(0, 10));
-        }
-        // Aggregate every transaction into that day's income/expense total
-        const dayMap = Object.create(null);
-        const _firstDay = dayList[0], _lastDay = dayList[dayList.length - 1];
-        for (let i = 0; i < S.transactions.length; i++) {
-          const t = S.transactions[i];
-          if (!t.date) continue;
-          const dISO = t.date.slice(0, 10);
-          if (dISO < _firstDay || dISO > _lastDay) continue;
-          let bucket = dayMap[dISO];
-          if (!bucket) bucket = dayMap[dISO] = { inc: 0, exp: 0 };
-          if (t.type === 'income') bucket.inc += (t.amount || 0);
-          else if (t.type === 'expense') bucket.exp += (t.amount || 0);
-        }
-        // Missing days (no transactions) fall back to a zero total
-        const incData = dayList.map(d => (dayMap[d] ? dayMap[d].inc : 0));
-        const expData = dayList.map(d => (dayMap[d] ? dayMap[d].exp : 0));
-        const MONS3_TREND = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const months12 = [];
+        for (let i = 11; i >= 0; i--) { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i); const ym = d.toISOString().slice(0, 7); const s = mStats(ym); months12.push({ lbl: d.toLocaleDateString('en-US', { month: 'short' }), exp: s.exp, inc: s.inc }); }
         const ctx = c1.getContext('2d');
         const gh = c1.clientHeight || (c1.parentElement && c1.parentElement.clientHeight) || 280;
         const incGrad = ctx.createLinearGradient(0, 0, 0, gh);
@@ -13244,40 +13220,19 @@ function runLedgerUnitTests(stateObj) {
         _charts['trend'] = new Chart(c1, {
           type: 'line',
           data: {
-            labels: dayList,
+            labels: months12.map(m => m.lbl),
             datasets: [
-              { label: 'Cash In', data: incData, borderColor: '#10b981', backgroundColor: incGrad, fill: 'origin', tension: 0.35, cubicInterpolationMode: 'monotone', pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 6, borderWidth: 2.1 },
-              { label: 'Expense', data: expData, borderColor: '#f43f5e', backgroundColor: expGrad, fill: 'origin', tension: 0.35, cubicInterpolationMode: 'monotone', pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 6, borderWidth: 2.1 }
+              { label: 'Cash In', data: months12.map(m => m.inc), borderColor: '#10b981', backgroundColor: incGrad, fill: 'origin', tension: 0.42, cubicInterpolationMode: 'monotone', pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 10, borderWidth: 2.1 },
+              { label: 'Expense', data: months12.map(m => m.exp), borderColor: '#f43f5e', backgroundColor: expGrad, fill: 'origin', tension: 0.42, cubicInterpolationMode: 'monotone', pointRadius: 0, pointHoverRadius: 4, pointHitRadius: 10, borderWidth: 2.1 }
             ]
           },
           options: {
             responsive: true,
             maintainAspectRatio: false,
             interaction: { mode: 'index', intersect: false },
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                backgroundColor: '#111111', titleColor: '#e5e7eb', bodyColor: '#d1d5db', borderColor: 'rgba(107,114,128,0.26)', borderWidth: 1, padding: 10,
-                callbacks: {
-                  title: (items) => (items && items.length ? fmtD(dayList[items[0].dataIndex]) : ''),
-                  label: chartTooltipLabel
-                }
-              }
-            },
+            plugins: { legend: { display: false }, tooltip: { backgroundColor: '#111111', titleColor: '#e5e7eb', bodyColor: '#d1d5db', borderColor: 'rgba(107,114,128,0.26)', borderWidth: 1, padding: 10, callbacks: { label: chartTooltipLabel } } },
             scales: {
-              x: {
-                grid: { display: false, drawTicks: false, drawOnChartArea: false },
-                border: { display: false },
-                ticks: {
-                  color: chartAxisCol, font: { size: 10 }, maxRotation: 0, minRotation: 0, autoSkip: false, padding: 8,
-                  callback: function (value, index) {
-                    // Only label the 1st of each month so the axis keeps its original monthly spacing
-                    const iso = dayList[index];
-                    if (!iso) return '';
-                    return iso.slice(8, 10) === '01' ? MONS3_TREND[parseInt(iso.slice(5, 7), 10) - 1] : '';
-                  }
-                }
-              },
+              x: { grid: { display: false, drawTicks: false, drawOnChartArea: false }, border: { display: false }, ticks: { color: chartAxisCol, font: { size: 10 }, maxRotation: 0, autoSkip: true, padding: 8 } },
               y: { beginAtZero: true, grid: { color: chartGridCol, borderDash: [4, 4], drawTicks: false, drawBorder: false }, border: { display: false, dash: [4, 4] }, ticks: { color: chartAxisCol, font: { size: 10 }, callback: chartMoney, padding: 8 } }
             }
           }
@@ -23456,8 +23411,6 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
       if (preLbl) preLbl.textContent = _DTP.title;
       const nowBtn = document.getElementById('dtp-now-btn');
       if (nowBtn) nowBtn.style.display = _DTP.dateOnly ? 'none' : 'inline-flex';
-      const clrBtn = document.getElementById('dtp-clear-btn');
-      if (clrBtn) clrBtn.style.display = _DTP.allowClear ? 'inline-flex' : 'none';
 
       const now = new Date();
       let initYr = now.getFullYear();
@@ -24412,7 +24365,7 @@ ${isTransfer && S.wallets.length > 1 ? `<div class="fg"><label class="fl">To Wal
           </div>
         </div>
       </div>
-      <div class="dtpicker-ftr"><button class="dtp-qb" id="dtp-now-btn" onclick="dtpNow()">Now</button><button class="dtp-qb" id="dtp-today-btn" onclick="dtpToday()">Today</button><button class="dtp-qb" id="dtp-clear-btn" onclick="dtpClear()" style="display:none;">Clear</button><button class="dtp-can" onclick="closeDTP()">Cancel</button><button class="dtp-ok" onclick="dtpConfirm()">OK</button></div>
+      <div class="dtpicker-ftr"><button class="dtp-qb" id="dtp-now-btn" onclick="dtpNow()">Now</button><button class="dtp-qb" id="dtp-today-btn" onclick="dtpToday()">Today</button><button class="dtp-can" onclick="closeDTP()">Cancel</button><button class="dtp-ok" onclick="dtpConfirm()">OK</button></div>
     </div>
   </div>
 
