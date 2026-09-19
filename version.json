@@ -1,49 +1,59 @@
 {
   "schema": 1,
-  "latestVersion": "1.0",
+  "latestVersion": "5.1",
   "minimumVersion": "1.0",
-  "apkUrl": "",
-  "releaseDate": "2026-09-01",
+  "apkUrl": "https://github.com/nasimulrizvi/nTransactions/releases/download/V4.2/nTransactions.v4.2.apk",
+  "releaseDate": "2026-09-19",
   "forceUpdate": false,
   "webPushVapidKey": "BGsLQIJhnCApn_GOoqbvZJ9N_wfWlR1mHBTtFu7TWsZxzzY_gfYnDzcPYUNnTSGpCkU5l6YvNPFIsFkPXFLNX9I",
-  "title": "nTransactions Android APK v1.0",
-  "message": "The official Android APK is available from the nTransactions download page.",
+  "title": "nTransactions v5.1 / Android APK v4.2 Major Release",
+  "message": "Major release introducing features from the past 3 months including Transfer record editing, AI tools integration, flicker-free search, and automated loan reminders.",
   "changelog": [
-    "Cross-platform update awareness system",
-    "Service Worker update prompt support",
-    "Android APK version comparison support",
-    "Official first-time APK download page",
-    "Improved Settings profile card and detailed Profile window"
+    "Android App version upgraded from v3.0 to v4.2",
+    "PWA Web App version upgraded from v4.0 to v5.1 (September 2026)",
+    "Transfer Record Editing — Direct editing support for internal wallet transfers",
+    "Flicker-free Instant Search — Optimized record filtering with 35ms debouncing",
+    "AI Financial Assistant & MCP Integration — MCP server tools for Claude Desktop, Manus, and Grok AI",
+    "Smart Loan Due Reminders — Automated push notifications for loan due dates and overdue payments",
+    "Monthly Digest & Email Reports — Multipart HTML & plain text monthly financial summary emails",
+    "Persistent SMS Notification Sync — Read/unread state synchronization across native app and Firebase",
+    "Wallet Balance & Real-time Sync Engine — Fixed wallet calculation and tombstone sync logic"
   ],
   "android": {
-    "latestVersion": "1.0",
-    "minimumVersion": "1.0",
-    "apkUrl": "https://github.com/nasimulrizvi/nTransactions/releases/download/V1.0.0/nTransactions-V1.0.apk",
-    "releaseDate": "2026-09-01",
+    "latestVersion": "4.2",
+    "minimumVersion": "1.1",
+    "apkUrl": "https://github.com/nasimulrizvi/nTransactions/releases/download/V4.2/nTransactions.v4.2.apk",
+    "releaseDate": "2026-09-19",
     "forceUpdate": false,
-    "title": "nTransactions APK v1.0",
-    "message": "Download the latest official nTransactions Android APK.",
+    "title": "nTransactions Android v4.2 is here!",
+    "message": "Official Android APK v4.2 update featuring 3 months of improvements: Transfer editing, instant search, AI assistant, smart reminders, and email digest reports.",
     "changelog": [
-      "Remote APK update metadata support",
-      "Soft and force update handling",
-      "Manual update checking from Settings",
-      "Official first-time APK download page",
-      "Profile editing with username availability checks"
+      "Android App version upgraded from v3.0 to v4.2",
+      "Direct editing capability for Transfer transactions",
+      "Flicker-free instant search and filtering in Records view",
+      "AI Financial Assistant (MCP) support for Claude, Manus, and Grok AI",
+      "Smart push notification reminders for loan due dates",
+      "Monthly financial digest and HTML email reports",
+      "Persistent read/unread state sync for bank and MFS SMS notifications",
+      "Firebase real-time dashboard and wallet balance synchronization fixes",
+      "Native WebView performance boost and UI polish"
     ]
   },
   "web": {
     "latestVersion": "5.1",
-    "minimumVersion": "5.1",
+    "minimumVersion": "3.2.0",
     "webPushVapidKey": "BGsLQIJhnCApn_GOoqbvZJ9N_wfWlR1mHBTtFu7TWsZxzzY_gfYnDzcPYUNnTSGpCkU5l6YvNPFIsFkPXFLNX9I",
-    "releaseDate": "2026-09-01",
+    "releaseDate": "2026-09-19",
     "forceUpdate": false,
-    "title": "What's New in nTransactions",
-    "message": "PWA users can now see release notes and reload when a fresh deployment is available.",
+    "title": "What's New in nTransactions v5.1 (Sep 2026)",
+    "message": "PWA Web App version update v5.1 (Updated Sep 2026) containing all major features from the last 3 months.",
     "changelog": [
-      "What's New announcement system",
-      "Service Worker update detection",
-      "Manual Check for Updates from Settings",
-      "Compact Settings profile card and Profile details modal"
+      "PWA version updated to v5.1 (September 2026)",
+      "Transfer transaction direct editing support",
+      "High-speed flicker-free search rendering",
+      "Full MCP protocol & OAuth support for AI tools",
+      "Monthly financial digest email notifications",
+      "Updated Service Worker caching & offline state engine"
     ]
   },
   "messaging": {
@@ -57,19 +67,20 @@
   },
   "announcements": [
     {
-      "id": "update-system-ready-2026-09-01",
-      "active": false,
+      "id": "pwa-v51-android-v42-sep-2026",
+      "active": true,
       "platforms": [
         "all"
       ],
       "version": "5.1",
-      "releaseDate": "2026-09-01",
-      "title": "Update Notifications Ready",
-      "message": "nTransactions can now show lightweight release announcements and Firebase Messaging notifications.",
+      "releaseDate": "2026-09-19",
+      "title": "nTransactions Sep 2026 Official Release (PWA v5.1 & Android v4.2)",
+      "message": "nTransactions major release updated to PWA v5.1 and Android APK v4.2 featuring 3 months of features, AI integration, smart reminders, and performance fixes.",
       "changelog": [
-        "APK update metadata support",
-        "PWA What's New support",
-        "Firebase Messaging compatibility"
+        "Android App version v4.2 release",
+        "PWA Web App version v5.1 release (Sep 2026)",
+        "Transfer edit, flicker-free search & AI tools integration",
+        "Smart loan reminders & monthly email digests"
       ],
       "actionUrl": ""
     }
