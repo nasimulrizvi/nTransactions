@@ -6,6 +6,8 @@
 // Fallback  : Client handles offline regex fallback if this endpoint fails
 // ─────────────────────────────────────────────────────────────────────────────
 
+const { verifyFirebaseToken } = require('./_lib/firebase-verify');
+
 const OR_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
 const DEFAULT_OR_MODELS = [
@@ -17,6 +19,12 @@ const DEFAULT_OR_MODELS = [
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://ntransactions.pro.bd',
   'https://www.ntransactions.pro.bd',
+  'https://ntx.nasimulrizvi.com',
+  'https://www.ntx.nasimulrizvi.com',
+  'https://ntransactions.ai.studio',
+  'https://www.ntransactions.ai.studio',
+  'https://ntransaction.vercel.app',
+  'https://ntransactions.vercel.app',
   'https://appassets.androidplatform.net'
 ];
 
@@ -30,8 +38,8 @@ function envList(value) {
 
 function setCors(req, res) {
   const origin = req.headers.origin || '';
-  res.setHeader('Access-Control-Allow-Origin', origin || '*');
-  res.setHeader('Vary', 'Origin');
+  const allowed = new Set([...DEFAULT_ALLOWED_ORIGINS, ...envList(process.env.VOICE_ALLOWED_ORIGINS)]);
+  if (allowed.has(origin)) { res.setHeader('Access-Control-Allow-Origin', origin); res.setHeader('Vary', 'Origin'); }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   res.setHeader('Access-Control-Max-Age', '86400');
@@ -54,68 +62,8 @@ function rateLimit(uid) {
 
 // ─── Zero-dependency Firebase JWT verifier ───────────────────────────────────
 
-const crypto = require('crypto');
-const CERTS_URL = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
-let _certCache = null, _certCacheExp = 0;
-
-async function _getCerts() {
-  const now = Date.now();
-  if (_certCache && now < _certCacheExp) return _certCache;
-  let resp;
-  try { resp = await fetch(CERTS_URL, { signal: AbortSignal.timeout(6000) }); }
-  catch (_) { throw new Error('firebase_network_error'); }
-  if (!resp.ok) throw new Error('firebase_network_error');
-  const match = (resp.headers.get('cache-control') || '').match(/max-age=(\d+)/);
-  _certCache = await resp.json();
-  _certCacheExp = now + (match ? parseInt(match[1]) * 1000 : 3_600_000);
-  return _certCache;
-}
-
 async function verifyFirebaseUser(idToken) {
-  const firebaseKey = process.env.FIREBASE_WEB_API_KEY;
-  if (firebaseKey) {
-    try {
-      const resp = await fetch(
-        `https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(firebaseKey)}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken })
-        }
-      );
-      const data = await resp.json().catch(() => ({}));
-      if (resp.ok && Array.isArray(data.users) && data.users.length) {
-        const u = data.users[0];
-        return { localId: u.localId, email: u.email || '' };
-      }
-    } catch (_) {}
-  }
-
-  const parts = String(idToken || '').split('.');
-  if (parts.length !== 3) return null;
-  let header, payload;
-  try {
-    header  = JSON.parse(Buffer.from(parts[0], 'base64url').toString('utf8'));
-    payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
-  } catch (_) { return null; }
-  const now = Math.floor(Date.now() / 1000);
-  if (payload.exp <= now || payload.iat > now + 300) return null;
-
-  const projectId = process.env.FIREBASE_PROJECT_ID || payload.aud || 'ntransactions';
-  if (payload.aud !== projectId && payload.aud !== payload.iss?.split('/').pop()) return null;
-  if (!payload.sub || header.alg !== 'RS256' || !header.kid) return null;
-
-  const certs = await _getCerts();
-  const pem = certs[header.kid];
-  if (!pem) return null;
-
-  try {
-    const v = crypto.createVerify('RSA-SHA256');
-    v.update(parts[0] + '.' + parts[1], 'utf8');
-    if (!v.verify(pem, Buffer.from(parts[2], 'base64url'))) return null;
-  } catch (_) { return null; }
-
-  return { localId: String(payload.sub), email: String(payload.email || '') };
+  return verifyFirebaseToken(idToken);
 }
 
 async function fetchWithTimeout(url, options, timeoutMs) {
@@ -143,6 +91,7 @@ RULES:
 6. category: infer intelligently (e.g. "Food & Drinks", "Transportation", "Mobile Recharge", "Online Shopping", "Cash Withdrawal", "Utilities", "Health & Care", "Education", "Money Transfer", "Other")
 7. referenceNumber: extract TxnID/Ref/Txn No/Reference/ID if present; otherwise empty string
 8. description: generate a SHORT, intelligent, user-friendly English description of the financial action. Do NOT copy SMS text. Make it feel natural and useful in a transaction history.
+9. fee: extract any explicit service fee, charge, or VAT as a separate non-negative number; otherwise return 0
 
 DESCRIPTION EXAMPLES:
 - "Cash Out Tk 500 from Agent" → "Cash withdrawn from an agent point."
@@ -157,7 +106,7 @@ DESCRIPTION EXAMPLES:
 OUTPUT: Return ONLY valid JSON. No markdown. No code fences. No explanations. No additional text.
 
 JSON schema:
-{"transactionType":"Expense","wallet":"","dateTime":"","amount":0,"currency":"BDT","category":"","referenceNumber":"","description":""}`;
+{"transactionType":"Expense","wallet":"","dateTime":"","amount":0,"fee":0,"currency":"BDT","category":"","referenceNumber":"","description":""}`;
 
 function buildSmsPrompt(sms, wallets, currency) {
   return `User wallets: ${JSON.stringify(wallets.map(w => ({ id: w.id, name: w.name })))}\nCurrency: ${currency || 'BDT'}\nSMS:\n${sms}`;
@@ -245,6 +194,29 @@ function parseAiJson(text) {
   throw new Error('Invalid JSON from AI');
 }
 
+function normalizeNonNegativeMoney(value) {
+  const n = Number(String(value == null ? '' : value).replace(/,/g, '').trim());
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return Math.round((n + Number.EPSILON) * 100) / 100;
+}
+
+function extractSmsFee(sms) {
+  const text = String(sms || '');
+  const money = '(?:BDT|TK\\.?|Taka|\\u09F3)';
+  const amount = '([0-9][0-9,]*(?:\\.\\d{1,2})?)';
+  const strongLabel = '(?:service\\s+charge|cash\\s*out\\s+charge|fee|vat)';
+  const strongBefore = text.match(new RegExp(`\\b${strongLabel}\\b[^0-9]{0,24}(?:${money})?\\s*${amount}`, 'i'));
+  const strongAfter = text.match(new RegExp(`${money}\\s*${amount}[^A-Za-z0-9]{0,12}\\b${strongLabel}\\b`, 'i'));
+  if (strongBefore || strongAfter) return normalizeNonNegativeMoney((strongBefore || strongAfter)[1]);
+  const bareBefore = text.match(new RegExp('\\bcharge\\b[^0-9]{0,24}(?:' + money + ')?\\s*' + amount, 'i'));
+  const bareAfter = text.match(new RegExp(money + '\\s*' + amount + '[^A-Za-z0-9]{0,12}\\bcharge\\b', 'i'));
+  const bare = bareBefore || bareAfter;
+  if (!bare) return 0;
+  const preceding = text.slice(0, bare.index || 0);
+  const priorMoney = new RegExp(`${money}\\s*[0-9]|[0-9][0-9,]*(?:\\.\\d{1,2})?\\s*${money}`, 'i').test(preceding);
+  return priorMoney ? normalizeNonNegativeMoney(bare[1]) : 0;
+}
+
 // ─── Request body helper ──────────────────────────────────────────────────────
 
 function requestBody(req) {
@@ -305,14 +277,17 @@ async function handler(req, res) {
 
   try {
     const parsed = parseAiJson(result.text);
-    if (!parsed.amount || Number(parsed.amount) <= 0) {
+    const amount = normalizeNonNegativeMoney(parsed.amount);
+    if (!amount) {
       sendJson(res, 422, { error: 'no_amount', message: 'Could not extract amount from SMS.' });
       return;
     }
-    sendJson(res, 200, { ...parsed, _model: result.model });
+    const fee = Math.max(normalizeNonNegativeMoney(parsed.fee), extractSmsFee(sms));
+    sendJson(res, 200, { ...parsed, amount, fee, _model: result.model });
   } catch (_) {
     sendJson(res, 502, { error: 'bad_json', message: 'AI returned unreadable response — use offline fallback.' });
   }
 }
 
 module.exports = handler;
+module.exports._test = { normalizeNonNegativeMoney, extractSmsFee, setCors };

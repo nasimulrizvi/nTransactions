@@ -5,7 +5,8 @@
     "dev": "node server.js",
     "start": "node server.js",
     "build": "echo 'No build step required'",
-    "lint": "node -c server.js api/*.js"
+    "lint": "node -c server.js && node -c sw.js && node -c finance-core.js && node -c api/_lib/firebase-verify.js && node -c api/ai-chat.js && node -c api/gemini-voice.js && node -c api/send-email.js && node -c api/shorten.js && node -c api/sms-parse.js && node -c scripts/audit-wallet-balances.js && node -c scripts/repair-duplicate-wallet-history.opt-in.js && node -c tests/logic-audit.test.js",
+    "test": "node tests/logic-audit.test.js"
   },
   "dependencies": {
     "compression": "^1.8.1",

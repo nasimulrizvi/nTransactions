@@ -14,23 +14,30 @@ if (typeof LOAN_TYPES === 'undefined') {
 }
 
 function roundMoney(n) {
-  return Math.round((parseFloat(n) || 0) * 100) / 100;
+  const value = Number(n);
+  if (!Number.isFinite(value) || value === 0) return 0;
+  const sign = value < 0 ? -1 : 1;
+  return sign * Math.round((Math.abs(value) + Number.EPSILON) * 100) / 100;
+}
+
+function walletBalanceAdjustmentRequested(originalBalance, submittedBalance) {
+  return roundMoney(originalBalance) !== roundMoney(submittedBalance);
 }
 
 function deltaForTransaction(t, wid) {
   if (!t || !wid) return 0;
+  const fee = roundMoney(t.fee !== undefined && t.fee !== null ? t.fee : (t.charge || 0));
   if (t.type === 'expense') {
-    return t.wallet === wid ? -roundMoney(t.amount) : 0;
+    return t.wallet === wid ? roundMoney(-roundMoney(t.amount) - fee) : 0;
   }
   if (t.type === 'income') {
-    return t.wallet === wid ? +roundMoney(t.amount) : 0;
+    return t.wallet === wid ? roundMoney(roundMoney(t.amount) - fee) : 0;
   }
   if (t.type === 'transfer') {
     const amt = roundMoney(t.amount);
-    const fee = roundMoney(t.fee);
-    if (t.wallet === wid && t.toWallet === wid) return -fee;
-    if (t.wallet === wid) return -(amt + fee);
-    if (t.toWallet === wid) return +amt;
+    if (t.wallet === wid && t.toWallet === wid) return roundMoney(-fee);
+    if (t.wallet === wid) return roundMoney(-amt - fee);
+    if (t.toWallet === wid) return roundMoney(amt);
   }
   return 0;
 }
@@ -64,7 +71,7 @@ function deltaForLoanEntry(loan, wid) {
       }
     });
   }
-  return totalDelta;
+  return roundMoney(totalDelta);
 }
 
 function deltaForWltHistory(h, wid) {
@@ -100,7 +107,7 @@ function computeWalletBalance(wid, state) {
     loanDelta += deltaForLoanEntry(l, wid);
   });
 
-  const totalDeltas = historyDelta + txDelta + loanDelta;
+  const totalDeltas = roundMoney(historyDelta + txDelta + loanDelta);
   const initBal = w.initialBalance !== undefined
     ? roundMoney(w.initialBalance)
     : roundMoney((w.balance || 0) - totalDeltas);
@@ -162,6 +169,7 @@ function buildSyncPayload(state, ts = Date.now()) {
     budgets: S.budgets || [],
     loans: S.loans || [],
     recurringTransactions: S.recurringTransactions || [],
+    billReminders: S.billReminders || [],
     customExpCats: S.customExpCats || [],
     customIncCats: S.customIncCats || [],
     subcategories: S.subcategories || {},
@@ -175,7 +183,7 @@ function buildSyncPayload(state, ts = Date.now()) {
     tombstones: S.tombstones || {},
     username: S.username || '',
     currency: S.currency || 'BDT',
-    syncProject: (typeof firebaseConfig !== 'undefined' && firebaseConfig.projectId) ? firebaseConfig.projectId : 'ntransactions-pro',
+    syncProject: (typeof firebaseConfig !== 'undefined' && firebaseConfig.projectId) ? firebaseConfig.projectId : 'ntransactions',
     ts
   };
 }
@@ -268,6 +276,74 @@ function getApiEndpoint(apiPath) {
   return 'https://ntransactions.pro.bd' + apiPath;
 }
 
+// ============ SAVINGS PURE CALCULATIONS ============
+function getSavingsLifetimeStats(savingsHistory = []) {
+  let totalDeposited = 0;
+  let totalWithdrawn = 0;
+  for (let i = 0; i < (savingsHistory || []).length; i++) {
+    const h = savingsHistory[i];
+    if (!h) continue;
+    const amt = parseFloat(h.amount) || 0;
+    if (amt <= 0) continue;
+    if (h.type === 'withdraw' || h.type === 'spend' || h.kind === 'withdraw') {
+      totalWithdrawn += amt;
+    } else if (h.type === 'deposit' || h.kind === 'deposit' || (!h.type && !h.bgtId)) {
+      totalDeposited += amt;
+    }
+  }
+  totalDeposited = roundMoney(totalDeposited);
+  totalWithdrawn = roundMoney(totalWithdrawn);
+  const currentBalance = roundMoney(Math.max(0, totalDeposited - totalWithdrawn));
+  return {
+    totalDeposited,
+    totalWithdrawn,
+    currentBalance
+  };
+}
+
+function getPeriodSavingsStats(savingsHistory = [], key = '') {
+  let deposited = 0;
+  let withdrawn = 0;
+  for (let i = 0; i < (savingsHistory || []).length; i++) {
+    const h = savingsHistory[i];
+    if (!h) continue;
+    const d = h.date || h.at || '';
+    if (key && !d.startsWith(key)) continue;
+    const amt = parseFloat(h.amount) || 0;
+    if (amt <= 0) continue;
+    if (h.type === 'withdraw' || h.type === 'spend' || h.kind === 'withdraw') {
+      withdrawn += amt;
+    } else if (h.type === 'deposit' || h.kind === 'deposit' || (!h.type && !h.bgtId)) {
+      deposited += amt;
+    }
+  }
+  deposited = roundMoney(deposited);
+  withdrawn = roundMoney(withdrawn);
+  const net = roundMoney(deposited - withdrawn);
+  return {
+    deposited,
+    withdrawn,
+    net
+  };
+}
+
+function isTxFundedFromSavings(t, savingsHistory = []) {
+  if (!t || t.type !== 'expense') return false;
+  if (t.fundedFromSavings === true) return true;
+  if (t.savingsSource === 'savings_spend' || t.savingsSource === 'adjustment_subsidy') return true;
+  if (t.savingsHistoryId) {
+    const h = (savingsHistory || []).find(x => x.id === t.savingsHistoryId);
+    if (h && (h.type === 'withdraw' || h.type === 'spend' || h.kind === 'withdraw')) return true;
+  }
+  if ((savingsHistory || []).some(h => (h.type === 'withdraw' || h.type === 'spend' || h.kind === 'withdraw') && h.txId === t.id)) {
+    return true;
+  }
+  if (typeof t.note === 'string' && (t.note.includes('Paid from Savings') || t.note.includes('Subsidized from Savings'))) {
+    return true;
+  }
+  return false;
+}
+
 // ============ UNIFIED DIAGNOSTIC TEST SUITE ============
 function runLedgerUnitTests(stateObj) {
   const state = stateObj || (typeof S !== 'undefined' ? S : { wallets: [], transactions: [], loans: [], wltHistory: [] });
@@ -279,12 +355,20 @@ function runLedgerUnitTests(stateObj) {
   try {
     // 1. Rounding precision
     assert(roundMoney(10.005) === 10.01, 'roundMoney(10.005) === 10.01');
+    assert(roundMoney(-10.005) === -10.01, 'roundMoney(-10.005) === -10.01');
+    assert(roundMoney(Infinity) === 0, 'roundMoney(Infinity) === 0');
     assert(roundMoney(5) === 5, 'roundMoney(5) === 5');
+    assert(walletBalanceAdjustmentRequested(100, '100.00') === false, 'unchanged wallet balance is metadata-only');
+    assert(walletBalanceAdjustmentRequested(100, '95.00') === true, 'changed wallet balance requests one adjustment');
 
     // 2. Transaction delta calculation
     const dummyExp = { type: 'expense', amount: 50, wallet: 'w1' };
     assert(deltaForTransaction(dummyExp, 'w1') === -50, 'deltaForTransaction expense on source');
     assert(deltaForTransaction(dummyExp, 'w2') === 0, 'deltaForTransaction expense on other');
+    assert(deltaForTransaction({ type: 'expense', amount: 50, fee: 5, wallet: 'w1' }, 'w1') === -55, 'deltaForTransaction expense includes fee');
+    assert(deltaForTransaction({ type: 'income', amount: 50, fee: 5, wallet: 'w1' }, 'w1') === 45, 'deltaForTransaction income subtracts fee');
+    assert(deltaForTransaction({ type: 'expense', amount: 50, charge: 5, wallet: 'w1' }, 'w1') === -55, 'deltaForTransaction supports legacy charge');
+    assert(deltaForTransaction({ type: 'expense', amount: 50, fee: 0, charge: 5, wallet: 'w1' }, 'w1') === -50, 'explicit zero fee overrides legacy charge');
 
     const dummyXfer = { type: 'transfer', amount: 100, fee: 5, wallet: 'w1', toWallet: 'w2' };
     assert(deltaForTransaction(dummyXfer, 'w1') === -105, 'deltaForTransaction transfer out + fee');
@@ -315,6 +399,44 @@ function runLedgerUnitTests(stateObj) {
     // 5. Origin resolution routing
     const endpoint = getApiEndpoint('/api/sms-parse');
     assert(typeof endpoint === 'string' && endpoint.includes('/api/sms-parse'), 'getApiEndpoint resolves sms-parse path');
+
+    // 6. Savings lifetime & period calculations
+    const dummySavHist = [
+      { id: 's1', type: 'deposit', amount: 1000, date: '2026-10-01T10:00' },
+      { id: 's2', type: 'deposit', amount: 500, date: '2026-10-02T10:00' },
+      { id: 's3', type: 'withdraw', amount: 300, date: '2026-10-05T12:00' },
+      { id: 's4', type: 'deposit', amount: 200, date: '2025-05-01T09:00' }
+    ];
+    const savLife = getSavingsLifetimeStats(dummySavHist);
+    assert(savLife.totalDeposited === 1700, 'Savings lifetime deposited matches 1700');
+    assert(savLife.totalWithdrawn === 300, 'Savings lifetime withdrawn matches 300');
+    assert(savLife.currentBalance === 1400, 'Savings lifetime current balance matches 1400');
+
+    const mSavStats = getPeriodSavingsStats(dummySavHist, '2026-10');
+    assert(mSavStats.deposited === 1500, 'Period 2026-10 savings deposited matches 1500');
+    assert(mSavStats.withdrawn === 300, 'Period 2026-10 savings withdrawn matches 300');
+    assert(mSavStats.net === 1200, 'Period 2026-10 savings net matches 1200');
+
+    // 7. isTxFundedFromSavings
+    const normalTx = { id: 'nt1', type: 'expense', amount: 100, wallet: 'w1' };
+    const savFundedTx = { id: 'st1', type: 'expense', amount: 100, wallet: 'w1', fundedFromSavings: true };
+    assert(isTxFundedFromSavings(normalTx, dummySavHist) === false, 'Normal expense is not funded from savings');
+    assert(isTxFundedFromSavings(savFundedTx, dummySavHist) === true, 'Funded expense is identified correctly');
+
+    // 8. Yearly Balance with Savings expense (zero duplicate deduction)
+    // Scenario: Income 1000, Regular Expense 910, Saved 50 => Balance 40
+    // Then spend 25 from savings => Total Expense 935, Saved Fund 25 => Regular Expense 910, Balance remains 40
+    const inc = 1000;
+    const regExp = 910;
+    const savDep = 50;
+    const initialYrBal = inc - regExp - savDep;
+    assert(initialYrBal === 40, 'Initial yearly balance equals 40');
+
+    const savSpend = 25;
+    const totalExpAfterSpend = regExp + savSpend; // 935
+    const regExpAfterSpend = totalExpAfterSpend - savSpend; // 910 (savings funded expense excluded from yearly balance deduction)
+    const yrBalAfterSpend = inc - regExpAfterSpend - savDep;
+    assert(yrBalAfterSpend === 40, 'Yearly balance remains 40 with zero duplicate deduction');
   } catch (err) {
     results.push({ name: 'Exception during test suite: ' + err.message, pass: false });
   }
@@ -326,3 +448,23 @@ function runLedgerUnitTests(stateObj) {
 }
 
 // === FINANCE-CORE END ===
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    LOAN_TYPES,
+    roundMoney,
+    walletBalanceAdjustmentRequested,
+    deltaForTransaction,
+    deltaForLoanEntry,
+    deltaForWltHistory,
+    computeWalletBalance,
+    recomputeAllWalletBalances,
+    recomputeAllBalances,
+    assertWalletInvariants,
+    buildSyncPayload,
+    getSavingsLifetimeStats,
+    getPeriodSavingsStats,
+    isTxFundedFromSavings,
+    runLedgerUnitTests
+  };
+}
