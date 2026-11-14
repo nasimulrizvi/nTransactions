@@ -10,7 +10,7 @@
     "users": {
       "$uid": {
         ".read": "$uid === auth.uid",
-        ".write": "$uid === auth.uid",
+        ".write": "$uid === auth.uid && !newData.exists()",
         "data": {
           ".read": "$uid === auth.uid",
           ".write": "$uid === auth.uid",
@@ -51,11 +51,12 @@
           }
         },
         "username": {
+          ".write": "$uid === auth.uid",
           ".validate": "!newData.exists() || (newData.isString() && newData.val().matches(/^[A-Za-z0-9]{0,24}$/))"
         },
         "cons": {
           ".write": "auth !== null",
-          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() >= (data.exists() ? data.val() : 0) && (newData.val() - (data.exists() ? data.val() : 0) == 0 || newData.val() - (data.exists() ? data.val() : 0) == 175000 || newData.val() - (data.exists() ? data.val() : 0) == 1000000)"
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() >= (data.exists() ? data.val() : 0) && (($uid === auth.uid && newData.val() - (data.exists() ? data.val() : 0) == 175000 && newData.parent().parent().parent().child('referrals').child(auth.uid).child('status').val() === 'completed' && newData.parent().parent().parent().child('referrals').child(auth.uid).child('referrerUid').val() !== auth.uid && !data.parent().parent().parent().child('referrals').child(auth.uid).child('rewardsClaimedAt').exists() && newData.parent().parent().parent().child('referrals').child(auth.uid).child('rewardsClaimedAt').isNumber()) || ($uid !== auth.uid && newData.val() - (data.exists() ? data.val() : 0) == 1000000 && newData.parent().parent().parent().child('referrals').child(auth.uid).child('referrerUid').val() === $uid && newData.parent().parent().parent().child('referrals').child(auth.uid).child('status').val() === 'completed' && !data.parent().parent().parent().child('referrals').child(auth.uid).child('rewardsClaimedAt').exists() && newData.parent().parent().parent().child('referrals').child(auth.uid).child('rewardsClaimedAt').isNumber()))"
         },
         "sms_pending": {
           ".read": "$uid === auth.uid",
@@ -71,7 +72,10 @@
         },
         "pending_loans": {
           ".read": "$uid === auth.uid",
-          ".write": "auth !== null"
+          "$inviteId": {
+            ".write": "auth !== null && (($uid === auth.uid && !newData.exists()) || (!data.exists() && newData.exists() && newData.child('id').val() === $inviteId && newData.child('senderUid').val() === auth.uid && newData.child('recipientUid').val() === $uid) || (data.exists() && newData.exists() && data.child('senderUid').val() === auth.uid && newData.child('id').val() === data.child('id').val() && newData.child('senderUid').val() === data.child('senderUid').val() && newData.child('recipientUid').val() === data.child('recipientUid').val() && newData.child('type').val() === data.child('type').val() && newData.child('amount').val() === data.child('amount').val() && newData.child('person').val() === data.child('person').val() && newData.child('sourceLoanId').val() === data.child('sourceLoanId').val()))",
+            ".validate": "!newData.exists() || (newData.hasChildren(['id', 'type', 'person', 'amount', 'senderUid', 'recipientUid', 'sourceLoanId']) && newData.child('id').isString() && newData.child('id').val() === $inviteId && newData.child('type').isString() && newData.child('person').isString() && newData.child('amount').isNumber() && newData.child('amount').val() > 0 && newData.child('senderUid').isString() && newData.child('recipientUid').isString() && newData.child('recipientUid').val() === $uid && newData.child('sourceLoanId').isString() && (!newData.child('inviteId').exists() || newData.child('inviteId').val() === $inviteId))"
+          }
         },
         "reports": {
           ".read": "$uid === auth.uid",
@@ -90,6 +94,29 @@
           "$tokenId": {
             ".validate": "!newData.exists() || (newData.hasChildren(['token', 'platform', 'updatedAt']) && newData.child('token').isString() && newData.child('token').val().length <= 4096 && newData.child('platform').isString() && newData.child('platform').val().matches(/^(web|android)$/) && newData.child('updatedAt').isNumber())"
           }
+        },
+        "notificationReads": {
+          ".read": "$uid === auth.uid",
+          "$notificationKey": {
+            ".write": "$uid === auth.uid && newData.exists() && (!data.exists() || newData.child('readAt').val() >= data.child('readAt').val())",
+            ".validate": "newData.hasChild('readAt') && newData.child('readAt').isNumber() && newData.child('readAt').val() > 0 && (!data.child('readAt').exists() || newData.child('readAt').val() >= data.child('readAt').val()) && ((!newData.child('notificationId').exists() && !newData.child('kind').exists() && !newData.child('source').exists()) || (newData.child('notificationId').isString() && newData.child('notificationId').val().length > 0 && newData.child('notificationId').val().length <= 1024 && newData.child('kind').isString() && newData.child('kind').val().matches(/^(bill|loan|recurring|app|sms|admin|period)$/) && newData.child('source').isString() && newData.child('source').val().length > 0 && newData.child('source').val().length <= 80))"
+          }
+        },
+        "read_notifs": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid"
+        },
+        "digestSent": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid"
+        },
+        "loanRemindersSent": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid"
+        },
+        "notifications": {
+          ".read": "$uid === auth.uid",
+          ".write": "$uid === auth.uid"
         }
       }
     },
@@ -127,15 +154,22 @@
     "referrals": {
       "$newUid": {
         ".read": "auth !== null && ($newUid === auth.uid || data.child('referrerUid').val() === auth.uid)",
-        ".write": "auth !== null && (\n          (!data.exists() && newData.exists() && $newUid === auth.uid && newData.child('referrerUid').val() !== $newUid && root.child('users').child(newData.child('referrerUid').val()).child('profile').exists()) ||\n          (data.exists() && data.child('status').val() === 'pending_verification' && $newUid === auth.uid && newData.child('status').val() === 'completed' && newData.child('referrerUid').val() === data.child('referrerUid').val() && newData.child('at').val() === data.child('at').val())\n        )",
-        ".validate": "newData.hasChildren(['referrerUid', 'status', 'at']) && newData.child('referrerUid').isString() && newData.child('referrerUid').val().length >= 10 && newData.child('referrerUid').val().length <= 64 && newData.child('status').isString() && newData.child('status').val().matches(/^(pending_verification|completed)$/) && newData.child('at').isNumber()"
+        ".write": "auth !== null && (\n          ($newUid === auth.uid && data.exists() && !newData.exists()) ||\n          (!data.exists() && newData.exists() && $newUid === auth.uid && newData.child('referrerUid').val() !== $newUid && root.child('users').child(newData.child('referrerUid').val()).child('profile').exists()) ||\n          (data.exists() && data.child('status').val() === 'pending_verification' && $newUid === auth.uid && newData.child('status').val() === 'completed' && newData.child('referrerUid').val() === data.child('referrerUid').val() && newData.child('at').val() === data.child('at').val() && !newData.child('rewardsClaimedAt').exists()) ||\n          (data.exists() && data.child('status').val() === 'completed' && $newUid === auth.uid && !data.child('rewardsClaimedAt').exists() && newData.child('rewardsClaimedAt').isNumber() && newData.child('status').val() === data.child('status').val() && newData.child('referrerUid').val() === data.child('referrerUid').val() && newData.child('at').val() === data.child('at').val() && newData.parent().parent().child('users').child($newUid).child('cons').val() - (data.parent().parent().child('users').child($newUid).child('cons').exists() ? data.parent().parent().child('users').child($newUid).child('cons').val() : 0) == 175000 && newData.parent().parent().child('users').child(data.child('referrerUid').val()).child('cons').val() - (data.parent().parent().child('users').child(data.child('referrerUid').val()).child('cons').exists() ? data.parent().parent().child('users').child(data.child('referrerUid').val()).child('cons').val() : 0) == 1000000)\n        )",
+        ".validate": "newData.hasChildren(['referrerUid', 'status', 'at']) && newData.child('referrerUid').isString() && newData.child('referrerUid').val().length >= 10 && newData.child('referrerUid').val().length <= 64 && newData.child('status').isString() && newData.child('status').val().matches(/^(pending_verification|completed)$/) && newData.child('at').isNumber() && (!newData.child('rewardsClaimedAt').exists() || newData.child('rewardsClaimedAt').isNumber())"
+      }
+    },
+    "data": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid && !newData.exists()"
       }
     },
     "shared_loans": {
       ".read": false,
       "$shareId": {
         ".read": true,
-        ".write": "auth !== null"
+        ".write": "auth !== null && ((!data.exists() && newData.exists() && newData.child('ownerUid').val() === auth.uid) || (data.exists() && data.child('ownerUid').val() === auth.uid && (!newData.exists() || newData.child('ownerUid').val() === auth.uid)))",
+        ".validate": "!newData.exists() || (newData.child('ownerUid').isString() && newData.child('ownerUid').val().length >= 10 && newData.child('ownerUid').val().length <= 128)"
       }
     }
   }
